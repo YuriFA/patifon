@@ -70,6 +70,12 @@ export default class AudioPlayer extends EventEmitter {
     return !this.playing || this.audio.paused;
   }
 
+  /** Element duration in seconds; 0 while unknown (no source, or metadata not loaded). */
+  get duration(): number {
+    const { duration } = this.audio;
+    return Number.isFinite(duration) ? duration : 0;
+  }
+
   get volume(): number {
     return this.volumeValue;
   }
@@ -106,7 +112,13 @@ export default class AudioPlayer extends EventEmitter {
     this.playing = true;
     await this.ensureAudioContext();
     this.loadCurrentTrack();
-    await this.audio.play();
+    try {
+      await this.audio.play();
+    } catch {
+      // Play was interrupted by a source switch or pause: the element is not
+      // playing, so the flag must not claim it is.
+      this.playing = false;
+    }
   }
 
   stop(): this {

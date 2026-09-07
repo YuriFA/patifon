@@ -1,3 +1,4 @@
+import type { MediaSessionMetadata } from "../media-session";
 import Fuse from "fuse.js";
 import type AudioPlayer from "../audio-player";
 import { importFiles } from "./import";
@@ -226,7 +227,34 @@ export async function initLibrary(
   initImportControls();
   initDropzone();
 
+  // Highlight follows actual playback, not just row clicks: media events fire
+  // for every path that starts or stops audio (clicks, OS transport, track end).
+  player.on("track:play", () => {
+    updateHighlight();
+  });
+  player.on("track:pause", () => {
+    updateHighlight();
+  });
+
   // Bootstrap: restore the persisted library
   records.push(...(await loadTracks()));
   rebuildPlaylist();
+}
+
+/**
+ * Metadata of the currently playing library track for OS media surfaces.
+ * Returns null when the playing index has no library record (the session
+ * then keeps its previous metadata).
+ */
+export function libraryMetadata(): MediaSessionMetadata | null {
+  const record = records[player.currentTrackIndex];
+  if (!record) {
+    return null;
+  }
+  return {
+    title: record.title,
+    artist: record.artist,
+    album: record.album,
+    artworkUrl: artworkUrlFor(record),
+  };
 }

@@ -4,7 +4,8 @@ import type Analyser from "./analyser";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
 import { roundedRect } from "./utils";
-import { initLibrary } from "./library/ui";
+import { initMediaSession } from "./media-session";
+import { initLibrary, libraryMetadata } from "./library/ui";
 
 declare global {
   interface Window {
@@ -245,4 +246,6 @@ window.addEventListener("resize", () => {
 // Library: import, persistence, search - also drives the playlist
 await initLibrary(player, playBtn);
 
+// OS media surfaces (media keys, lock screen): metadata + transport controls
+initMediaSession(player, libraryMetadata);
 visualize();
