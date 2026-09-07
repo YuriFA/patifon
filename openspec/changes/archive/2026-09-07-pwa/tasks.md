@@ -20,4 +20,4 @@
 ## 5. Verification
 
 - [x] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
-- [ ] 5.2 Manual pass in a real Chromium: install prompt appears, installed app launches standalone in its own window, offline relaunch boots the library. Verify: checklist noted in the change summary.
+- [x] 5.2 Manual pass in a real Chromium: install prompt appears, installed app launches standalone in its own window, offline relaunch boots the library. Verify: checklist noted in the change summary.
