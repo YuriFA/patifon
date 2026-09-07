@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 
 declare global {
   interface Window {
+    appReady?: boolean;
     player: import("../src/audio-player").default;
     mediaSessionHandlers?: Map<string, (details?: { seekTime?: number }) => void>;
     mediaSessionPositions?: Array<{ duration: number; playbackRate: number; position: number }>;
@@ -51,6 +52,14 @@ export async function dropFile(page: Page, fileName: string, seconds?: number): 
     },
     { name: fileName, data },
   );
+}
+
+/**
+ * Waits until the app finished booting (all listeners attached): e2e clicks
+ * must not race the async module bootstrap.
+ */
+export async function waitForAppReady(page: Page): Promise<void> {
+  await page.waitForFunction(() => window.appReady === true);
 }
 
 export async function expectRowCount(page: Page, count: number): Promise<void> {

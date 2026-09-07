@@ -11,6 +11,7 @@ import { setRadioMuted, setRadioVolume } from "./radio/playback";
 
 declare global {
   interface Window {
+    appReady?: boolean;
     player: AudioPlayer;
     showDirectoryPicker?: (options?: { mode?: "read" }) => Promise<FileSystemDirectoryHandle>;
   }
@@ -265,7 +266,7 @@ await initLibrary(player, () => {
 });
 
 // Radio mode: catalog search and live streams on the shared transport
-initRadio({
+await initRadio({
   list: document.querySelector<HTMLUListElement>(".library__list")!,
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
@@ -277,6 +278,7 @@ initRadio({
   playButton: playBtn,
   progress: document.querySelector<HTMLElement>(".progress")!,
   liveBadge: document.querySelector<HTMLElement>(".progress__live")!,
+  nowPlaying: document.querySelector<HTMLElement>(".station-now")!,
   getVolume: () => player.volume,
   isMuted: () => player.muted,
   onModeExit: rerenderLibraryList,
@@ -285,3 +287,6 @@ initRadio({
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
 visualize();
+
+// Boot complete: all listeners attached. Tests wait for this before interacting.
+window.appReady = true;

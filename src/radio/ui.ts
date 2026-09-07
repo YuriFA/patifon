@@ -1,7 +1,15 @@
-import { reportListen, searchStations, type RadioStation } from "./api";
+import { reportListen, type RadioStation } from "./api";
+import { cancelScheduledSearch, scheduleSearch } from "./search";
 import { renderStationRow, stationTags } from "./rows";
+import {
+  hideNowPlaying,
+  queryNowPlaying,
+  showNowPlaying,
+  type NowPlayingElements,
+} from "./now-playing";
 import * as playback from "./playback";
 import type { RadioPlaybackState } from "./playback";
+import { deleteStation, loadSavedStations, saveStation } from "./store";
 import { refreshMediaSession, setActiveSource, type MediaSessionSource } from "../media-session";
 import type { MediaSessionMetadata } from "../media-session";
 
@@ -24,18 +32,34 @@ export interface RadioUiDeps {
   playButton: HTMLElement;
   progress: HTMLElement;
   liveBadge: HTMLElement;
+  /** Root of the now-playing station card inside the visualization area. */
+  nowPlaying: HTMLElement;
   getVolume: () => number;
   isMuted: () => boolean;
   /** Re-renders the library list when the mode switches off. */
   onModeExit: () => void;
 }
 
-const SEARCH_DEBOUNCE_MS = 300;
-
 let deps: RadioUiDeps;
+let nowPlaying: NowPlayingElements;
 let mode = false;
 let stations: RadioStation[] = [];
-let searchTimer: number | null = null;
+let savedStations: RadioStation[] = [];
+
+function isSaved(stationuuid: string): boolean {
+  return savedStations.some((station) => station.stationuuid === stationuuid);
+}
+
+function toggleSaveStation(station: RadioStation): void {
+  if (isSaved(station.stationuuid)) {
+    savedStations = savedStations.filter((s) => s.stationuuid !== station.stationuuid);
+    void deleteStation(station.stationuuid);
+  } else {
+    savedStations = [...savedStations, station];
+    void saveStation(station);
+  }
+  renderStations();
+}
 
 function stationMetadata(station: RadioStation): MediaSessionMetadata {
   return {
@@ -104,21 +128,29 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
       setPlayButton(true);
       setLiveIndicator(true);
       updatePlayingHighlight();
+      if (station) {
+        showNowPlaying(nowPlaying, station);
+      }
       refreshMediaSession();
       break;
     case "paused":
       setPlayButton(false);
       setLiveIndicator(true);
+      if (station) {
+        showNowPlaying(nowPlaying, station);
+      }
       refreshMediaSession();
       break;
     case "stopped":
       setPlayButton(false);
       setLiveIndicator(false);
+      hideNowPlaying(nowPlaying);
       updatePlayingHighlight();
       break;
     case "error":
       setPlayButton(false);
       setLiveIndicator(false);
+      hideNowPlaying(nowPlaying);
       if (station) {
         setRowError(station.stationuuid, true);
       }
@@ -170,47 +202,29 @@ export function isStationEngaged(): boolean {
 }
 
 function renderStations(): void {
-  deps.emptyHint.hidden = stations.length > 0 || Boolean(deps.search.value.trim());
-  if (stations.length === 0 && deps.search.value.trim()) {
-    deps.emptyHint.hidden = false;
-    deps.emptyHint.textContent = "No stations found";
-  } else if (stations.length === 0) {
-    deps.emptyHint.hidden = false;
-    deps.emptyHint.textContent = "Type to search community radio stations";
+  const query = deps.search.value.trim();
+  const listed = query ? stations : savedStations;
+  deps.emptyHint.hidden = listed.length > 0;
+  if (listed.length === 0) {
+    deps.emptyHint.textContent = query
+      ? "No stations found"
+      : "No saved stations yet - search and press the star";
   }
   deps.list.replaceChildren(
-    ...stations.map((station) => renderStationRow(station, (s) => void playStation(s))),
+    ...listed.map((station) =>
+      renderStationRow(
+        station,
+        isSaved(station.stationuuid),
+        (s) => void playStation(s),
+        toggleSaveStation,
+      ),
+    ),
   );
 }
 
 function renderCatalogError(): void {
   // Keep the previous list visible; surface the failure as a hint line
   deps.emptyHint.textContent = "Radio catalog unavailable - check your connection";
-}
-
-function scheduleSearch(): void {
-  if (searchTimer !== null) {
-    window.clearTimeout(searchTimer);
-  }
-  searchTimer = window.setTimeout(() => {
-    searchTimer = null;
-    void runSearch();
-  }, SEARCH_DEBOUNCE_MS);
-}
-
-async function runSearch(): Promise<void> {
-  const query = deps.search.value.trim();
-  if (!query) {
-    stations = [];
-    renderStations();
-    return;
-  }
-  try {
-    stations = await searchStations(query);
-    renderStations();
-  } catch {
-    renderCatalogError();
-  }
 }
 
 function setLibraryControlsVisible(visible: boolean): void {
@@ -229,21 +243,28 @@ export function toggleMode(): void {
     renderStations();
     deps.search.focus();
   } else {
-    if (searchTimer !== null) {
-      window.clearTimeout(searchTimer);
-      searchTimer = null;
-    }
+    cancelScheduledSearch();
     deps.search.value = "";
     deps.onModeExit();
   }
 }
 
-export function initRadio(deps_: RadioUiDeps): void {
+export async function initRadio(deps_: RadioUiDeps): Promise<void> {
   deps = deps_;
+  nowPlaying = queryNowPlaying(deps.nowPlaying);
   playback.onRadioStateChange(handlePlaybackState);
+  // Hydration is part of boot: the UI must never render an unhydrated list
+  savedStations = await loadSavedStations();
   deps.search.addEventListener("input", () => {
     if (isRadioMode()) {
-      scheduleSearch();
+      scheduleSearch({
+        search: deps.search,
+        onResults: (results) => {
+          stations = results;
+          renderStations();
+        },
+        onError: renderCatalogError,
+      });
     }
   });
   deps.modeButton.addEventListener("click", () => {

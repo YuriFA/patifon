@@ -93,3 +93,17 @@ Host-header recommendation is not applicable client-side.
 - **Live streams in tests**: e2e fulfils stream requests with generated WAV
   bytes via route interception; real-world stream behavior (ICY metadata
   headers, codec quirks) is covered by the manual pass.
+
+## Addendum: saved stations and now-playing display (user feedback)
+
+7. **Saved stations live in the same IndexedDB database, new store.** The
+   `audio-player` database bumps to version 2; the upgrade creates a
+   `stations` store (keyPath `stationuuid`) holding the same station subset
+   the API returns. Saved state is an in-memory set hydrated at startup; the
+   row star toggles save/delete. Radio mode with an empty search query shows
+   the saved stations; search results keep their own star states.
+8. **Now-playing card fills the visualizer area for radio.** The visualizer
+   canvas only draws for library playback (radio bypasses the graph), so the
+   empty area gets a station card: icon (or placeholder), name, tags. It is
+   shown while a station plays or is paused and hidden on stop/error and
+   whenever library playback takes over.

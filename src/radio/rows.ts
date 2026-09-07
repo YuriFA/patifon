@@ -16,10 +16,15 @@ export function stationTags(station: RadioStation): string {
     .join(", ");
 }
 
-/** Builds a station row matching the library row look (thumb, name, bitrate). */
+/**
+ * Builds a station row matching the library row look (thumb, name, bitrate)
+ * with a save star reflecting the station's saved state.
+ */
 export function renderStationRow(
   station: RadioStation,
+  saved: boolean,
   onActivate: (station: RadioStation) => void,
+  onToggleSave: (station: RadioStation) => void,
 ): HTMLLIElement {
   const row = document.createElement("li");
   row.className = "library__row radio__row";
@@ -43,6 +48,8 @@ export function renderStationRow(
   meta.textContent = station.name;
   row.append(meta);
 
+  row.append(buildStarButton(station, saved, onToggleSave));
+
   const bitrate = document.createElement("span");
   bitrate.className = "library__duration";
   bitrate.textContent = station.bitrate > 0 ? `${station.bitrate} kbps` : "";
@@ -54,4 +61,21 @@ export function renderStationRow(
   });
 
   return row;
+}
+
+function buildStarButton(
+  station: RadioStation,
+  saved: boolean,
+  onToggleSave: (station: RadioStation) => void,
+): HTMLButtonElement {
+  const star = document.createElement("button");
+  star.className = `radio__star${saved ? " radio__star_saved" : ""}`;
+  star.type = "button";
+  star.title = saved ? "Remove from saved" : "Save station";
+  star.textContent = saved ? "\u2605" : "\u2606";
+  star.addEventListener("click", (event) => {
+    event.stopPropagation();
+    onToggleSave(station);
+  });
+  return star;
 }

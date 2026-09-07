@@ -104,3 +104,30 @@ silently.
 
 - **WHEN** a station's stream fails to start or terminates with an error
 - **THEN** the station row shows an error indication and playback state returns to stopped
+
+### Requirement: Saved stations persist across sessions
+
+The system SHALL let the user save and unsave stations from the radio list.
+Saved stations SHALL persist in IndexedDB: radio mode SHALL show them without
+a search, and they SHALL remain playable after a page reload.
+
+#### Scenario: Saving a station
+
+- **WHEN** the user activates the save control on a station row
+- **THEN** the station is marked as saved and appears among the saved stations
+
+#### Scenario: Reload shows saved stations
+
+- **WHEN** the user reloads the page after saving stations and opens radio mode without a search query
+- **THEN** the saved stations are listed and playing one of them works
+
+### Requirement: Now-playing station display
+
+While a station plays, the system SHALL show the playing station's name, and
+its icon and tags when available, in the area otherwise occupied by the
+visualizer, so the user can see what is playing.
+
+#### Scenario: Station card in the visualization area
+
+- **WHEN** a station plays
+- **THEN** the visualization area shows the station's name and, when available, its icon and tags

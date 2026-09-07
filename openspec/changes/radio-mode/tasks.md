@@ -23,3 +23,9 @@
 
 - [x] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
 - [ ] 5.2 Manual pass with real network: search finds real stations, several direct streams play (Chrome), at least one HLS station plays, media keys control the station, dead station shows the error state. Verify: checklist noted in the change summary.
+
+## 6. Saved stations and now-playing display (feedback)
+
+- [x] 6.1 Bump the IndexedDB database to version 2 with a `stations` store; add `idbDelete` and a `src/radio/store.ts` (save/delete/load). Verify: `npm run typecheck` green.
+- [x] 6.2 Save/unsave star on station rows; radio mode with empty search shows saved stations; saved state persists across reloads and stays playable. Verify: `npm run test:e2e` green.
+- [x] 6.3 Now-playing station card (icon, name, tags) in the visualization area while a station plays or is paused; hidden on stop and during library playback. Verify: visual check in dev.

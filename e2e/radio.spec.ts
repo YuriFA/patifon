@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dropFile, expectRowCount, makeSineWav } from "./helpers";
+import { dropFile, expectRowCount, makeSineWav, waitForAppReady } from "./helpers";
 
 const STATIONS = [
   {
@@ -61,6 +61,7 @@ async function searchAndPlayFirst(page: import("@playwright/test").Page): Promis
 test("search lists matching stations with tags and bitrate", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await page.click(".library__mode");
   await expect(page.locator(".library__add")).toBeHidden();
 
@@ -74,6 +75,7 @@ test("search lists matching stations with tags and bitrate", async ({ page }) =>
 test("clicking a station row plays the stream with highlight and live state", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await searchAndPlayFirst(page);
 
   await expect(page.locator(".radio__row").first()).toHaveClass(/library__row_playing/u);
@@ -86,6 +88,7 @@ test("clicking a station row plays the stream with highlight and live state", as
 test("transport pause and resume apply to the station", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await searchAndPlayFirst(page);
   await expect(page.locator(".progress__live")).toBeVisible();
 
@@ -102,6 +105,7 @@ test("transport pause and resume apply to the station", async ({ page }) => {
 test("playing a station reports the listen to the catalog", async ({ page }) => {
   const counters = await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await searchAndPlayFirst(page);
 
   await expect.poll(() => counters.listenReports).toEqual(["uuid-one"]);
@@ -117,6 +121,7 @@ test("station name reaches the media session", async ({ page }) => {
   });
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await searchAndPlayFirst(page);
 
   await expect
@@ -132,6 +137,7 @@ test("station name reaches the media session", async ({ page }) => {
 test("dead stream shows an error state on the row", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await page.click(".library__mode");
   await page.fill(".library__search", "test");
   await expect(page.locator(".radio__row")).toHaveCount(2);
@@ -145,6 +151,7 @@ test("dead stream shows an error state on the row", async ({ page }) => {
 test("catalog failure shows an error without losing previous results", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await page.click(".library__mode");
 
   await page.fill(".library__search", "test");
@@ -158,6 +165,7 @@ test("catalog failure shows an error without losing previous results", async ({ 
 test("activating a library track stops the station", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
+  await waitForAppReady(page);
   await dropFile(page, "Artist - Local Track.wav");
   await expectRowCount(page, 1);
 
@@ -168,4 +176,75 @@ test("activating a library track stops the station", async ({ page }) => {
   await page.locator(".library__row").first().click();
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("stopped");
   await expect(page.locator(".library__row").first()).toHaveClass(/library__row_playing/u);
+});
+
+test("saving a station persists it across reloads", async ({ page }) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await page.click(".library__mode");
+  await page.fill(".library__search", "test");
+  await expect(page.locator(".radio__row")).toHaveCount(2);
+
+  await page.locator(".radio__row").first().locator(".radio__star").click();
+  await expect(page.locator(".radio__row").first().locator(".radio__star")).toHaveClass(
+    /radio__star_saved/u,
+  );
+
+  // the page unload kills an in-flight IndexedDB write - wait for the commit
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const r = indexedDB.open("audio-player");
+          r.addEventListener("success", () => resolve(r.result));
+          r.addEventListener("error", () => reject(r.error));
+        });
+        const tx = db.transaction("stations", "readonly");
+        const result = await new Promise<number>((resolve) => {
+          const rq = tx.objectStore("stations").getAll();
+          rq.onsuccess = () => resolve(rq.result.length);
+        });
+        db.close();
+        return result;
+      }),
+    )
+    .toBe(1);
+
+  await page.reload();
+  await waitForAppReady(page);
+  await page.click(".library__mode");
+  await expect(page.locator(".radio__row")).toHaveCount(1);
+  await expect(page.locator(".radio__row").first()).toContainText("Test Radio One");
+
+  // a saved station plays after the reload
+  await page.locator(".radio__row").first().click();
+  await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
+
+  // unsaving removes it from the list
+  await page.locator(".radio__row").first().locator(".radio__star").click();
+  await expect(page.locator(".radio__row")).toHaveCount(0);
+  await expect(page.locator(".library__empty")).toContainText("No saved stations yet");
+});
+
+test("now playing card shows the station name and tags", async ({ page }) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await searchAndPlayFirst(page);
+
+  const card = page.locator(".station-now");
+  await expect(card).toBeVisible();
+  await expect(card.locator(".station-now__name")).toHaveText("Test Radio One");
+  await expect(card.locator(".station-now__tags")).toHaveText("rock, pop");
+
+  await page.click(".player-controls__btn_play");
+  await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("paused");
+  await expect(card).toBeVisible();
+
+  await page.click(".player-controls__btn_play");
+  await page.click(".library__mode");
+  await page.click(".library__mode");
+  // switching back to the library view keeps the card while the station plays
+  await expect(card).toBeVisible();
 });

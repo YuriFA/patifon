@@ -1,6 +1,7 @@
 const DB_NAME = "audio-player";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_TRACKS = "tracks";
+const STORE_STATIONS = "stations";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -14,6 +15,9 @@ function openDatabase(): Promise<IDBDatabase> {
     const db = request.result;
     if (!db.objectStoreNames.contains(STORE_TRACKS)) {
       db.createObjectStore(STORE_TRACKS, { keyPath: "id" });
+    }
+    if (!db.objectStoreNames.contains(STORE_STATIONS)) {
+      db.createObjectStore(STORE_STATIONS, { keyPath: "stationuuid" });
     }
   });
   request.addEventListener("success", () => {
@@ -47,4 +51,10 @@ export async function idbGetAll<T>(store: string): Promise<T[]> {
   const db = await openDatabase();
   const tx = db.transaction(store, "readonly");
   return asPromise(tx.objectStore(store).getAll() as IDBRequest<T[]>);
+}
+
+export async function idbDelete(store: string, key: string): Promise<void> {
+  const db = await openDatabase();
+  const tx = db.transaction(store, "readwrite");
+  await asPromise(tx.objectStore(store).delete(key));
 }

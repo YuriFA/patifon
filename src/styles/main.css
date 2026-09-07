@@ -549,3 +549,62 @@ body.drop-hover::after {
   border-radius: 3px;
   padding: 0 4px;
 }
+
+.station-now {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 70%;
+  text-align: center;
+}
+
+.station-now__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.station-now__icon-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  background-color: var(--dark-grey-hover);
+  font-size: 32px;
+}
+
+.station-now__name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.station-now__tags {
+  font-size: 12px;
+  color: var(--medium-grey);
+}
+
+.radio__star {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--medium-grey);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px 4px;
+
+  &:hover {
+    color: var(--red);
+  }
+}
+
+.radio__star_saved {
+  color: var(--red);
+}
