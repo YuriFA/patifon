@@ -353,3 +353,123 @@ body {
   display: block;
   margin: 0 auto;
 }
+
+/* Library */
+.playlist {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 90px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.library__header {
+  display: flex;
+  gap: 8px;
+  padding: 12px 15px;
+}
+
+.library__search {
+  flex: 1;
+  background-color: var(--dark-grey-hover);
+  color: var(--font-color);
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--red);
+  }
+}
+
+.library__add,
+.library__add-dir {
+  background-color: var(--dark-grey-hover);
+  color: var(--font-color);
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--red);
+  }
+}
+
+.library__empty {
+  padding: 30px 15px;
+  color: var(--medium-grey);
+  font-size: 14px;
+  text-align: center;
+}
+
+.library__list {
+  margin: 0;
+  padding: 0 15px;
+  list-style: none;
+}
+
+.library__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+
+  &:hover {
+    background-color: var(--dark-grey-hover);
+  }
+
+  &.library__row_playing {
+    background-color: #2e3540;
+    border-left-color: var(--red);
+  }
+}
+
+.library__thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
+
+  &_empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--dark-grey-hover);
+    color: var(--medium-grey);
+    font-size: 16px;
+  }
+}
+
+.library__meta {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.library__duration {
+  color: var(--medium-grey);
+  font-size: 12px;
+}
+
+body.drop-hover::after {
+  content: "";
+  position: fixed;
+  inset: 8px;
+  border: 2px dashed var(--red);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 10;
+}

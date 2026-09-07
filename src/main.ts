@@ -4,9 +4,17 @@ import type Analyser from "./analyser";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
 import { roundedRect } from "./utils";
+import { initLibrary } from "./library/ui";
+
 declare global {
   interface Window {
     player: AudioPlayer;
+    showDirectoryPicker?: (options?: { mode?: "read" }) => Promise<FileSystemDirectoryHandle>;
+  }
+
+  // the async iterator over directory entries is not in lib.dom yet
+  interface FileSystemDirectoryHandle {
+    values(): AsyncIterableIterator<FileSystemHandle>;
   }
 }
 
@@ -30,13 +38,7 @@ const visualizerCanvas = document.querySelector<HTMLCanvasElement>("#visualizer"
 visualizerCanvas.width = document.body.clientWidth;
 visualizerCanvas.height = document.body.clientHeight - playerBar.clientHeight;
 
-const tracks = [
-  "https://singles2017.s3.amazonaws.com/uploads/file1499697873293.mp3",
-  "https://singles2017.s3.amazonaws.com/uploads/file1496417854957.mp3",
-  "http://freshly-ground.com/data/audio/mpc/20090207%20-%20Loverman.mp3",
-];
-
-const player = new AudioPlayer(tracks, { equalizer: true, analyser: true });
+const player = new AudioPlayer([], { equalizer: true, analyser: true });
 // debug/observability handle (also used by e2e to inspect playback state)
 window.player = player;
 player.volume = 0.1;
@@ -239,5 +241,8 @@ window.addEventListener("resize", () => {
   visualizerCanvas.width = document.body.clientWidth;
   visualizerCanvas.height = document.body.clientHeight - playerBar.clientHeight;
 });
+
+// Library: import, persistence, search - also drives the playlist
+await initLibrary(player, playBtn);
 
 visualize();

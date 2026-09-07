@@ -8,7 +8,21 @@
   </head>
   <body>
     <div class="audio_player">
-      <div class="playlist"></div>
+      <div class="playlist">
+        <div class="library__header">
+          <input
+            class="library__search"
+            type="search"
+            placeholder="Search library"
+            autocomplete="off"
+          />
+          <button class="library__add" type="button">Add files</button>
+          <button class="library__add-dir" type="button" hidden>Add folder</button>
+          <input class="library__file-input" type="file" multiple accept="audio/*" hidden />
+        </div>
+        <div class="library__empty">Drop audio files anywhere, or use "Add files"</div>
+        <ul class="library__list"></ul>
+      </div>
       <div class="audio_visualize">
         <canvas id="visualizer" height="500"></canvas>
       </div>

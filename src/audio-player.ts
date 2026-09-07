@@ -16,6 +16,8 @@ const MEDIA_EVENTS_FORWARDED = [
   "canplaythrough",
   "loadedmetadata",
   "timeupdate",
+  "play",
+  "pause",
 ] as const;
 
 /**
@@ -112,6 +114,18 @@ export default class AudioPlayer extends EventEmitter {
     this.audio.pause();
     this.audio.currentTime = 0;
     return this;
+  }
+
+  /**
+   * Swaps the whole track list (library rebuilds). Playback stops; the
+   * caller re-renders its UI from the new list.
+   */
+  replaceTracks(tracks: TrackSource[]): void {
+    if (this.isPlaying) {
+      this.stop();
+    }
+    this.playlist.replaceTracks(tracks);
+    this.currentTrackIndex = 0;
   }
 
   pause(): this {

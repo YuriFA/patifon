@@ -3,7 +3,7 @@ import Track from "./track";
 export type TrackSource = string | { src: string; name?: string };
 
 export default class Playlist {
-  private readonly items: Track[] = [];
+  private items: Track[] = [];
 
   constructor(tracks: TrackSource[] = []) {
     this.addTrackList(tracks);
@@ -34,5 +34,10 @@ export default class Playlist {
         this.addTrack(i, source.src, source.name);
       }
     });
+  }
+
+  replaceTracks(tracks: TrackSource[]): void {
+    this.items = [];
+    this.addTrackList(tracks);
   }
 }

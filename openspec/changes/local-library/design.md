@@ -29,20 +29,20 @@ first gesture (phase-1 design).
 
 1. **Libraries (fact-checked 2026-09-07):**
    - `music-metadata` 11.x - browser path is `import { parseBlob } from
-     "music-metadata"` in any bundler (exports map: default condition ships
+"music-metadata"` in any bundler (exports map: default condition ships
      `lib/core.js`; Node-only parseFile sits behind the "node" condition).
      Returns `format.duration` and `common.picture[]` (`data: Uint8Array`),
      TS types included, no WASM. parseBlob failures (exotic/corrupt files)
      are caught per file - the track is still imported with fallback
      metadata and duration 0 (rendered "-:--").
    - `fuse.js` 7.x - `import Fuse from "fuse.js"`; `new Fuse(list, { keys:
-     ["title", "artist", "album"], threshold: 0.4 })`; search results
+["title", "artist", "album"], threshold: 0.4 })`; search results
      re-render the list.
 2. **Storage: own minimal IndexedDB promise wrapper** (`src/utils/idb.ts`,
    ~60 lines, zero deps): database `audio-player` v1, object store `tracks`
    with keyPath `id` (`crypto.randomUUID()`), records
    `{ id, fileName, title, artist, album, duration, addedAt, file: Blob,
-   artwork: Blob | null }`. Blobs are structured-cloneable, so the audio
+artwork: Blob | null }`. Blobs are structured-cloneable, so the audio
    bytes stay a reference to the on-disk file - no duplication concerns at
    our scale (Chrome origin quota: 60% of disk). Alternative `idb` package
    rejected: the wrapper is smaller than the dependency's value here.
@@ -60,7 +60,7 @@ first gesture (phase-1 design).
    - "add files" `<input type="file" multiple accept="audio/*">` - the
      universal path;
    - directory picker button rendered only when `"showDirectoryPicker" in
-     window` (Chromium): import the folder's direct children with the same
+window` (Chromium): import the folder's direct children with the same
      filter. Native dialogs cannot be automated in e2e - picker path is
      verified manually, the other two paths are e2e-covered.
 5. **UI:** the `.playlist` area becomes the library: search input on top,
@@ -71,10 +71,10 @@ first gesture (phase-1 design).
    All styles plain CSS in `src/styles/main.css` following phase-1 patterns.
 6. **Metadata extraction** (`src/library/import.ts`): `parseBlob(file)` →
    `{ title: common.title, artist: common.artist ?? common.albumartist,
-   album: common.album, duration: format.duration, artwork: first picture }`;
+album: common.album, duration: format.duration, artwork: first picture }`;
    fallback: filename `Artist - Title.ext` split on the LAST " - "; bare
    name otherwise. Artwork `Uint8Array` → `new Blob([data], { type:
-   picture.format })`.
+picture.format })`.
 
 ## Risks / Trade-offs
 

@@ -1,133 +1,60 @@
-import { expect, test, type Page } from "@playwright/test";
-
-/**
- * Generates an in-memory sine-wave WAV fixture, so no binary audio ever
- * lands in the repository. Served by intercepting the playlist track URLs.
- */
-function makeSineWav(seconds = 30, sampleRate = 44100, frequency = 440): Buffer {
-  const samples = seconds * sampleRate;
-  // 16-bit mono
-  const dataSize = samples * 2;
-  const buffer = Buffer.alloc(44 + dataSize);
-
-  buffer.write("RIFF", 0, "ascii");
-  buffer.writeUInt32LE(36 + dataSize, 4);
-  buffer.write("WAVE", 8, "ascii");
-  buffer.write("fmt ", 12, "ascii");
-  // PCM chunk size
-  buffer.writeUInt32LE(16, 16);
-  // PCM format
-  buffer.writeUInt16LE(1, 20);
-  // mono
-  buffer.writeUInt16LE(1, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  // byte rate
-  buffer.writeUInt32LE(sampleRate * 2, 28);
-  // block align
-  buffer.writeUInt16LE(2, 32);
-  // bits per sample
-  buffer.writeUInt16LE(16, 34);
-  buffer.write("data", 36, "ascii");
-  buffer.writeUInt32LE(dataSize, 40);
-
-  for (let i = 0; i < samples; i += 1) {
-    const t = i / sampleRate;
-    // 0.5 Hz tremolo so the spectrum keeps changing frame to frame
-    const envelope = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.5 * t);
-    const value = Math.round(Math.sin(2 * Math.PI * frequency * t) * 12000 * envelope);
-    buffer.writeInt16LE(value, 44 + i * 2);
-  }
-  return buffer;
-}
-
-const wav = makeSineWav();
-
-async function openPlayer(page: Page): Promise<void> {
-  await page.route(/s3\.amazonaws\.com|freshly-ground\.com/u, (route) => {
-    // emulate a real audio server: byte-range support so seeking works
-    const rangeHeader = route.request().headers()["range"];
-    const match = /bytes=(\d+)-(\d*)/u.exec(rangeHeader ?? "");
-    if (match) {
-      const start = Number(match[1]);
-      const end = match[2] ? Number(match[2]) : wav.length - 1;
-      return route.fulfill({
-        status: 206,
-        contentType: "audio/wav",
-        headers: {
-          "access-control-allow-origin": "*",
-          "accept-ranges": "bytes",
-          "content-range": `bytes ${start}-${end}/${wav.length}`,
-        },
-        body: wav.subarray(start, end + 1),
-      });
-    }
-    return route.fulfill({
-      contentType: "audio/wav",
-      headers: {
-        "access-control-allow-origin": "*",
-        "accept-ranges": "bytes",
-      },
-      body: wav,
-    });
-  });
-  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/u, (route) => route.abort());
-  await page.goto("/");
-}
+import { expect, test } from "@playwright/test";
+import { dropFile, expectRowCount, progressWidth, seedLibrary } from "./helpers";
 
 const playBtn = ".player-controls__btn_play";
 const nextBtn = ".player-controls__btn_next";
 const prevBtn = ".player-controls__btn_prev";
 
-test("page loads with the player shell", async ({ page }) => {
-  await openPlayer(page);
+test("page loads with the player shell and empty library", async ({ page }) => {
+  await page.goto("/");
   await expect(page).toHaveTitle(/Audio Player/u);
   await expect(page.locator(".player-controls")).toBeVisible();
   await expect(page.locator("#visualizer")).toBeVisible();
+  await expect(page.locator(".library__empty")).toBeVisible();
 });
 
 test("play after page load starts playback (autoplay policy satisfied)", async ({ page }) => {
-  await openPlayer(page);
-  const progressFill = page.locator(".progress__bar .slider-horiz__filled");
+  await seedLibrary(page);
 
   await page.click(playBtn);
   await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);
 
   // timeupdate drives the progress fill; growth proves audible-track progress
-  const widthAfter1s = await progressFill.evaluate((el) => el.style.width);
+  await page.waitForTimeout(500);
+  const width1 = await progressWidth(page);
   await page.waitForTimeout(1500);
-  const widthAfter25s = await progressFill.evaluate((el) => el.style.width);
-  expect(Number(widthAfter25s.replace("%", ""))).toBeGreaterThan(
-    Number(widthAfter1s.replace("%", "")),
-  );
+  const width2 = await progressWidth(page);
+  expect(width2).toBeGreaterThan(width1);
 });
 
 test("pause and resume keeps position", async ({ page }) => {
-  await openPlayer(page);
-  const progressFill = page.locator(".progress__bar .slider-horiz__filled");
+  await seedLibrary(page);
 
   await page.click(playBtn);
   await page.waitForTimeout(1200);
-  // pause
   await page.click(playBtn);
   await expect(page.locator(playBtn)).not.toHaveClass(/player-controls__btn_pause/u);
 
-  const pausedWidth = await progressFill.evaluate((el) => el.style.width);
-  await page.waitForTimeout(600);
-  const stillPausedWidth = await progressFill.evaluate((el) => el.style.width);
-  // frozen while paused
-  expect(pausedWidth).toBe(stillPausedWidth);
+  const pausedWidth = await progressWidth(page);
+  await page.waitForTimeout(1000);
+  const stillPausedWidth = await progressWidth(page);
+  // frozen while paused: no forward progress beyond decoder jitter (a playing
+  // track advances ~5% per second on this fixture)
+  expect(Math.abs(stillPausedWidth - pausedWidth)).toBeLessThan(1);
 
   // resume
   await page.click(playBtn);
   await page.waitForTimeout(1000);
-  const resumedWidth = await progressFill.evaluate((el) => el.style.width);
-  expect(Number(resumedWidth.replace("%", ""))).toBeGreaterThan(
-    Number(pausedWidth.replace("%", "")),
-  );
+  const resumedWidth = await progressWidth(page);
+  expect(resumedWidth).toBeGreaterThan(pausedWidth);
 });
 
 test("next and previous switch tracks", async ({ page }) => {
-  await openPlayer(page);
+  await page.goto("/");
+  await dropFile(page, "Artist - Alpha.wav");
+  await dropFile(page, "Artist - Beta.wav");
+  await expectRowCount(page, 2);
+
   await page.click(playBtn);
   await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);
 
@@ -147,7 +74,8 @@ test("next and previous switch tracks", async ({ page }) => {
 });
 
 test("seek through the progress bar keeps playback running", async ({ page }) => {
-  await openPlayer(page);
+  await seedLibrary(page);
+
   await page.click(playBtn);
   await page.waitForTimeout(800);
 
@@ -157,15 +85,14 @@ test("seek through the progress bar keeps playback running", async ({ page }) =>
   await page.mouse.click(box!.x + box!.width * 0.8, box!.y + box!.height / 2);
   await page.waitForTimeout(300);
 
-  const width = await page
-    .locator(".progress__bar .slider-horiz__filled")
-    .evaluate((el) => Number(el.style.width.replace("%", "")));
+  const width = await progressWidth(page);
   // jumped forward, still advancing
   expect(width).toBeGreaterThan(60);
 });
 
 test("volume slider reflects state and mute toggles", async ({ page }) => {
-  await openPlayer(page);
+  await page.goto("/");
+  await expect(page.locator(".library__empty")).toBeVisible();
 
   const volumeFill = page.locator(".volume__slider .slider-horiz__filled");
   const initial = await volumeFill.evaluate((el) => Number(el.style.width.replace("%", "")));
@@ -187,7 +114,7 @@ test("volume slider reflects state and mute toggles", async ({ page }) => {
 });
 
 test("equalizer preset applies to every band", async ({ page }) => {
-  await openPlayer(page);
+  await page.goto("/");
 
   await page.click(".player-controls__btn_equalizer");
   const popup = page.locator(".equalizer-popup");
@@ -212,7 +139,7 @@ test("equalizer preset applies to every band", async ({ page }) => {
 });
 
 test("visualizer renders while playing, freezes on pause, survives resize", async ({ page }) => {
-  await openPlayer(page);
+  await seedLibrary(page);
   const canvas = page.locator("#visualizer");
 
   const sampleSum = () =>
@@ -236,7 +163,7 @@ test("visualizer renders while playing, freezes on pause, survives resize", asyn
 
   await page.waitForTimeout(500);
   const playingSumLater = await sampleSum();
-  // animating: a later frame differs (tremolo keeps the spectrum moving)
+  // animating: a later frame differs
   expect(playingSumLater).not.toBe(playingSum);
 
   // pause
