@@ -65,6 +65,8 @@ test("persistent storage is requested at startup", async ({ page }) => {
   });
   await page.goto("/");
   await expect
-    .poll(() => page.evaluate(() => (window as unknown as Record<string, unknown>).persistRequested))
+    .poll(() =>
+      page.evaluate(() => (window as unknown as Record<string, unknown>).persistRequested),
+    )
     .toBe(true);
 });

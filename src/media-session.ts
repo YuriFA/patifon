@@ -13,7 +13,32 @@ export interface MediaSessionMetadata {
 
 export type MetadataProvider = () => MediaSessionMetadata | null;
 
+/**
+ * A controllable playback source (library player, radio). OS transport
+ * actions and metadata publication always address the active source.
+ */
+export interface MediaSessionSource {
+  play(): void;
+  pause(): void;
+  state(): "playing" | "paused";
+  metadata(): MediaSessionMetadata | null;
+}
+
 type MediaSessionNavigator = Navigator & { mediaSession: MediaSession };
+
+function session(): MediaSession | null {
+  if (!("mediaSession" in navigator)) {
+    return null;
+  }
+  return (navigator as MediaSessionNavigator).mediaSession;
+}
+
+let librarySource: MediaSessionSource | null = null;
+let radioSource: MediaSessionSource | null = null;
+
+function activeSource(): MediaSessionSource | null {
+  return radioSource ?? librarySource;
+}
 
 function audioFromEvent(event: unknown): HTMLAudioElement | null {
   const target = (event as Event | undefined)?.target;
@@ -21,46 +46,55 @@ function audioFromEvent(event: unknown): HTMLAudioElement | null {
 }
 
 function setAction(
-  session: MediaSession,
+  ms: MediaSession,
   action: MediaSessionAction,
   handler: MediaSessionActionHandler,
 ): void {
   try {
-    session.setActionHandler(action, handler);
+    ms.setActionHandler(action, handler);
   } catch {
     // This browser does not support the action - skip it
   }
 }
 
-/** Registers transport actions mapping onto the same player methods the page controls use. */
-function registerTransportActions(player: AudioPlayer, session: MediaSession): void {
-  setAction(session, "play", () => {
-    void player.play();
+/** Registers transport actions; play/pause address the active source, prev/next/seek stay library-only. */
+function registerTransportActions(ms: MediaSession): void {
+  setAction(ms, "play", () => {
+    activeSource()?.play();
   });
-  setAction(session, "pause", () => {
-    player.pause();
+  setAction(ms, "pause", () => {
+    activeSource()?.pause();
   });
-  setAction(session, "previoustrack", () => {
-    void player.playPrev();
+  setAction(ms, "previoustrack", () => {
+    if (libraryPlayer && !radioSource) {
+      void libraryPlayer.playPrev();
+    }
   });
-  setAction(session, "nexttrack", () => {
-    void player.playNext();
+  setAction(ms, "nexttrack", () => {
+    if (libraryPlayer && !radioSource) {
+      void libraryPlayer.playNext();
+    }
   });
-  setAction(session, "seekto", (details) => {
+  setAction(ms, "seekto", (details) => {
     const { seekTime } = details;
-    if (seekTime !== null && seekTime !== undefined && player.duration > 0) {
-      player.rewind(seekTime / player.duration);
+    if (radioSource || seekTime === null || seekTime === undefined) {
+      return;
+    }
+    if (libraryPlayer && libraryPlayer.duration > 0) {
+      libraryPlayer.rewind(seekTime / libraryPlayer.duration);
     }
   });
 }
 
-/** Publishes provider metadata; keeps previous metadata when the provider cannot describe the track. */
-function updateSessionMetadata(session: MediaSession, metadataProvider: MetadataProvider): void {
-  const meta = metadataProvider();
+let libraryPlayer: AudioPlayer | null = null;
+
+/** Publishes the source's metadata; keeps previous metadata when the source cannot describe the track. */
+function publishMetadata(ms: MediaSession, source: MediaSessionSource): void {
+  const meta = source.metadata();
   if (!meta) {
     return;
   }
-  session.metadata = new MediaMetadata({
+  ms.metadata = new MediaMetadata({
     title: meta.title,
     artist: meta.artist,
     album: meta.album ?? "",
@@ -68,14 +102,45 @@ function updateSessionMetadata(session: MediaSession, metadataProvider: Metadata
   });
 }
 
+function publishActive(ms: MediaSession): void {
+  const source = activeSource();
+  if (!source) {
+    return;
+  }
+  ms.playbackState = source.state();
+  publishMetadata(ms, source);
+}
+
+/**
+ * Switches the active transport source. Pass the radio source while a
+ * station plays and `null` to hand control back to the library player.
+ * The newly active source's state and metadata are published immediately.
+ */
+export function setActiveSource(source: MediaSessionSource | null): void {
+  radioSource = source;
+  const ms = session();
+  if (!ms) {
+    return;
+  }
+  publishActive(ms);
+}
+
+/** Republishes the active source's state and metadata (called on its state changes). */
+export function refreshMediaSession(): void {
+  const ms = session();
+  if (ms) {
+    publishActive(ms);
+  }
+}
+
 /** Publishes current position/duration/rate; browsers rejecting a combination throw, which we swallow. */
-function updateSessionPositionState(session: MediaSession, event: unknown): void {
+function updateSessionPositionState(ms: MediaSession, event: unknown): void {
   const audio = audioFromEvent(event);
   if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
     return;
   }
   try {
-    session.setPositionState({
+    ms.setPositionState({
       duration: audio.duration,
       playbackRate: audio.playbackRate,
       position: Math.min(Math.max(audio.currentTime, 0), audio.duration),
@@ -86,27 +151,43 @@ function updateSessionPositionState(session: MediaSession, event: unknown): void
 }
 
 /**
- * Wires the player to the Media Session API: metadata, playback state,
- * position state and transport action handlers. Every registration is
- * defensive - environments without support degrade to plain playback
- * with no errors.
+ * Wires the library player to the Media Session API: metadata, playback
+ * state, position state and transport action handlers. The player is the
+ * default transport source; radio replaces it via setActiveSource while a
+ * station plays. Every registration is defensive - environments without
+ * support degrade to plain playback with no errors.
  */
 export function initMediaSession(player: AudioPlayer, metadataProvider: MetadataProvider): void {
-  if (!("mediaSession" in navigator)) {
+  const ms = session();
+  if (!ms) {
     return;
   }
-  const session = (navigator as MediaSessionNavigator).mediaSession;
+  libraryPlayer = player;
+  librarySource = {
+    play: () => {
+      void player.play();
+    },
+    pause: () => {
+      player.pause();
+    },
+    state: () => (player.isPlaying ? "playing" : "paused"),
+    metadata: metadataProvider,
+  };
 
-  registerTransportActions(player, session);
-  session.playbackState = "paused";
+  registerTransportActions(ms);
+  ms.playbackState = "paused";
   player.on("track:play", () => {
-    session.playbackState = "playing";
-    updateSessionMetadata(session, metadataProvider);
+    if (!radioSource) {
+      ms.playbackState = "playing";
+      publishMetadata(ms, librarySource!);
+    }
   });
   player.on("track:pause", () => {
-    session.playbackState = "paused";
+    if (!radioSource) {
+      ms.playbackState = "paused";
+    }
   });
   player.on("track:timeupdate", (event) => {
-    updateSessionPositionState(session, event);
+    updateSessionPositionState(ms, event);
   });
 }

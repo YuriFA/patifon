@@ -5,7 +5,9 @@ import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
 import { roundedRect } from "./utils";
 import { initMediaSession } from "./media-session";
-import { initLibrary, libraryMetadata } from "./library/ui";
+import { initLibrary, libraryMetadata, rerenderLibraryList } from "./library/ui";
+import { initRadio, isStationEngaged, stopPlayback, toggleStationPlayback } from "./radio/ui";
+import { setRadioMuted, setRadioVolume } from "./radio/playback";
 
 declare global {
   interface Window {
@@ -43,8 +45,6 @@ const player = new AudioPlayer([], { equalizer: true, analyser: true });
 // debug/observability handle (also used by e2e to inspect playback state)
 window.player = player;
 player.volume = 0.1;
-
-// Volume settings
 const setVolume = (value: number) => {
   const icon = volumeBtn.children[0];
   if (value === 0) {
@@ -59,6 +59,7 @@ const setVolume = (value: number) => {
     icon.classList.remove("volume__icon_mute", "volume__icon_half");
   }
   player.volume = value;
+  setRadioVolume(value);
 };
 
 const volumeSlider = new RangeSlider(volumeSliderNode, {
@@ -77,6 +78,7 @@ volumeBtn.addEventListener("click", (event) => {
     player.mute();
     icon.classList.add("volume__icon_mute");
   }
+  setRadioMuted(player.muted);
 });
 
 // Mouse wheel controls the volume
@@ -115,9 +117,12 @@ player.on("track:timeupdate", (event) => {
   const ratio = audio.currentTime / audio.duration;
   progressSlider.setValue(ratio);
 });
-
-// Player controls
+// Player controls: transport routes to the active source (library or radio)
 playBtn.addEventListener("click", () => {
+  if (isStationEngaged()) {
+    toggleStationPlayback();
+    return;
+  }
   if (player.isPlaying) {
     playBtn.classList.remove("player-controls__btn_pause");
     player.pause();
@@ -128,11 +133,17 @@ playBtn.addEventListener("click", () => {
 });
 
 playNextBtn.addEventListener("click", () => {
+  if (isStationEngaged()) {
+    return;
+  }
   playBtn.classList.add("player-controls__btn_pause");
   void player.playNext();
 });
 
 playPrevBtn.addEventListener("click", () => {
+  if (isStationEngaged()) {
+    return;
+  }
   playBtn.classList.add("player-controls__btn_pause");
   void player.playPrev();
 });
@@ -247,8 +258,29 @@ window.addEventListener("resize", () => {
 // The call is fire-and-forget: the browser's grant decision is its own.
 void navigator.storage.persist();
 
-// Library: import, persistence, search - also drives the playlist
-await initLibrary(player, playBtn);
+// Library: import, persistence, search - also drives the playlist.
+// Activating a library track stops a playing radio station first.
+await initLibrary(player, () => {
+  stopPlayback();
+});
+
+// Radio mode: catalog search and live streams on the shared transport
+initRadio({
+  list: document.querySelector<HTMLUListElement>(".library__list")!,
+  search: document.querySelector<HTMLInputElement>(".library__search")!,
+  emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
+  addButtons: [
+    document.querySelector<HTMLButtonElement>(".library__add")!,
+    document.querySelector<HTMLButtonElement>(".library__add-dir")!,
+  ],
+  modeButton: document.querySelector<HTMLButtonElement>(".library__mode")!,
+  playButton: playBtn,
+  progress: document.querySelector<HTMLElement>(".progress")!,
+  liveBadge: document.querySelector<HTMLElement>(".progress__live")!,
+  getVolume: () => player.volume,
+  isMuted: () => player.muted,
+  onModeExit: rerenderLibraryList,
+});
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);

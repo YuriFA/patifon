@@ -480,3 +480,72 @@ body.drop-hover::after {
   pointer-events: none;
   z-index: 10;
 }
+
+/* Radio mode */
+
+.library__mode {
+  flex-shrink: 0;
+  background-color: var(--dark-grey-hover);
+  color: var(--font-color);
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--red);
+  }
+
+  &_active {
+    background-color: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+}
+
+.radio__row {
+  .library__meta {
+    font-size: 13px;
+  }
+
+  &_error {
+    opacity: 0.55;
+
+    &::after {
+      content: "unavailable";
+      color: var(--red);
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .library__duration {
+      display: none;
+    }
+  }
+}
+
+.progress_live {
+  .progress__bar {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .progress__live {
+    display: inline-block;
+  }
+}
+
+.progress__live {
+  display: none;
+  position: absolute;
+  right: 12px;
+  top: -5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 3px;
+  padding: 0 4px;
+}

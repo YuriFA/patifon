@@ -1,3 +1,4 @@
+import { isRadioMode } from "../radio/ui";
 import type { MediaSessionMetadata } from "../media-session";
 import Fuse from "fuse.js";
 import type AudioPlayer from "../audio-player";
@@ -9,12 +10,12 @@ const FUSE_OPTIONS = {
   threshold: 0.4,
   ignoreLocation: true,
 };
-
 let player: AudioPlayer;
-let playBtn: HTMLElement;
 let librarySearch: HTMLInputElement;
 let libraryList: HTMLUListElement;
 let libraryEmpty: HTMLDivElement;
+/** Called before a library track starts: main.ts stops radio playback there. */
+let onTrackActivate: () => void = () => {};
 let fuse = new Fuse<LibraryRecord>([], FUSE_OPTIONS);
 
 const records: LibraryRecord[] = [];
@@ -63,10 +64,10 @@ function playRecord(record: LibraryRecord): void {
   if (index === -1) {
     return;
   }
+  onTrackActivate();
   if (player.isPlaying) {
     player.stop();
   }
-  playBtn.classList.add("player-controls__btn_pause");
   void player.play(index);
   updateHighlight();
 }
@@ -113,7 +114,13 @@ function renderList(): void {
 
   libraryList.replaceChildren(...visible.map((record) => buildRow(record)));
   libraryEmpty.hidden = records.length > 0;
+  libraryEmpty.textContent = 'Drop audio files anywhere, or use "Add files"';
   updateHighlight();
+}
+
+/** Re-renders the library list when radio mode hands the list back. */
+export function rerenderLibraryList(): void {
+  renderList();
 }
 
 function rebuildPlaylist(): void {
@@ -211,17 +218,20 @@ function initImportControls(): void {
  */
 export async function initLibrary(
   audioPlayer: AudioPlayer,
-  playButton: HTMLElement,
+  trackActivate: () => void,
 ): Promise<void> {
   player = audioPlayer;
-  playBtn = playButton;
+  onTrackActivate = trackActivate;
   librarySearch = document.querySelector<HTMLInputElement>(".library__search")!;
   libraryList = document.querySelector<HTMLUListElement>(".library__list")!;
   libraryEmpty = document.querySelector<HTMLDivElement>(".library__empty")!;
 
   const search = document.querySelector<HTMLInputElement>(".library__search");
   search?.addEventListener("input", () => {
-    renderList();
+    // In radio mode the radio module owns the search box and the list
+    if (!isRadioMode()) {
+      renderList();
+    }
   });
 
   initImportControls();
