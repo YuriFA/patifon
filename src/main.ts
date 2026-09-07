@@ -243,6 +243,10 @@ window.addEventListener("resize", () => {
   visualizerCanvas.height = document.body.clientHeight - playerBar.clientHeight;
 });
 
+// Protect the IndexedDB library (audio blobs, metadata, artwork) from eviction.
+// The call is fire-and-forget: the browser's grant decision is its own.
+void navigator.storage.persist();
+
 // Library: import, persistence, search - also drives the playlist
 await initLibrary(player, playBtn);
 
