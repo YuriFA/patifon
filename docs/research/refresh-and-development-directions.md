@@ -2,57 +2,7 @@
 
 Дата исследования: 2026-09-06. Методология: все фактические утверждения о технологиях, API и поддержке браузеров проверены по первоисточникам (MDN Web Docs, W3C/WHATWG-спецификации, официальная документация инструментов, репозитории OSS) и снабжены ссылками. Оценки трудоёмкости и рисков в разделах 3-5 - экспертные оценки для этого проекта, а не цитаты. Версии инструментов зафиксированы на дату исследования.
 
-## 1. Текущее состояние проекта
-
-Факты из репозитория (проверено по коду):
-
-- Ванильный JavaScript без фреймворков: классы `AudioPlayer`, `Playlist`, `Track`, `Equalizer`, `Analyser` в `src/scripts/`, UI на чистом DOM, стили - SCSS (`src/styles/main.scss` с хелперами `_mixins.scss`, `_variables.scss`), иконки - SVG в разметке.
-- Аудио-граф Web Audio API: `AudioBufferSourceNode`/`MediaElementAudioSourceNode` -> 10 полос эквалайзера на `BiquadFilterNode` (peaking, 60..16000 Гц, усиление -12..+12 дБ, ~19 пресетов) -> `GainNode` (громкость/mute) -> `AnalyserNode` (`fftSize` 2048) -> `destination`.
-- Визуализатор на Canvas 2D по данным `getFloatFrequencyData`/`getByteFrequencyData`/`getByteTimeDomainData`; собственный `EventEmitter`; соглашение о "приватности" через имена с подчёркиванием (`_createAudioApiNodes` и т.п.).
-- Сборка 2016-2017 годов (`package.json`): gulp 3.9.1, gulp-browserify + babelify + babel-preset-es2015 (Babel 6), gulp-sass 3.1 (эпоха node-sass/libsass), ESLint 3.19 + airbnb-конфиг 15, browser-sync как dev-сервер.
-
-Почему стек больше не работает и не поддерживается:
-
-- `node-sass` официально достиг конца жизни: "Node Sass has reached end of life. It will receive no more releases, even for security fixes. Projects that still use it should move onto Dart Sass" (https://github.com/sass/node-sass, https://sass-lang.com/blog/node-sass-is-end-of-life). Таблица поддержки node-sass показывает жёсткую привязку версий к версиям Node (для Node 20 нужна версия 9.0+, для Node 18 - 8.0+; https://github.com/sass/node-sass), поэтому старые сборочные зависимости эпохи Node 4-6 на актуальных Node не устанавливаются.
-- `babel-preset-es2015` и прочие годовые пресеты официально устарели: "As of Babel v6, all the yearly presets have been deprecated. We recommend using @babel/preset-env instead" (https://babeljs.io/docs/babel-preset-es2015).
-- Актуальный gulp - 5.0.1 (https://www.npmjs.com/package/gulp); ветка 3.x не обслуживалась много лет. ESLint 3.x несовместим с современными конфигурациями: актуальная версия - 10.10.0 (https://www.npmjs.com/package/eslint).
-- Актуальные LTS-линейки Node.js: 22.x (Maintenance LTS до 2027-04-30), 24.x (Active LTS до 2028-04-30), 26.x (Current) (https://github.com/nodejs/release).
-
-## 2. План освежения
-
-Цель: минимальными изменениями кода перевести проект на поддерживаемый стек 2026 года, не переписывая логику аудио-графа, которая сама по себе актуальна.
-
-### 2.1 Замена инструментария
-
-| Было | Стало | Обоснование (первоисточники) |
-| --- | --- | --- |
-| gulp 3.9 + gulp-watch + browser-sync | Vite 8 (dev-сервер + сборка) | Vite - dev-сервер поверх нативных ES-модулей с HMR и сборка в одном инструменте (https://vite.dev/guide/). Актуальная версия 8.2.2 (https://www.npmjs.com/package/vite); Vite 8.0 вышел 2026-03-12 и собирает через Rolldown (https://vite.dev/blog/announcing-vite8). Требования: Node 20.19+/22.12+ (https://vite.dev/guide/). `index.html` становится точкой входа; `<script type="module">` подключается напрямую (https://vite.dev/guide/) |
-| gulp-browserify + babelify + babel-preset-es2015 | нативный ESM без транспиляции | Vite в разработке отдаёт модули как есть (native ES modules, https://vite.dev/guide/); для продакшена целится в Baseline Widely Available браузеры (https://vite.dev/guide/). Babel не нужен: годовые пресеты устарели (https://babeljs.io/docs/babel-preset-es2015) |
-| gulp-sass 3 (node-sass) | `sass-embedded` или `sass` (Dart Sass) | node-sass - конец жизни (https://sass-lang.com/blog/node-sass-is-end-of-life). Официальные npm-пакеты Sass: `sass` (чистый JS) и `sass-embedded` (быстрее, обёртка над Dart VM) (https://sass-lang.com/install/). Актуальный Dart Sass - 1.104.0 (https://sass-lang.com/install/). Vite поддерживает `.scss` из коробки: достаточно установить препроцессор (`npm add -D sass-embedded # or sass`) (https://vite.dev/guide/features, раздел CSS Pre-processors) |
-| ESLint 3 + airbnb + eslintrc | ESLint 10.x + flat config `eslint.config.js` | Актуальная версия 10.10.0 (https://www.npmjs.com/package/eslint). Flat config - формат по умолчанию начиная с ESLint v9.0.0 (https://eslint.org/docs/latest/use/configure/migration-guide); конфигурация задаётся файлом `eslint.config.js` (https://eslint.org/docs/latest/use/configure/configuration-files). Для конвертации старого `.eslintrc` есть официальный мигратор `@eslint/migrate-config` (https://eslint.org/docs/latest/use/configure/migration-guide) |
-| тестов нет | Vitest (юнит) + Playwright (e2e) | Vitest 5.0.0 - тест-раннер поверх Vite, читает `vite.config.*` (https://vitest.dev/guide/, https://www.npmjs.com/package/vitest; требует Vite >=6.4.0 и Node >=22.12.0). Playwright - e2e-фреймворк с Chromium/Firefox/WebKit (https://playwright.dev/docs/intro) |
-| - | Vite из коробки обрабатывает TS, JSX, CSS-модули, воркеры, ассеты | https://vite.dev/guide/features (включая раздел TypeScript: Vite транспилирует `.ts`, но не проверяет типы - этим занимается `tsc --noEmit`) |
-
-### 2.2 Модернизация кода Web Audio
-
-Актуальная спецификация - Web Audio API 1.1 (W3C Working Draft от 2024-11-05, https://www.w3.org/TR/webaudio/). Базовые узлы, которые использует проект (`BiquadFilterNode`, `GainNode`, `AnalyserNode`, источники), остаются ядром API и никуда не делись (https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode, https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode).
-
-Обязательные правки:
-
-1. **Политика автозапуска (autoplay policy).** Web Audio подчиняется правилам автозапуска с Chrome 71: `AudioContext`, созданный без жеста пользователя, стартует в состоянии `suspended`, и нужно вызвать `resume()` после взаимодействия (или создавать контекст по клику; проверять `AudioContext.state` и событие `statechange`) (https://developer.chrome.com/blog/autoplay). Общее правило MDN: воспроизведение со звуком разрешено только после взаимодействия пользователя с сайтом (https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay). Для плеера это значит: не автоплей на загрузке страницы, явная кнопка Play, обработка отказа `play()`/`start()` (https://developer.chrome.com/blog/autoplay).
-2. **Учёт особенности `MediaElementAudioSourceNode`.** После `createMediaElementSource()` звук элемента перенаправляется в граф `AudioContext` и наружу идёт только через граф (https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaElementSource). Это уже так в проекте, но это важно зафиксировать как инвариант: отключение/ошибки графа = тишина.
-3. **Сглаживание визуализатора.** `AnalyserNode.smoothingTimeConstant` - усреднение с предыдущим кадром анализа, "makes the transition between values over time smoother" (https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode). Если в проекте сглаживание делается вручную на Canvas-уровне, его можно перенести на `AnalyserNode`.
-4. **Приватность классов.** Заменить соглашение `_underscore` на настоящие приватные элементы `#field`: инкапсуляция принудительно обеспечивается самим языком, обращение извне класса - синтаксическая ошибка (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_elements). TypeScript поддерживает ECMAScript-приватные поля начиная с 3.8 (https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html).
-5. **Если появится кастомная DSP - только `AudioWorklet`, не `ScriptProcessorNode`.** `ScriptProcessorNode` заменён AudioWorklet'ами: "This feature was replaced by AudioWorklets and the AudioWorkletNode interface" (https://developer.mozilla.org/en-US/docs/Web/API/ScriptProcessorNode). `AudioWorklet` выполняет обработку в отдельном аудио-потоке с низкой задержкой (https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet). В текущем проекте ScriptProcessorNode не используется, поэтому это требование на будущее.
-
-### 2.3 Рекомендуемый порядок работ
-
-1. Этап 0: зафиксировать текущее поведение e2e-тестом Playwright (smoke: страница открывается, трек запускается по кнопке) - чтобы миграцию проверять поведением, а не "на глаз" (подход по https://playwright.dev/docs/intro).
-2. Этап 1: перенос на Vite 8 + `sass-embedded`, отказ от gulp/browserify/babel; нативный ESM; скрипты `dev`/`build`/`preview` (https://vite.dev/guide/).
-3. Этап 2: ESLint 10 + flat config через `@eslint/migrate-config` (https://eslint.org/docs/latest/use/configure/migration-guide), чистка устаревших правил airbnb-конфига.
-4. Этап 3: правка автозапуска (`resume()` по жесту, `state`/`statechange`) (https://developer.chrome.com/blog/autoplay); `#`-приватные поля.
-5. Этап 4: Vitest для логики плейлиста/эквалайзера (чистые модули), Playwright - для UI; подходы к тестированию Web Audio - см. раздел 3.7.
-6. Этап 5 (опционально): TypeScript по официальному сценарию постепенной миграции (https://www.typescriptlang.org/docs/handbook/migrating-from-javascript.html).
+Разделы 1-2 (текущее состояние и план освежения) потреблены change'ом `migrate-toolchain` (openspec/changes/migrate-toolchain) и удалены по политике пофазного потребления ресерчей. Ниже - направления развития для будущих фаз.
 
 ## 3. Направления развития
 
@@ -141,16 +91,16 @@
 
 Оценки ценности/усилий/рисков - качественные суждения данного исследования (не из внешних источников).
 
-| # | Направление | Ценность для пользователя | Усилия | Основные риски | Зависимости |
-| --- | --- | --- | --- | --- | --- |
-| 3.1 | Media Session API | Высокая (системная интеграция) | Очень низкие | Почти нет | Артворк/метаданные (из 3.2 или 3.4) |
-| 3.2 | Локальная библиотека + теги | Высокая (главный use-case без сервера) | Средние | Кросс-браузерность файловых API | music-metadata; IndexedDB из 3.3 |
-| 3.3 | PWA (установка + офлайн) | Средне-высокая | Низкие-средние | Стратегии кэша аудио, квоты | vite-plugin-pwa |
-| 3.4 | Сервер Subsonic/Navidrome (+ Jellyfin) | Высокая для владельцев серверов | Высокие | CORS, различия серверов, объём фич | Слой источников; хорошо сочетается с 3.1 и 3.5 |
-| 3.5 | HLS через hls.js | Средняя (радио, длинные стримы) | Низкие-средние | MSE-поддержка платформ (не проверено), CORS | hls.js |
-| 3.6 | Десктоп (Tauri/Electron) | Средняя | Низкие на старт, средние на полировку | Разные webview в Tauri (аудио проверить), размер в Electron | Готовый веб-плеер |
-| 3.7 | TS + #private + тесты Web Audio | Косвенная (скорость разработки) | Средние, постепенные | Скоуп-крип | Vitest, Playwright, standardized-audio-context-mock / node-web-audio-api |
-| 3.8 | Визуализатор WebGL/WebGPU | Средне-высокая (wow-эффект) | Низкие (Butterchurn) / высокие (WebGPU) | Энергопотребление; WebGPU-фрагментация поддержки | Butterchurn; OffscreenCanvas |
+| #   | Направление                            | Ценность для пользователя              | Усилия                                  | Основные риски                                              | Зависимости                                                              |
+| --- | -------------------------------------- | -------------------------------------- | --------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 3.1 | Media Session API                      | Высокая (системная интеграция)         | Очень низкие                            | Почти нет                                                   | Артворк/метаданные (из 3.2 или 3.4)                                      |
+| 3.2 | Локальная библиотека + теги            | Высокая (главный use-case без сервера) | Средние                                 | Кросс-браузерность файловых API                             | music-metadata; IndexedDB из 3.3                                         |
+| 3.3 | PWA (установка + офлайн)               | Средне-высокая                         | Низкие-средние                          | Стратегии кэша аудио, квоты                                 | vite-plugin-pwa                                                          |
+| 3.4 | Сервер Subsonic/Navidrome (+ Jellyfin) | Высокая для владельцев серверов        | Высокие                                 | CORS, различия серверов, объём фич                          | Слой источников; хорошо сочетается с 3.1 и 3.5                           |
+| 3.5 | HLS через hls.js                       | Средняя (радио, длинные стримы)        | Низкие-средние                          | MSE-поддержка платформ (не проверено), CORS                 | hls.js                                                                   |
+| 3.6 | Десктоп (Tauri/Electron)               | Средняя                                | Низкие на старт, средние на полировку   | Разные webview в Tauri (аудио проверить), размер в Electron | Готовый веб-плеер                                                        |
+| 3.7 | TS + #private + тесты Web Audio        | Косвенная (скорость разработки)        | Средние, постепенные                    | Скоуп-крип                                                  | Vitest, Playwright, standardized-audio-context-mock / node-web-audio-api |
+| 3.8 | Визуализатор WebGL/WebGPU              | Средне-высокая (wow-эффект)            | Низкие (Butterchurn) / высокие (WebGPU) | Энергопотребление; WebGPU-фрагментация поддержки            | Butterchurn; OffscreenCanvas                                             |
 
 ## 5. Рекомендуемый короткий список
 

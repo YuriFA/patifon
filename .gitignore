@@ -4,7 +4,9 @@ node_modules/
 .vscode/
 etc/config.json
 script
-
 test.js
 media/
-public/
+dist/
+test-results/
+playwright-report/
+.cache/
