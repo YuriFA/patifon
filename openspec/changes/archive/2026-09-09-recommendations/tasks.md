@@ -40,6 +40,10 @@
 - [x] 5.1 Full matrix `npm run lint && npm run typecheck &&
 npm run format:check && npm run build && npm run test:e2e`. Verify:
       exit 0.
-- [ ] 5.2 Manual pass with the real account once LB playlists exist for it:
+- [x] 5.2 Manual pass with the real account once LB playlists exist for it:
       section lists them, matches resolve, playback and save work. Verify:
-      checklist in the change summary.
+      checklist in the change summary. Closed by user decision (2026-09-09):
+      the account has no local tracks and ListenBrainz has not generated any
+      created-for-you playlists yet, so a live pass is impossible; all
+      scenarios are covered by the mocked e2e suite. The section is built to
+      degrade to the empty state until LB playlists appear.
