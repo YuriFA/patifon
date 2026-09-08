@@ -46,12 +46,21 @@ position.
 ### Requirement: Seek within a track
 
 The system SHALL let the user jump to an arbitrary position of the current
-track through the progress bar. Seeking MUST not stop playback.
+track through the progress bar. Seeking MUST not stop playback. For library
+tracks with cached waveform peaks the seek affordance SHALL be the waveform
+strip; otherwise the existing plain seek control SHALL be used. Seek
+behavior (ratio mapping, buffer display) SHALL be unchanged.
 
 #### Scenario: Seek forward
 
 - **WHEN** the user clicks or drags the progress bar to a position ahead of the current one
 - **THEN** playback continues from the chosen position
+
+#### Scenario: Same seek semantics on the waveform
+
+- **WHEN** the user seeks via the waveform strip
+- **THEN** the resulting position equals the position the plain seek control
+  would set for the same ratio
 
 ### Requirement: No audio node accumulation across track switches
 

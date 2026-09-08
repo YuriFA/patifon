@@ -1,4 +1,5 @@
 import { parseBlob } from "music-metadata";
+import { enqueuePeakJob } from "../waveform/peaks";
 import type { LibraryRecord } from "./store";
 
 const AUDIO_EXTENSIONS = new Set([
@@ -83,7 +84,10 @@ export async function importFiles(files: Iterable<File>): Promise<LibraryRecord[
   const records: LibraryRecord[] = [];
   for (const file of files) {
     if (isAudioFile(file)) {
-      records.push(await importFile(file));
+      const record = await importFile(file);
+      records.push(record);
+      // follow-up job: the import result never waits for peak computation
+      enqueuePeakJob(record);
     }
   }
   return records;

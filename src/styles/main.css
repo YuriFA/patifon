@@ -53,6 +53,25 @@ body {
   height: 15px;
 }
 
+.progress__wave {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* clicks pass through to the RangeSlider, which keeps owning seek */
+  pointer-events: none;
+}
+
+.progress_wave .progress__wave {
+  display: block;
+}
+
+.progress_wave .slider-horiz {
+  /* invisible but hit-testable: the canvas paints the visuals */
+  opacity: 0;
+}
+
 .progress__bar {
   height: 100%;
   background-color: #eeeeee;

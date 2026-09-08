@@ -22,6 +22,7 @@ import {
 import { setRadioMuted, setRadioVolume } from "./radio/playback";
 import { startVisualizer } from "./visualizer";
 import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
+import { initWaveformStrip } from "./waveform/strip";
 import { initPlaylists, enterPlaylistsView, exitPlaylistsView } from "./playlists/ui";
 import { isPlaylistsMode } from "./playlists/mode";
 
@@ -119,11 +120,12 @@ const progressSlider = new RangeSlider(progressBar, {
   },
 });
 
+let bufferRatio = 0;
 const updateBuffer = (event: Event) => {
   const audio = event.target as HTMLAudioElement;
   const buffered = audio.buffered;
-  const buffRatio = buffered.length > 0 ? buffered.end(buffered.length - 1) / audio.duration : 0;
-  progressSlider.setBuffer(buffRatio);
+  bufferRatio = buffered.length > 0 ? buffered.end(buffered.length - 1) / audio.duration : 0;
+  progressSlider.setBuffer(bufferRatio);
 };
 
 player.on("track:progress", updateBuffer);
@@ -287,6 +289,12 @@ document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("c
 initMediaSession(player, libraryMetadata);
 initLyrics(player, { currentRecord: currentLibraryRecord });
 startVisualizer(player, visualizerCanvas, () => !isRadioMode() && !isLyricsVisible());
-
+initWaveformStrip({
+  player,
+  progress: document.querySelector<HTMLDivElement>(".progress")!,
+  getBufferRatio: () => bufferRatio,
+  isRadioActive: () => isStationEngaged() || isRadioMode(),
+  currentRecord: currentLibraryRecord,
+});
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;

@@ -14,16 +14,16 @@ function persistedPlaylists(
   return page.evaluate(
     () =>
       new Promise<Array<{ id: string; name: string; trackIds: string[] }>>((resolve) => {
-        const request = indexedDB.open("audio-player", 4);
-        request.onsuccess = () => {
+        const request = indexedDB.open("audio-player");
+        request.addEventListener("success", () => {
           const db = request.result;
           const tx = db.transaction("playlists", "readonly");
           const getAll = tx.objectStore("playlists").getAll();
-          getAll.onsuccess = () => {
+          getAll.addEventListener("success", () => {
             db.close();
             resolve(getAll.result as Array<{ id: string; name: string; trackIds: string[] }>);
-          };
-        };
+          });
+        });
       }),
   );
 }
@@ -234,21 +234,20 @@ test("playlists drop references to tracks missing from the library", async ({ pa
 
   const trackId = await page.locator(".library__row").nth(0).getAttribute("data-id");
   await page.evaluate((id) => {
-    const request = indexedDB.open("audio-player", 4);
-    request.onsuccess = () => {
+    const request = indexedDB.open("audio-player");
+    request.addEventListener("success", () => {
       const db = request.result;
       const tx = db.transaction("playlists", "readwrite");
       tx.objectStore("playlists").put({
         id: "seed-1",
         name: "Seeded",
-
         trackIds: [id, "deleted-track-id"],
         createdAt: Date.now(),
       });
-      tx.oncomplete = () => {
+      tx.addEventListener("complete", () => {
         db.close();
-      };
-    };
+      });
+    });
   }, trackId);
 
   await page.reload();

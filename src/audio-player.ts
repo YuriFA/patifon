@@ -76,6 +76,11 @@ export default class AudioPlayer extends EventEmitter {
     return Number.isFinite(duration) ? duration : 0;
   }
 
+  /** Element position in seconds. */
+  get position(): number {
+    return this.audio.currentTime;
+  }
+
   get volume(): number {
     return this.volumeValue;
   }
