@@ -16,6 +16,8 @@ export interface VisualizerControls {
  * Overlay badges in the visualization area's corner, styled after the radio
  * LIVE badge family: the Bars/MilkDrop toggle (hidden without WebGL2) and the
  * preset skip (MilkDrop only). The toggle names the mode a click switches to.
+ * The row also hosts the karaoke badge, which the lyrics module owns and
+ * wires; it stays available without WebGL2.
  */
 export function createVisualizerControls(deps: VisualizerControlsDeps): VisualizerControls {
   const modeButton = deps.root.querySelector<HTMLButtonElement>(".visualizer-controls__mode")!;
@@ -28,9 +30,10 @@ export function createVisualizerControls(deps: VisualizerControlsDeps): Visualiz
   let mode: VisualizerMode = "bars";
 
   const sync = () => {
-    deps.root.hidden = !supported;
+    // the row stays visible without WebGL2: it also hosts the karaoke toggle
+    modeButton.hidden = !supported;
     modeButton.textContent = mode === "bars" ? "MilkDrop" : "Bars";
-    skipButton.hidden = mode !== "milkdrop";
+    skipButton.hidden = !supported || mode !== "milkdrop";
   };
 
   return {

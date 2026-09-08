@@ -679,7 +679,8 @@ body.drop-hover::after {
 }
 
 .visualizer-controls__mode,
-.visualizer-controls__skip {
+.visualizer-controls__skip,
+.visualizer-controls__lyrics {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -687,11 +688,22 @@ body.drop-hover::after {
   border: 1px solid var(--red);
   border-radius: 3px;
   padding: 0 4px;
-  background: transparent;
+  /* scenes render behind the row: a dim backing keeps the badges legible */
+  background: rgba(38, 47, 53, 0.55);
   cursor: pointer;
 
   &:hover {
     background-color: var(--dark-grey-hover);
+  }
+}
+
+/* karaoke on: filled badge reads as an enabled state toggle */
+.visualizer-controls__lyrics_active {
+  background-color: var(--red);
+  color: var(--bg-color);
+
+  &:hover {
+    background-color: var(--red);
   }
 }
 

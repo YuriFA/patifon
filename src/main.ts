@@ -243,7 +243,10 @@ document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("c
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
-initLyrics(player, { currentRecord: currentLibraryRecord });
+initLyrics(player, {
+  currentRecord: currentLibraryRecord,
+  lyricsToggle: document.querySelector<HTMLButtonElement>(".visualizer-controls__lyrics")!,
+});
 initVisualizer({
   player,
   barsCanvas: visualizerCanvas,

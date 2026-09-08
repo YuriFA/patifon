@@ -191,8 +191,11 @@ test("without WebGL2 the mode control is hidden and bars stay the only mode", as
   await waitForAppReady(page);
   await dropFile(page, "Artist - Track.wav");
   await playFirstRow(page);
+  await expect(page.locator(".visualizer-controls__mode")).toBeHidden();
+  await expect(page.locator(".visualizer-controls__skip")).toBeHidden();
+  // the karaoke toggle lives in the same row and works without WebGL2
+  await expect(page.locator(".visualizer-controls__lyrics")).toBeVisible();
 
-  await expect(page.locator(".visualizer-controls")).toBeHidden();
   await expect.poll(() => barsAlphaSum(page)).toBeGreaterThan(0);
   // MilkDrop never engaged: no lazy chunk was even requested
   await expect.poll(() => isReady(page)).toBe(false);

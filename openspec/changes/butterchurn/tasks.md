@@ -20,3 +20,9 @@
 
 - [x] 4.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
 - [x] 4.2 Manual pass: real browser, music playing - switch to MilkDrop, let several presets rotate, skip one, open lyrics (loop pauses, resumes on close), switch to radio (clears), switch back to bars (columns resume); reload keeps the mode. Verify: checklist noted in the change summary.
+
+## 5. Karaoke toggle
+
+- [x] 5.1 Karaoke badge in the controls row: lyrics module owns the display preference (`karaoke-enabled` in localStorage, default on), off keeps the panel hidden and the active mode rendering, enabling mid-track resolves the playing track. Verify: `npm run test:e2e` green.
+- [x] 5.2 Controls row stays visible without WebGL2 (mode and skip hide individually); badge gets a dim backing for legibility over bright scenes. Verify: `npm run build` green.
+- [x] 5.3 lyrics delta spec (karaoke display toggle) and design decision 8; e2e: toggle hides/shows the panel, preference persists across reloads, no-WebGL2 keeps the karaoke badge. Verify: `npm run test:e2e` green.
