@@ -4,11 +4,13 @@ import { initScrobblingTracker, type ScrobblingDeps } from "./listens";
 import { queuedListenCount, retryQueuedListens } from "./queue";
 import {
   clearToken,
+  clearUsername,
   getToken,
   isEnabledPreference,
   loadScrobblingSettings,
   setEnabled,
   setToken,
+  setUsername,
 } from "./settings";
 
 interface PopupElements {
@@ -61,15 +63,16 @@ function wireConnect(el: PopupElements): void {
     if (!candidate) {
       return;
     }
-    el.connectButton.disabled = true;
-    el.statusLine.textContent = "Checking token...";
-    void validateToken(candidate).then((valid) => {
+    void validateToken(candidate).then((check) => {
       el.connectButton.disabled = false;
-      if (!valid) {
+      if (!check.valid) {
         el.statusLine.textContent = "Token rejected by ListenBrainz";
         return;
       }
       setToken(candidate);
+      if (check.username) {
+        setUsername(check.username);
+      }
       el.tokenInput.value = "";
       renderState(el);
       // a fresh token makes the whole retry queue eligible again
@@ -88,8 +91,16 @@ function wireToggle(el: PopupElements): void {
 function wireDisconnect(el: PopupElements): void {
   el.disconnectButton.addEventListener("click", () => {
     clearToken();
+    clearUsername();
     renderState(el);
   });
+}
+
+/** Opens the scrobbling popover (used by other views prompting to connect). */
+export function openScrobblingPopup(): void {
+  const el = queryPopupElements();
+  el.popup.classList.add("scrobbling-popup__open");
+  refreshQueueHint();
 }
 
 /**

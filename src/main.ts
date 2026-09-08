@@ -1,5 +1,6 @@
 import "./styles/main.css";
 import "./styles/scrobbling.css";
+import "./styles/recommendations.css";
 import AudioPlayer from "./audio-player";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
@@ -24,9 +25,15 @@ import {
 import { initVisualizer } from "./visualizer/controller";
 import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
 import { initWaveformStrip } from "./waveform/strip";
-import { initPlaylists, enterPlaylistsView, exitPlaylistsView } from "./playlists/ui";
+import {
+  initPlaylists,
+  enterPlaylistsView,
+  exitPlaylistsView,
+  refreshPlaylistsView,
+} from "./playlists/ui";
 import { initScrobbling } from "./scrobbling/ui";
 import { isPlaylistsMode } from "./playlists/mode";
+import { initRecommendations } from "./recommendations/ui";
 
 declare global {
   interface Window {
@@ -218,6 +225,16 @@ await initPlaylists({
   records: libraryRecords,
   artworkUrl: libraryArtworkUrl,
   onExit: rerenderLibraryList,
+});
+
+// "Created for you": ListenBrainz recommendation playlists, matched to the library
+initRecommendations({
+  container: document.querySelector<HTMLDivElement>(".recommendations")!,
+  list: document.querySelector<HTMLUListElement>(".recommendations__list")!,
+  state: document.querySelector<HTMLDivElement>(".recommendations__state")!,
+  player,
+  records: libraryRecords,
+  onSaved: refreshPlaylistsView,
 });
 
 document

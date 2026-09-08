@@ -1,0 +1,56 @@
+/* "Created for you" section of the playlists view (ListenBrainz recommendations). */
+
+.recommendations {
+  margin-top: 10px;
+}
+
+.recommendations[hidden] {
+  display: none;
+}
+
+.recommendations__head {
+  padding: 6px 12px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--medium-grey);
+}
+
+.recommendations__brand {
+  margin-left: 4px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--red);
+}
+
+.recommendations__state {
+  padding: 4px 12px 8px;
+  font-size: 13px;
+  color: var(--grey);
+}
+
+.recommendations__connect {
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  background: transparent;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--font-color);
+  cursor: pointer;
+}
+
+.recommendations__connect:hover {
+  background: var(--dark-grey-hover);
+}
+
+.recommendations__save {
+  color: var(--font-color);
+}
+
+/* A recommended track with no library counterpart: visible, not playable. */
+.recommendations__track_missing {
+  opacity: 0.4;
+  cursor: default;
+}

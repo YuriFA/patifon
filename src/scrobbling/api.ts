@@ -18,19 +18,28 @@ export type SubmitResult =
   | { ok: true }
   | { ok: false; retryable: boolean; retryAfterMs: number | null };
 
-/** Checks a user token against the API; false also for network-unreachable servers. */
-export async function validateToken(token: string): Promise<boolean> {
+export interface TokenCheck {
+  valid: boolean;
+  /** ListenBrainz user name, present when the token is valid. */
+  username: string | null;
+}
+
+/** Checks a user token against the API; invalid also for unreachable servers. */
+export async function validateToken(token: string): Promise<TokenCheck> {
   try {
     const response = await fetch(`${API_ROOT}/1/validate-token`, {
       headers: authHeaders(token),
     });
     if (!response.ok) {
-      return false;
+      return { valid: false, username: null };
     }
-    const data = (await response.json()) as { valid?: boolean };
-    return data.valid === true;
+    const data = (await response.json()) as { valid?: boolean; user_name?: string };
+    if (data.valid !== true) {
+      return { valid: false, username: null };
+    }
+    return { valid: true, username: data.user_name ?? null };
   } catch {
-    return false;
+    return { valid: false, username: null };
   }
 }
 

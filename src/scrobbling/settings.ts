@@ -1,16 +1,33 @@
 const TOKEN_KEY = "listenbrainz-token";
 const ENABLED_KEY = "scrobbling-enabled";
+const USERNAME_KEY = "listenbrainz-username";
 
 let token: string | null = null;
 let enabled = true;
+let username: string | null = null;
 
 export function loadScrobblingSettings(): void {
   token = localStorage.getItem(TOKEN_KEY);
   enabled = localStorage.getItem(ENABLED_KEY) !== "0";
+  username = localStorage.getItem(USERNAME_KEY);
 }
 
 export function getToken(): string | null {
   return token;
+}
+
+export function getUsername(): string | null {
+  return username;
+}
+
+export function setUsername(value: string): void {
+  username = value;
+  localStorage.setItem(USERNAME_KEY, value);
+}
+
+export function clearUsername(): void {
+  username = null;
+  localStorage.removeItem(USERNAME_KEY);
 }
 
 export function isEnabled(): boolean {
