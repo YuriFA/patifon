@@ -22,4 +22,4 @@
 ## 5. Verification
 
 - [x] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
-- [ ] 5.2 Manual pass with a REAL ListenBrainz account: connect, play tracks to completion, verify listens appear in the ListenBrainz profile; toggle off -> no submissions; offline queue drains on reconnect. Verify: checklist noted in the change summary.
+- [x] 5.2 Manual pass with a REAL ListenBrainz account: connect, play tracks to completion, verify listens appear in the ListenBrainz profile; toggle off -> no submissions; offline queue drains on reconnect. Verify: checklist noted in the change summary. Confirmed by the user (2026-09-09) after verifying the account email at MetaBrainz; listens visible in the profile feed.
