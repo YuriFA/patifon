@@ -123,11 +123,21 @@ a search, and they SHALL remain playable after a page reload.
 
 ### Requirement: Now-playing station display
 
-While a station plays, the system SHALL show the playing station's name, and
-its icon and tags when available, in the area otherwise occupied by the
-visualizer, so the user can see what is playing.
+While a station is engaged, the system SHALL keep it visible as a pinned list
+item with its own save star in radio mode, and SHALL show its name, icon and
+tags in a card in the library view, so the user always sees what is playing.
+The visualizer SHALL NOT leave a frozen frame behind when playback stops or
+radio takes over.
 
-#### Scenario: Station card in the visualization area
+#### Scenario: Playing station pinned in the radio list
 
-- **WHEN** a station plays
-- **THEN** the visualization area shows the station's name and, when available, its icon and tags
+- **WHEN** a station is playing or paused and radio mode is open
+- **THEN** the station appears as the first list row with the active
+  highlight and a working save star, without duplicating a row already listed
+
+#### Scenario: Station card in the library view
+
+- **WHEN** a station is playing or paused and the user switches to the library view
+- **THEN** the visualization area shows exactly one station icon (or the
+  placeholder) with the station's name and tags, and no library waveform is
+  left behind it

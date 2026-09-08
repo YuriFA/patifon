@@ -1,3 +1,7 @@
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --red: #ce3d60;
   --grey: #bdc8d0;

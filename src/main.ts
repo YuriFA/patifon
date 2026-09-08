@@ -1,13 +1,12 @@
 import "./styles/main.css";
 import AudioPlayer from "./audio-player";
-import type Analyser from "./analyser";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
-import { roundedRect } from "./utils";
 import { initMediaSession } from "./media-session";
 import { initLibrary, libraryMetadata, rerenderLibraryList } from "./library/ui";
 import { initRadio, isStationEngaged, stopPlayback, toggleStationPlayback } from "./radio/ui";
 import { setRadioMuted, setRadioVolume } from "./radio/playback";
+import { startVisualizer } from "./visualizer";
 
 declare global {
   interface Window {
@@ -192,69 +191,6 @@ presetSelect.addEventListener("change", () => {
   });
 });
 
-// Visualizer
-const VISUALIZER_STYLE = {
-  columnWidth: 5,
-  marginWidth: 5,
-  columnRadius: 2,
-  sidePadding: 10,
-  scale: 2,
-  mirrorScale: 0.5,
-  minValue: 3,
-};
-
-function drawColumns(analyser: Analyser): void {
-  const { columnWidth, marginWidth, columnRadius, sidePadding, scale, mirrorScale, minValue } =
-    VISUALIZER_STYLE;
-  const sectionWidth = columnWidth + marginWidth;
-  const { frequencyBinCount: length, minDecibels: minDb, maxDecibels: maxDb } = analyser.analyser;
-
-  const ctx = visualizerCanvas.getContext("2d")!;
-  ctx.strokeStyle = "#CE3D60";
-  ctx.fillStyle = "#CE3D60";
-  ctx.lineJoin = "round";
-
-  const { width, height } = visualizerCanvas;
-  const yAxisStart = height / 2;
-  const columnCount = (width - sidePadding * 2) / sectionWidth;
-
-  ctx.clearRect(0, 0, width, height);
-  analyser.updateData();
-  const frequencyData = analyser.fFrequencyData;
-  const step = Math.round(length / columnCount);
-
-  for (let i = 0; i < columnCount; i += 1) {
-    const frequencyValue = Math.max(minValue, (frequencyData[i * step] - (minDb + maxDb)) * scale);
-    roundedRect({
-      ctx,
-      x: i * sectionWidth + sidePadding,
-      y: yAxisStart - frequencyValue,
-      width: columnWidth,
-      height: frequencyValue * (1 + mirrorScale),
-      radius: columnRadius,
-      fill: true,
-      stroke: true,
-    });
-  }
-}
-
-function visualize(): void {
-  const draw = () => {
-    // read live: the analyser only exists once the audio graph is built lazily
-    const analyser = player.analyser;
-    if (player.isPlaying && analyser) {
-      drawColumns(analyser);
-    }
-    requestAnimationFrame(draw);
-  };
-  requestAnimationFrame(draw);
-}
-
-window.addEventListener("resize", () => {
-  visualizerCanvas.width = document.body.clientWidth;
-  visualizerCanvas.height = document.body.clientHeight - playerBar.clientHeight;
-});
-
 // Protect the IndexedDB library (audio blobs, metadata, artwork) from eviction.
 // The call is fire-and-forget: the browser's grant decision is its own.
 void navigator.storage.persist();
@@ -282,11 +218,16 @@ await initRadio({
   getVolume: () => player.volume,
   isMuted: () => player.muted,
   onModeExit: rerenderLibraryList,
+  // a station taking the transport stops the library track
+  onStationActivate: () => {
+    playBtn.classList.remove("player-controls__btn_pause");
+    player.stop();
+  },
 });
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
-visualize();
+startVisualizer(player, visualizerCanvas);
 
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;

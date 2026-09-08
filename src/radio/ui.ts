@@ -1,6 +1,7 @@
 import { reportListen, type RadioStation } from "./api";
 import { cancelScheduledSearch, scheduleSearch } from "./search";
-import { renderStationRow, stationTags } from "./rows";
+import { renderStationRow } from "./rows";
+import { createStationSource } from "./session";
 import {
   hideNowPlaying,
   queryNowPlaying,
@@ -10,8 +11,7 @@ import {
 import * as playback from "./playback";
 import type { RadioPlaybackState } from "./playback";
 import { deleteStation, loadSavedStations, saveStation } from "./store";
-import { refreshMediaSession, setActiveSource, type MediaSessionSource } from "../media-session";
-import type { MediaSessionMetadata } from "../media-session";
+import { refreshMediaSession, setActiveSource } from "../media-session";
 
 declare global {
   interface Window {
@@ -38,6 +38,8 @@ export interface RadioUiDeps {
   isMuted: () => boolean;
   /** Re-renders the library list when the mode switches off. */
   onModeExit: () => void;
+  /** Stops library playback before the station takes the transport. */
+  onStationActivate: () => void;
 }
 
 let deps: RadioUiDeps;
@@ -61,41 +63,18 @@ function toggleSaveStation(station: RadioStation): void {
   renderStations();
 }
 
-function stationMetadata(station: RadioStation): MediaSessionMetadata {
-  return {
-    title: station.name,
-    artist: stationTags(station),
-    album: null,
-    artworkUrl: station.favicon || null,
-  };
-}
-
-function stationSource(): MediaSessionSource {
-  return {
-    play: () => {
-      void playback.resumeStation();
-    },
-    pause: () => {
-      playback.pauseStation();
-    },
-    state: () => (playback.radioState() === "playing" ? "playing" : "paused"),
-    metadata: () => {
-      const station = currentStation();
-      return station ? stationMetadata(station) : null;
-    },
-  };
-}
-
-function currentStation(): RadioStation | null {
-  // playback owns the identity; expose it through its state
-  return playingStation;
-}
-
 let playingStation: RadioStation | null = null;
 
 function setPlayingStation(station: RadioStation | null): void {
   playingStation = station;
-  setActiveSource(station ? stationSource() : null);
+  setActiveSource(
+    station
+      ? createStationSource(playback, () => {
+          // playback owns the identity; expose it through its state
+          return playingStation;
+        })
+      : null,
+  );
 }
 
 function setRowError(uuid: string, failed: boolean): void {
@@ -127,8 +106,10 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
     case "playing":
       setPlayButton(true);
       setLiveIndicator(true);
-      updatePlayingHighlight();
-      if (station) {
+      if (mode) {
+        renderStations();
+      }
+      if (station && !mode) {
         showNowPlaying(nowPlaying, station);
       }
       refreshMediaSession();
@@ -136,7 +117,7 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
     case "paused":
       setPlayButton(false);
       setLiveIndicator(true);
-      if (station) {
+      if (station && !mode) {
         showNowPlaying(nowPlaying, station);
       }
       refreshMediaSession();
@@ -145,16 +126,20 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
       setPlayButton(false);
       setLiveIndicator(false);
       hideNowPlaying(nowPlaying);
-      updatePlayingHighlight();
+      if (mode) {
+        renderStations();
+      }
       break;
     case "error":
       setPlayButton(false);
       setLiveIndicator(false);
       hideNowPlaying(nowPlaying);
+      if (mode) {
+        renderStations();
+      }
       if (station) {
         setRowError(station.stationuuid, true);
       }
-      updatePlayingHighlight();
       break;
   }
 }
@@ -165,6 +150,7 @@ function setLiveIndicator(active: boolean): void {
 }
 
 export async function playStation(station: RadioStation): Promise<void> {
+  deps.onStationActivate();
   stations = stations.some((s) => s.stationuuid === station.stationuuid)
     ? stations
     : [...stations, station];
@@ -179,7 +165,14 @@ export async function playStation(station: RadioStation): Promise<void> {
 export function stopPlayback(): void {
   playback.stopStation();
   setPlayingStation(null);
-  updatePlayingHighlight();
+  hideNowPlaying(nowPlaying);
+  if (mode) {
+    renderStations();
+  }
+}
+
+export function isStationEngaged(): boolean {
+  return playingStation !== null;
 }
 
 export function toggleStationPlayback(): void {
@@ -193,33 +186,37 @@ export function toggleStationPlayback(): void {
   }
 }
 
-export function isRadioMode(): boolean {
-  return mode;
-}
-
-export function isStationEngaged(): boolean {
-  return playingStation !== null;
-}
-
 function renderStations(): void {
   const query = deps.search.value.trim();
   const listed = query ? stations : savedStations;
-  deps.emptyHint.hidden = listed.length > 0;
-  if (listed.length === 0) {
+  const rows = listed.map((station) =>
+    renderStationRow(
+      station,
+      isSaved(station.stationuuid),
+      (s) => void playStation(s),
+      toggleSaveStation,
+    ),
+  );
+  // the on-air station stays visible as a list item with its own star
+  const playing = playingStation;
+  if (playing && !listed.some((s) => s.stationuuid === playing.stationuuid)) {
+    rows.unshift(
+      renderStationRow(
+        playing,
+        isSaved(playing.stationuuid),
+        (s) => void playStation(s),
+        toggleSaveStation,
+      ),
+    );
+  }
+  deps.emptyHint.hidden = rows.length > 0;
+  if (rows.length === 0) {
     deps.emptyHint.textContent = query
       ? "No stations found"
       : "No saved stations yet - search and press the star";
   }
-  deps.list.replaceChildren(
-    ...listed.map((station) =>
-      renderStationRow(
-        station,
-        isSaved(station.stationuuid),
-        (s) => void playStation(s),
-        toggleSaveStation,
-      ),
-    ),
-  );
+  deps.list.replaceChildren(...rows);
+  updatePlayingHighlight();
 }
 
 function renderCatalogError(): void {
@@ -239,6 +236,8 @@ export function toggleMode(): void {
   deps.search.placeholder = mode ? "Search radio stations" : "Search library";
   setLibraryControlsVisible(!mode);
   if (mode) {
+    // in radio mode the pinned list item represents the station
+    hideNowPlaying(nowPlaying);
     stations = [];
     renderStations();
     deps.search.focus();
@@ -246,7 +245,15 @@ export function toggleMode(): void {
     cancelScheduledSearch();
     deps.search.value = "";
     deps.onModeExit();
+    // back in the library view the card is the only radio indicator
+    if (playingStation) {
+      showNowPlaying(nowPlaying, playingStation);
+    }
   }
+}
+
+export function isRadioMode(): boolean {
+  return mode;
 }
 
 export async function initRadio(deps_: RadioUiDeps): Promise<void> {

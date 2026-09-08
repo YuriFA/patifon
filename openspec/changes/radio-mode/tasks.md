@@ -29,3 +29,4 @@
 - [x] 6.1 Bump the IndexedDB database to version 2 with a `stations` store; add `idbDelete` and a `src/radio/store.ts` (save/delete/load). Verify: `npm run typecheck` green.
 - [x] 6.2 Save/unsave star on station rows; radio mode with empty search shows saved stations; saved state persists across reloads and stays playable. Verify: `npm run test:e2e` green.
 - [x] 6.3 Now-playing station card (icon, name, tags) in the visualization area while a station plays or is paused; hidden on stop and during library playback. Verify: visual check in dev.
+- [x] 7.1 Feedback round: pin the playing station as a list item with its star (card only in the library view), clear the visualizer frame on stop/radio takeover, stop library playback on station activation, fix the `[hidden]` icon fallback override. Verify: `npm run test:e2e` green; manual pass on the real catalog.

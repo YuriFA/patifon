@@ -102,8 +102,12 @@ Host-header recommendation is not applicable client-side.
    the API returns. Saved state is an in-memory set hydrated at startup; the
    row star toggles save/delete. Radio mode with an empty search query shows
    the saved stations; search results keep their own star states.
-8. **Now-playing card fills the visualizer area for radio.** The visualizer
-   canvas only draws for library playback (radio bypasses the graph), so the
-   empty area gets a station card: icon (or placeholder), name, tags. It is
-   shown while a station plays or is paused and hidden on stop/error and
-   whenever library playback takes over.
+8. **Playing station is a pinned list item; the card belongs to the library
+   view.** In radio mode the on-air station stays visible as the first list
+   row (active highlight, own star), so the favorite control is always at
+   hand. The station card (icon or placeholder, name, tags) shows in the
+   library view while a station plays or is paused, and is hidden in radio
+   mode and on stop/error. The visualizer clears its frame the moment
+   playback stops (library pause or radio takeover), so no frozen waveform
+   ever sits under the card; activating a station also stops library
+   playback, mirroring the library-stops-radio rule.

@@ -1,62 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { dropFile, expectRowCount, makeSineWav, waitForAppReady } from "./helpers";
-
-const STATIONS = [
-  {
-    stationuuid: "uuid-one",
-    name: "Test Radio One",
-    url_resolved: "https://stream.test/live-one",
-    favicon: "",
-    tags: "rock,pop",
-    bitrate: 128,
-  },
-  {
-    stationuuid: "uuid-two",
-    name: "Broken Waves",
-    url_resolved: "https://stream.test/dead",
-    favicon: "",
-    tags: "electronic",
-    bitrate: 96,
-  },
-];
-
-interface RouteCounters {
-  searchQueries: string[];
-  listenReports: string[];
-}
-
-async function mockCatalog(page: import("@playwright/test").Page): Promise<RouteCounters> {
-  const counters: RouteCounters = { searchQueries: [], listenReports: [] };
-  const wav = Buffer.from(makeSineWav(60));
-  await page.route("**/json/stations/search*", (route) => {
-    const url = new URL(route.request().url());
-    const name = url.searchParams.get("name") ?? "";
-    counters.searchQueries.push(name);
-    if (name === "fail") {
-      return route.abort();
-    }
-    return route.fulfill({ contentType: "application/json", body: JSON.stringify(STATIONS) });
-  });
-  await page.route("https://stream.test/live-one", (route) => {
-    return route.fulfill({ contentType: "audio/wav", body: wav });
-  });
-  await page.route("https://stream.test/dead", (route) => {
-    return route.fulfill({ status: 404, contentType: "text/plain", body: "gone" });
-  });
-  await page.route("**/json/url/*", (route) => {
-    const uuid = route.request().url().split("/").pop() ?? "";
-    counters.listenReports.push(uuid);
-    return route.fulfill({ contentType: "application/json", body: "{}" });
-  });
-  return counters;
-}
-
-async function searchAndPlayFirst(page: import("@playwright/test").Page): Promise<void> {
-  await page.click(".library__mode");
-  await page.fill(".library__search", "test");
-  await expect(page.locator(".radio__row")).toHaveCount(2);
-  await page.locator(".radio__row").first().click();
-}
+import { dropFile, expectRowCount, waitForAppReady } from "./helpers";
+import { mockCatalog, searchAndPlayFirst, waitForSavedStationCount } from "./radio.helpers";
 
 test("search lists matching stations with tags and bitrate", async ({ page }) => {
   await mockCatalog(page);
@@ -191,25 +135,7 @@ test("saving a station persists it across reloads", async ({ page }) => {
     /radio__star_saved/u,
   );
 
-  // the page unload kills an in-flight IndexedDB write - wait for the commit
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          const r = indexedDB.open("audio-player");
-          r.addEventListener("success", () => resolve(r.result));
-          r.addEventListener("error", () => reject(r.error));
-        });
-        const tx = db.transaction("stations", "readonly");
-        const result = await new Promise<number>((resolve) => {
-          const rq = tx.objectStore("stations").getAll();
-          rq.onsuccess = () => resolve(rq.result.length);
-        });
-        db.close();
-        return result;
-      }),
-    )
-    .toBe(1);
+  await waitForSavedStationCount(page, 1);
 
   await page.reload();
   await waitForAppReady(page);
@@ -221,30 +147,83 @@ test("saving a station persists it across reloads", async ({ page }) => {
   await page.locator(".radio__row").first().click();
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
 
-  // unsaving removes it from the list
+  // unsaving keeps the pinned playing row but drops it from storage
   await page.locator(".radio__row").first().locator(".radio__star").click();
+  await expect(page.locator(".radio__row").first().locator(".radio__star")).not.toHaveClass(
+    /radio__star_saved/u,
+  );
+
+  // after a reload only the empty-state hint remains
+  await page.reload();
+  await waitForAppReady(page);
+  await page.click(".library__mode");
   await expect(page.locator(".radio__row")).toHaveCount(0);
   await expect(page.locator(".library__empty")).toContainText("No saved stations yet");
 });
 
-test("now playing card shows the station name and tags", async ({ page }) => {
+test("playing station is pinned in the list and the card shows in library view", async ({
+  page,
+}) => {
   await mockCatalog(page);
   await page.goto("/");
   await waitForAppReady(page);
   await searchAndPlayFirst(page);
 
+  // radio mode: the station is a pinned list item with its star, no card
   const card = page.locator(".station-now");
+  const firstRow = page.locator(".radio__row").first();
+  await expect(firstRow).toHaveClass(/library__row_playing/u);
+  await expect(firstRow.locator(".radio__star")).toBeVisible();
+  await expect(firstRow).toContainText("Test Radio One");
+  await expect(card).toBeHidden();
+
+  // library view: the card is the only radio indicator (single icon, no fallback)
+  await page.click(".library__mode");
   await expect(card).toBeVisible();
   await expect(card.locator(".station-now__name")).toHaveText("Test Radio One");
   await expect(card.locator(".station-now__tags")).toHaveText("rock, pop");
+  await expect(card.locator(".station-now__icon-empty")).toBeVisible();
+  await expect(card.locator(".station-now__icon")).toBeHidden();
 
+  // paused radio keeps the card; back in radio mode the pinned row returns
   await page.click(".player-controls__btn_play");
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("paused");
   await expect(card).toBeVisible();
 
-  await page.click(".player-controls__btn_play");
   await page.click(".library__mode");
+  await expect(card).toBeHidden();
+  await expect(page.locator(".radio__row").first()).toHaveClass(/library__row_playing/u);
+});
+
+test("radio takeover clears the frozen library visualizer frame", async ({ page }) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropFile(page, "Artist - Local Track.wav");
+  await expectRowCount(page, 1);
+  await page.locator(".library__row").first().click();
+  await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(true);
+
+  const pixelAlphaSum = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
+      const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let sum = 0;
+      for (let i = 3; i < data.length; i += 4) {
+        sum += data[i];
+      }
+      return sum;
+    });
+
+  // the library track is being visualized...
+  await expect.poll(pixelAlphaSum).toBeGreaterThan(0);
+
+  // ...until a radio station takes over: no frozen frame, no card overlay
   await page.click(".library__mode");
-  // switching back to the library view keeps the card while the station plays
-  await expect(card).toBeVisible();
+  await page.fill(".library__search", "test");
+  await expect(page.locator(".radio__row")).toHaveCount(2);
+  await page.locator(".radio__row").first().click();
+  await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
+  await expect.poll(pixelAlphaSum).toBe(0);
+  await expect(page.locator(".station-now")).toBeHidden();
 });
