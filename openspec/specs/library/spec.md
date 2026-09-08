@@ -93,3 +93,15 @@ row in the list, and SHALL highlight the currently playing track.
 
 - **WHEN** a library track is playing
 - **THEN** its row carries the playing highlight
+
+### Requirement: Library rows expose playlist actions
+
+Library rows SHALL gain "add to playlist" and "play next" actions. Existing
+row behavior (activation plays the track, playback highlight) SHALL be
+unchanged.
+
+#### Scenario: Add to playlist from a row
+
+- **WHEN** the user opens a row's playlist action and picks a playlist
+- **THEN** the track is appended to that playlist without interrupting
+  playback
