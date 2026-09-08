@@ -27,7 +27,7 @@ function hasWave(page: Page): Promise<boolean> {
   );
 }
 
-async function readWaveformRecord(page: Page): Promise<unknown> {
+function readWaveformRecord(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("audio-player");
