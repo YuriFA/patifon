@@ -195,6 +195,38 @@ test("playing station is pinned in the list and the card shows in library view",
   await expect(page.locator(".radio__row").first()).toHaveClass(/library__row_playing/u);
 });
 
+test("radio mode hides the library waveform while a track keeps playing", async ({ page }) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropFile(page, "Artist - Local Track.wav");
+  await expectRowCount(page, 1);
+  await page.locator(".library__row").first().click();
+  await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(true);
+
+  const pixelAlphaSum = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
+      const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let sum = 0;
+      for (let i = 3; i < data.length; i += 4) {
+        sum += data[i];
+      }
+      return sum;
+    });
+  await expect.poll(pixelAlphaSum).toBeGreaterThan(0);
+
+  // browsing radio while the song plays: the list must not overlap a waveform
+  await page.click(".library__mode");
+  await page.fill(".library__search", "some");
+  await expect(page.locator(".radio__row")).toHaveCount(2);
+  await expect.poll(pixelAlphaSum).toBe(0);
+
+  // leaving radio mode brings the waveform back for the still-playing track
+  await page.click(".library__mode");
+  await expect.poll(pixelAlphaSum).toBeGreaterThan(0);
+});
+
 test("radio takeover clears the frozen library visualizer frame", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");

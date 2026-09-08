@@ -110,4 +110,6 @@ Host-header recommendation is not applicable client-side.
    mode and on stop/error. The visualizer clears its frame the moment
    playback stops (library pause or radio takeover), so no frozen waveform
    ever sits under the card; activating a station also stops library
-   playback, mirroring the library-stops-radio rule.
+   playback, mirroring the library-stops-radio rule. Radio mode owns the
+   content area: the waveform pauses while it is open even when a library
+   track keeps playing, so search results never overlap a live frame.

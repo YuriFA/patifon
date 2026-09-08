@@ -51,15 +51,21 @@ function drawColumns(analyser: Analyser, canvas: HTMLCanvasElement): void {
  * Mirrors the library playback on the canvas: columns while a track plays,
  * cleared while nothing plays. Radio bypasses the Web Audio graph (cross-origin
  * streams are silent through a MediaElementSource), so a radio takeover just
- * clears the last library frame.
+ * clears the last library frame. `shouldDraw` gates drawing on app state -
+ * radio mode owns the content area, so the waveform pauses while it is open
+ * even when a library track keeps playing.
  */
-export function startVisualizer(player: AudioPlayer, canvas: HTMLCanvasElement): void {
+export function startVisualizer(
+  player: AudioPlayer,
+  canvas: HTMLCanvasElement,
+  shouldDraw: () => boolean = () => true,
+): void {
   let wasDrawing = false;
 
   const draw = () => {
     // read live: the analyser only exists once the audio graph is built lazily
     const analyser = player.analyser;
-    if (player.isPlaying && analyser) {
+    if (player.isPlaying && analyser && shouldDraw()) {
       drawColumns(analyser, canvas);
       wasDrawing = true;
     } else if (wasDrawing) {

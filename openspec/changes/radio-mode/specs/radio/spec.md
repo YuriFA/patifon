@@ -141,3 +141,9 @@ radio takes over.
 - **THEN** the visualization area shows exactly one station icon (or the
   placeholder) with the station's name and tags, and no library waveform is
   left behind it
+
+#### Scenario: Radio mode hides the library waveform
+
+- **WHEN** a library track plays and the user opens radio mode to search
+- **THEN** the waveform is cleared and not drawn behind the station list while
+  radio mode is open, and resumes when the user returns to the library view

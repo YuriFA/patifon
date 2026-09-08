@@ -4,7 +4,13 @@ import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
 import { initMediaSession } from "./media-session";
 import { initLibrary, libraryMetadata, rerenderLibraryList } from "./library/ui";
-import { initRadio, isStationEngaged, stopPlayback, toggleStationPlayback } from "./radio/ui";
+import {
+  initRadio,
+  isRadioMode,
+  isStationEngaged,
+  stopPlayback,
+  toggleStationPlayback,
+} from "./radio/ui";
 import { setRadioMuted, setRadioVolume } from "./radio/playback";
 import { startVisualizer } from "./visualizer";
 
@@ -227,7 +233,7 @@ await initRadio({
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
-startVisualizer(player, visualizerCanvas);
+startVisualizer(player, visualizerCanvas, () => !isRadioMode());
 
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;
