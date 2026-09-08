@@ -40,17 +40,20 @@ and, like the visualizer, it does not flow through Web Audio.
 1. **Token in localStorage, queue in IndexedDB.** The token is a small
    secret-ish string with no query needs - localStorage key
    `listenbrainz-token`. The retry queue holds structured records (metadata
-   + submitted-at) that must survive reloads and iterate in order - IDB
-   store `listens`, database version 6 (auto-increment key to preserve
-   insertion order).
+   - submitted-at) that must survive reloads and iterate in order - IDB
+     store `listens`, database version 6 (auto-increment key to preserve
+     insertion order).
 2. **Completion rule on player events, not timers.** The module tracks the
-   playing record and accumulates nothing: on `track:ended` and on
-   `track:play` (of the NEXT track, i.e. a switch) it inspects the audio
-   element's position through the player: `position >= duration / 2 ||
-   position >= 240` -> queue a single listen. This avoids drift-prone
+   furthest `position` of the playing record (updated on every
+   `track:timeupdate` / `track:pause`) and settles the completion rule at
+   source transitions: on `track:play` of a DIFFERENT record, and on a
+   same-record restart after a natural end (position near 0 with the
+   furthest position near the end - the single-track wrap case). Natural
+   ends reach the tracker through the existing `ended -> playNext -> play`
+   chain, so no new event forwarding is needed; a mid-track backward seek
+   never loses the furthest position. This avoids drift-prone
    time-accumulation and works for playlists and queue insertions alike.
-   AudioPlayer gains `ended` in `MEDIA_EVENTS_FORWARDED` (additive, no
-   behavior change).
+   AudioPlayer is unchanged.
 3. **One submission pipeline.** Playing-now and queued completed listens go
    through the same serializer: at most one in-flight request, minimum
    1.1s spacing between request starts, `Retry-After`/429 honored by

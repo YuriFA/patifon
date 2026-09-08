@@ -1,7 +1,9 @@
 import "./styles/main.css";
+import "./styles/scrobbling.css";
 import AudioPlayer from "./audio-player";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
+import { initVolumeControl } from "./volume";
 import { initMediaSession } from "./media-session";
 import {
   initLibrary,
@@ -19,11 +21,11 @@ import {
   toggleMode,
   toggleStationPlayback,
 } from "./radio/ui";
-import { setRadioMuted, setRadioVolume } from "./radio/playback";
-import { startVisualizer } from "./visualizer";
+import { initVisualizer } from "./visualizer/controller";
 import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
 import { initWaveformStrip } from "./waveform/strip";
 import { initPlaylists, enterPlaylistsView, exitPlaylistsView } from "./playlists/ui";
+import { initScrobbling } from "./scrobbling/ui";
 import { isPlaylistsMode } from "./playlists/mode";
 
 declare global {
@@ -44,9 +46,6 @@ const playBtn = document.querySelector<HTMLDivElement>(".player-controls__btn_pl
 const playNextBtn = document.querySelector<HTMLDivElement>(".player-controls__btn_next")!;
 const playPrevBtn = document.querySelector<HTMLDivElement>(".player-controls__btn_prev")!;
 
-const volumeBtn = document.querySelector<HTMLDivElement>(".volume__btn")!;
-const volumeSliderNode = document.querySelector<HTMLDivElement>(".volume__slider")!;
-
 const playerBar = document.querySelector<HTMLDivElement>(".bar")!;
 const progressBar = document.querySelector<HTMLDivElement>(".progress__bar")!;
 
@@ -58,58 +57,15 @@ const presetSelect = document.querySelector<HTMLSelectElement>(".equalizer-popup
 const visualizerCanvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
 visualizerCanvas.width = document.body.clientWidth;
 visualizerCanvas.height = document.body.clientHeight - playerBar.clientHeight;
+const webglCanvas = document.querySelector<HTMLCanvasElement>(".visualizer__webgl")!;
+webglCanvas.width = visualizerCanvas.width;
+webglCanvas.height = visualizerCanvas.height;
 
 const player = new AudioPlayer([], { equalizer: true, analyser: true });
 // debug/observability handle (also used by e2e to inspect playback state)
 window.player = player;
 player.volume = 0.1;
-const setVolume = (value: number) => {
-  const icon = volumeBtn.children[0];
-  if (value === 0) {
-    icon.classList.remove("volume__icon_half");
-    icon.classList.add("volume__icon_mute");
-  }
-  if (value > 0 && value <= 0.5) {
-    icon.classList.remove("volume__icon_mute");
-    icon.classList.add("volume__icon_half");
-  }
-  if (value > 0.5) {
-    icon.classList.remove("volume__icon_mute", "volume__icon_half");
-  }
-  player.volume = value;
-  setRadioVolume(value);
-};
-
-const volumeSlider = new RangeSlider(volumeSliderNode, {
-  value: player.volume,
-  onchange: setVolume,
-  onmove: setVolume,
-});
-
-volumeBtn.addEventListener("click", (event) => {
-  event.preventDefault();
-  const icon = volumeBtn.children[0];
-  if (player.muted) {
-    player.unmute();
-    icon.classList.remove("volume__icon_mute");
-  } else {
-    player.mute();
-    icon.classList.add("volume__icon_mute");
-  }
-  setRadioMuted(player.muted);
-});
-
-// Mouse wheel controls the volume
-const onwheelUpdateVolume = (event: WheelEvent) => {
-  event.preventDefault();
-  const direction = event.deltaY === 0 ? 0 : -Math.sign(event.deltaY);
-  const newValue = player.volume + direction * 0.05;
-  volumeSlider.setValue(newValue);
-  setVolume(newValue);
-};
-
-volumeBtn.addEventListener("wheel", onwheelUpdateVolume);
-volumeSliderNode.addEventListener("wheel", onwheelUpdateVolume);
+initVolumeControl(player);
 
 // Progress settings
 const progressSlider = new RangeSlider(progressBar, {
@@ -288,7 +244,15 @@ document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("c
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
 initLyrics(player, { currentRecord: currentLibraryRecord });
-startVisualizer(player, visualizerCanvas, () => !isRadioMode() && !isLyricsVisible());
+initVisualizer({
+  player,
+  barsCanvas: visualizerCanvas,
+  webglCanvas,
+  controlsRoot: document.querySelector<HTMLElement>(".visualizer-controls")!,
+  shouldDraw: () => !isRadioMode() && !isLyricsVisible(),
+});
+// ListenBrainz scrobbling: popup + token, listen tracking, retry queue
+initScrobbling(player, { currentRecord: currentLibraryRecord });
 initWaveformStrip({
   player,
   progress: document.querySelector<HTMLDivElement>(".progress")!,

@@ -1,10 +1,11 @@
 const DB_NAME = "audio-player";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE_TRACKS = "tracks";
 const STORE_STATIONS = "stations";
 const STORE_LYRICS = "lyrics";
 const STORE_PLAYLISTS = "playlists";
 const STORE_WAVEFORMS = "waveforms";
+const STORE_LISTENS = "listens";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -31,6 +32,10 @@ function openDatabase(): Promise<IDBDatabase> {
     }
     if (!db.objectStoreNames.contains(STORE_LYRICS)) {
       db.createObjectStore(STORE_LYRICS);
+    }
+    if (!db.objectStoreNames.contains(STORE_LISTENS)) {
+      // retry queue: auto-increment keys preserve submission order
+      db.createObjectStore(STORE_LISTENS, { autoIncrement: true });
     }
   });
   request.addEventListener("success", () => {
@@ -66,13 +71,25 @@ export async function idbGetAll<T>(store: string): Promise<T[]> {
   return asPromise(tx.objectStore(store).getAll() as IDBRequest<T[]>);
 }
 
+export async function idbAdd(store: string, value: unknown): Promise<IDBValidKey> {
+  const db = await openDatabase();
+  const tx = db.transaction(store, "readwrite");
+  return asPromise(tx.objectStore(store).add(value));
+}
+
+export async function idbGetAllKeys(store: string): Promise<IDBValidKey[]> {
+  const db = await openDatabase();
+  const tx = db.transaction(store, "readonly");
+  return asPromise(tx.objectStore(store).getAllKeys());
+}
+
 export async function idbGet<T>(store: string, key: string): Promise<T | undefined> {
   const db = await openDatabase();
   const tx = db.transaction(store, "readonly");
   return asPromise(tx.objectStore(store).get(key) as IDBRequest<T | undefined>);
 }
 
-export async function idbDelete(store: string, key: string): Promise<void> {
+export async function idbDelete(store: string, key: IDBValidKey): Promise<void> {
   const db = await openDatabase();
   const tx = db.transaction(store, "readwrite");
   await asPromise(tx.objectStore(store).delete(key));
