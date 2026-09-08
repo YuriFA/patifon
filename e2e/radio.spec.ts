@@ -153,6 +153,9 @@ test("saving a station persists it across reloads", async ({ page }) => {
     /radio__star_saved/u,
   );
 
+  // the unload kills an in-flight delete: wait until storage actually dropped it
+  await waitForSavedStationCount(page, 0);
+
   // after a reload only the empty-state hint remains
   await page.reload();
   await waitForAppReady(page);

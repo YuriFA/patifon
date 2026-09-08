@@ -268,3 +268,11 @@ export function libraryMetadata(): MediaSessionMetadata | null {
     artworkUrl: artworkUrlFor(record),
   };
 }
+
+/**
+ * Full record of the player's current index (the lyrics cache keys on
+ * artist/title and matches LRCLIB by duration). Null outside the library.
+ */
+export function currentLibraryRecord(): LibraryRecord | null {
+  return records[player.currentTrackIndex] ?? null;
+}

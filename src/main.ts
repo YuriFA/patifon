@@ -3,7 +3,12 @@ import AudioPlayer from "./audio-player";
 import { PRESETS } from "./equalizer";
 import RangeSlider from "./utils/range-slider";
 import { initMediaSession } from "./media-session";
-import { initLibrary, libraryMetadata, rerenderLibraryList } from "./library/ui";
+import {
+  initLibrary,
+  currentLibraryRecord,
+  libraryMetadata,
+  rerenderLibraryList,
+} from "./library/ui";
 import {
   initRadio,
   isRadioMode,
@@ -13,6 +18,7 @@ import {
 } from "./radio/ui";
 import { setRadioMuted, setRadioVolume } from "./radio/playback";
 import { startVisualizer } from "./visualizer";
+import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
 
 declare global {
   interface Window {
@@ -228,12 +234,14 @@ await initRadio({
   onStationActivate: () => {
     playBtn.classList.remove("player-controls__btn_pause");
     player.stop();
+    clearLyrics();
   },
 });
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
-startVisualizer(player, visualizerCanvas, () => !isRadioMode());
+initLyrics(player, { currentRecord: currentLibraryRecord });
+startVisualizer(player, visualizerCanvas, () => !isRadioMode() && !isLyricsVisible());
 
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;

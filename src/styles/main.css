@@ -595,6 +595,53 @@ body.drop-hover::after {
   color: var(--medium-grey);
 }
 
+.lyrics {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  overflow-y: auto;
+  padding: 40px 20%;
+  text-align: center;
+  scrollbar-width: none;
+  /* the panel overlays the whole content area; only lyric lines take clicks
+     so the library and radio controls behind stay reachable */
+  pointer-events: none;
+  /* own stacking context: lines must paint and receive clicks above the
+     positioned library overlay while the container itself stays click-through */
+  z-index: 1;
+}
+
+.lyrics__text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--medium-grey);
+}
+.lyrics__line {
+  color: var(--medium-grey);
+  cursor: pointer;
+  transition: color 0.15s ease;
+  /* inherit none from the overlay container: lines alone take clicks */
+  pointer-events: auto;
+}
+
+.lyrics__line:hover {
+  color: var(--grey);
+}
+
+.lyrics__line_active {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.lyrics__line_plain {
+  cursor: default;
+}
+
 .radio__star {
   flex-shrink: 0;
   background: none;

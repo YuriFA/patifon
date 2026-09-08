@@ -58,7 +58,7 @@ with 429 + `Retry-After`.
    Click-to-seek uses the same seek path as the progress bar.
 6. **Request discipline.** One in-flight request per track activation
    (`AbortController` on track change), `X-User-Agent: audio-player/2
-   (github.com/yurifa/audio-player)`, 429 honored with a single `Retry-After`
+(github.com/yurifa/audio-player)`, 429 honored with a single `Retry-After`
    wait capped at 10s, 404 and any failure resolve to "no lyrics" - the panel
    just stays hidden.
 
