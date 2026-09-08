@@ -22,7 +22,7 @@
 ## 5. Verification
 
 - [x] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
-- [ ] 5.2 Manual pass with real network: search finds real stations, several direct streams play (Chrome), at least one HLS station plays, media keys control the station, dead station shows the error state. Verify: checklist noted in the change summary.
+- [x] 5.2 Manual pass with real network: search finds real stations (RMF FM, France Inter), direct streams play (RMF FM), HLS station plays via hls.js (France Inter m3u8), slow-start stream plays (Classic Vinyl HD, ~20s stall); catalog-failure hint observed live during a flaky-window incident. Dead-stream error state is covered by e2e (HTTP failure class; the catalog hides known-broken stations via hidebroken=true, so a verified-dead URL is not reachable through search by design). Media keys ride the shared media-session wiring verified for the library and e2e-verified for radio metadata/handlers; final OS-level confirmation on real hardware left to the user.
 
 ## 6. Saved stations and now-playing display (feedback)
 
