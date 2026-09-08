@@ -4,6 +4,20 @@ import Fuse from "fuse.js";
 import type AudioPlayer from "../audio-player";
 import { importFiles } from "./import";
 import { loadTracks, saveTrack, type LibraryRecord } from "./store";
+import { isPlaylistsMode } from "../playlists/mode";
+import { createAddToPlaylistButton } from "../playlists/picker";
+import { pendingQueueIds, prunePlayed } from "../playlists/queue";
+import {
+  initSource,
+  recordAt,
+  playbackOrder,
+  isPlayingLibrary,
+  switchToLibrarySource,
+  markLibrarySource,
+} from "./source";
+import { createPlayNextButton } from "./row-actions";
+import { initDropzone } from "./dropzone";
+import { formatDuration } from "../utils";
 
 const FUSE_OPTIONS = {
   keys: ["title", "artist", "album"],
@@ -21,6 +35,10 @@ let fuse = new Fuse<LibraryRecord>([], FUSE_OPTIONS);
 const records: LibraryRecord[] = [];
 const objectUrls = new Map<string, string>();
 const artworkUrls = new Map<string, string>();
+
+function toSource(record: LibraryRecord): { src: string; name: string } {
+  return { src: urlFor(record), name: record.title };
+}
 
 function urlFor(record: LibraryRecord): string {
   let url = objectUrls.get(record.id);
@@ -43,19 +61,15 @@ function artworkUrlFor(record: LibraryRecord): string | null {
   return url;
 }
 
-function formatDuration(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return "-:--";
-  }
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
 function updateHighlight(): void {
-  const index = player.currentTrackIndex;
-  libraryList.querySelectorAll(".library__row").forEach((row, i) => {
-    row.classList.toggle("library__row_playing", i === index && player.isPlaying);
+  const playing = recordAt(player.currentTrackIndex);
+  const queued = new Set(pendingQueueIds());
+  libraryList.querySelectorAll<HTMLElement>(".library__row").forEach((row) => {
+    row.classList.toggle(
+      "library__row_playing",
+      player.isPlaying && playing !== null && row.dataset.id === playing.id,
+    );
+    row.classList.toggle("library__row_queued", queued.has(row.dataset.id ?? ""));
   });
 }
 
@@ -65,6 +79,10 @@ function playRecord(record: LibraryRecord): void {
     return;
   }
   onTrackActivate();
+  // A playlist owns the player order until a library row takes it back.
+  if (!isPlayingLibrary()) {
+    switchToLibrarySource();
+  }
   if (player.isPlaying) {
     player.stop();
   }
@@ -101,6 +119,9 @@ function buildRow(record: LibraryRecord): HTMLLIElement {
   duration.textContent = formatDuration(record.duration);
   row.append(duration);
 
+  row.append(createAddToPlaylistButton(record.id));
+  row.append(createPlayNextButton(record));
+
   row.addEventListener("click", () => {
     playRecord(record);
   });
@@ -118,6 +139,11 @@ function renderList(): void {
   updateHighlight();
 }
 
+/** Library records in library order, for views built on top of them. */
+export function libraryRecords(): readonly LibraryRecord[] {
+  return records;
+}
+
 /** Re-renders the library list when radio mode hands the list back. */
 export function rerenderLibraryList(): void {
   renderList();
@@ -132,6 +158,8 @@ function rebuildPlaylist(): void {
       objectUrls.delete(id);
     }
   }
+  // a library rebuild replaces whatever source owned the player order
+  markLibrarySource();
   player.replaceTracks(records.map((record) => ({ src: urlFor(record), name: record.title })));
   fuse = new Fuse(records, FUSE_OPTIONS);
   renderList();
@@ -147,32 +175,6 @@ async function addFiles(files: Iterable<File>): Promise<void> {
     records.push(record);
   }
   rebuildPlaylist();
-}
-
-function initDropzone(): void {
-  let dragDepth = 0;
-  window.addEventListener("dragenter", (event) => {
-    event.preventDefault();
-    dragDepth += 1;
-    document.body.classList.add("drop-hover");
-  });
-  window.addEventListener("dragleave", () => {
-    dragDepth = Math.max(0, dragDepth - 1);
-    if (dragDepth === 0) {
-      document.body.classList.remove("drop-hover");
-    }
-  });
-  window.addEventListener("dragover", (event) => {
-    event.preventDefault();
-  });
-  window.addEventListener("drop", (event) => {
-    event.preventDefault();
-    dragDepth = 0;
-    document.body.classList.remove("drop-hover");
-    if (event.dataTransfer) {
-      void addFiles([...event.dataTransfer.files]);
-    }
-  });
 }
 
 function initImportControls(): void {
@@ -228,17 +230,31 @@ export async function initLibrary(
 
   const search = document.querySelector<HTMLInputElement>(".library__search");
   search?.addEventListener("input", () => {
-    // In radio mode the radio module owns the search box and the list
-    if (!isRadioMode()) {
+    // In radio and playlists modes their modules own the search box and list
+    if (!isRadioMode() && !isPlaylistsMode()) {
       renderList();
     }
   });
 
+  initSource({
+    player: audioPlayer,
+    records,
+    toSource,
+    onTrackActivate: trackActivate,
+    onOrderApplied: renderList,
+  });
+
+  initDropzone((files) => void addFiles(files));
   initImportControls();
-  initDropzone();
 
   // Highlight follows actual playback, not just row clicks: media events fire
   // for every path that starts or stops audio (clicks, OS transport, track end).
+  player.on("track:play", () => {
+    // a queued track reached the current position: retire its badge
+    if (prunePlayed(playbackOrder(), player.currentTrackIndex)) {
+      renderList();
+    }
+  });
   player.on("track:play", () => {
     updateHighlight();
   });
@@ -257,7 +273,7 @@ export async function initLibrary(
  * then keeps its previous metadata).
  */
 export function libraryMetadata(): MediaSessionMetadata | null {
-  const record = records[player.currentTrackIndex];
+  const record = recordAt(player.currentTrackIndex);
   if (!record) {
     return null;
   }
@@ -269,10 +285,14 @@ export function libraryMetadata(): MediaSessionMetadata | null {
   };
 }
 
+export function libraryArtworkUrl(record: LibraryRecord): string | null {
+  return artworkUrlFor(record);
+}
+
 /**
  * Full record of the player's current index (the lyrics cache keys on
  * artist/title and matches LRCLIB by duration). Null outside the library.
  */
 export function currentLibraryRecord(): LibraryRecord | null {
-  return records[player.currentTrackIndex] ?? null;
+  return recordAt(player.currentTrackIndex);
 }

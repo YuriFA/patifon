@@ -140,6 +140,16 @@ export default class AudioPlayer extends EventEmitter {
     this.currentTrackIndex = 0;
   }
 
+  /**
+   * Swaps the whole track list WITHOUT interrupting playback: the shared
+   * media element keeps its source and position. The caller owns index
+   * consistency (the current track must keep its index or be re-pointed
+   * explicitly via play()).
+   */
+  setTracksPreservingCurrent(tracks: TrackSource[]): void {
+    this.playlist.replaceTracks(tracks);
+  }
+
   pause(): this {
     this.playing = false;
     this.audio.pause();

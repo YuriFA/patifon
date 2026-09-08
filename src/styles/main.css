@@ -399,7 +399,9 @@ body {
 }
 
 .library__add,
-.library__add-dir {
+.library__add-dir,
+.playlists__new,
+.playlists__back {
   background-color: var(--dark-grey-hover);
   color: var(--font-color);
   border: 1px solid var(--medium-grey);
@@ -427,6 +429,7 @@ body {
 }
 
 .library__row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -487,7 +490,8 @@ body.drop-hover::after {
 
 /* Radio mode */
 
-.library__mode {
+.library__mode,
+.library__mode-playlists {
   flex-shrink: 0;
   background-color: var(--dark-grey-hover);
   color: var(--font-color);
@@ -527,6 +531,90 @@ body.drop-hover::after {
       display: none;
     }
   }
+}
+
+/* Playlists view */
+
+.library__row-action {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  color: var(--medium-grey);
+  border: none;
+  border-radius: 3px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--font-color);
+    background-color: var(--dark-grey-hover);
+  }
+}
+
+.hidden-button {
+  visibility: hidden;
+}
+
+.library__row_queued::after {
+  content: "queued";
+  color: var(--red);
+  font-size: 10px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.playlists__track-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.playlists__popover {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  z-index: 5;
+  min-width: 150px;
+  background-color: var(--dark-grey-hover);
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.playlists__popover-item {
+  background: transparent;
+  color: var(--font-color);
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  text-align: left;
+  padding: 5px 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--dark-grey-hover);
+    color: var(--red);
+  }
+}
+
+.playlists__rename-input {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--dark-grey-hover);
+  color: var(--font-color);
+  border: 1px solid var(--red);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 13px;
+  outline: none;
 }
 
 .progress_live {

@@ -1,8 +1,9 @@
 const DB_NAME = "audio-player";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_TRACKS = "tracks";
 const STORE_STATIONS = "stations";
 const STORE_LYRICS = "lyrics";
+const STORE_PLAYLISTS = "playlists";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -19,6 +20,9 @@ function openDatabase(): Promise<IDBDatabase> {
     }
     if (!db.objectStoreNames.contains(STORE_STATIONS)) {
       db.createObjectStore(STORE_STATIONS, { keyPath: "stationuuid" });
+    }
+    if (!db.objectStoreNames.contains(STORE_PLAYLISTS)) {
+      db.createObjectStore(STORE_PLAYLISTS, { keyPath: "id" });
     }
     if (!db.objectStoreNames.contains(STORE_LYRICS)) {
       db.createObjectStore(STORE_LYRICS);

@@ -7,6 +7,8 @@ import {
   initLibrary,
   currentLibraryRecord,
   libraryMetadata,
+  libraryArtworkUrl,
+  libraryRecords,
   rerenderLibraryList,
 } from "./library/ui";
 import {
@@ -14,11 +16,14 @@ import {
   isRadioMode,
   isStationEngaged,
   stopPlayback,
+  toggleMode,
   toggleStationPlayback,
 } from "./radio/ui";
 import { setRadioMuted, setRadioVolume } from "./radio/playback";
 import { startVisualizer } from "./visualizer";
 import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
+import { initPlaylists, enterPlaylistsView, exitPlaylistsView } from "./playlists/ui";
+import { isPlaylistsMode } from "./playlists/mode";
 
 declare global {
   interface Window {
@@ -236,6 +241,46 @@ await initRadio({
     player.stop();
     clearLyrics();
   },
+});
+
+// Playlists view: third mode alongside library and radio; the modes are
+// exclusive, so entering one exits the other.
+await initPlaylists({
+  list: document.querySelector<HTMLUListElement>(".library__list")!,
+  search: document.querySelector<HTMLInputElement>(".library__search")!,
+  emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
+  addButtons: [
+    document.querySelector<HTMLButtonElement>(".library__add")!,
+    document.querySelector<HTMLButtonElement>(".library__add-dir")!,
+  ],
+  newButton: document.querySelector<HTMLButtonElement>(".playlists__new")!,
+  backButton: document.querySelector<HTMLButtonElement>(".playlists__back")!,
+  modeButton: document.querySelector<HTMLButtonElement>(".library__mode-playlists")!,
+  player,
+  records: libraryRecords,
+  artworkUrl: libraryArtworkUrl,
+  onExit: rerenderLibraryList,
+});
+
+document
+  .querySelector<HTMLButtonElement>(".library__mode-playlists")!
+  .addEventListener("click", () => {
+    if (isPlaylistsMode()) {
+      exitPlaylistsView();
+      return;
+    }
+    // modes are exclusive: leave radio mode (audio keeps playing) first
+    if (isRadioMode()) {
+      toggleMode();
+    }
+    enterPlaylistsView();
+  });
+
+document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("click", () => {
+  // runs after radio's own handler: radio just took the view, yield playlists
+  if (isRadioMode() && isPlaylistsMode()) {
+    exitPlaylistsView();
+  }
 });
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
