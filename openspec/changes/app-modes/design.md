@@ -55,18 +55,23 @@ independent. A station can stay engaged while the library view is shown
    engagement points (library track activation, station activation) report
    here instead of calling each other's stop functions through `main.ts`
    callbacks. Entering a mode does not touch the source.
-3. **Typed events keep the existing emitter.** An `AudioPlayerEvents` map
-   (`"track:play" -> Event`, ...) plus generic `on`/`off`/`emit` overloads
-   on AudioPlayer; the 34-line emitter class and its runtime behavior stay
-   as-is. Payloads remain the raw DOM media events. Consumers that only
-   read position or duration move to the existing `player.position` /
-   `player.duration` getters, which is what deletes the three cast sites;
-   no payload re-shaping. A misspelled event name fails `tsc --noEmit`.
+3. **Typed events keep the existing emitter.** The emitter class becomes
+   generic over an `AudioPlayerEvents` map (`track:<name> -> payload`), a
+   type-level change only: the runtime stays the same Map-of-listeners
+   implementation with single-payload dispatch, and AudioPlayer inherits
+   the checked `on`/`off`/`emit`. Payloads remain the raw DOM media events.
+   Consumers that only read position or duration move to the existing
+   `player.position` / `player.duration` getters (buffer and playback rate
+   get the same treatment), which is what deletes the event-cast sites; no
+   payload re-shaping. A misspelled event name fails `tsc --noEmit`.
 4. **One search listener, routed by mode.** The mode module keeps a
    registry of per-mode search handlers set at init; a single `input`
-   listener on `.library__search` routes to the active mode's handler and
-   clears to the mode's empty state when the field empties. The triplicate
-   guarded listeners disappear; registration order stops mattering.
+   listener on `.library__search` routes to the active mode's handler.
+   Entering a mode renders its dataset for the query already in the field
+   (the spec's "search field serves the active mode"): radio schedules a
+   catalog search for non-empty text, playlists and the library re-render
+   filtered. The triplicate guarded listeners disappear; registration
+   order stops mattering.
 5. **Transport icon derives from source state.** The button is owned by one
    place subscribing to the player's play/pause events and radio's playback
    state notifications, deriving the glyph from the engaged source. The six
