@@ -10,7 +10,6 @@ export interface RadioPlaybackCallbacks {
 let element: HTMLAudioElement | null = null;
 let hls: Hls | null = null;
 let current: RadioStation | null = null;
-let callbacks: ((state: RadioPlaybackState, station: RadioStation | null) => void) | null = null;
 let errorListener: (() => void) | null = null;
 
 function audioElement(): HTMLAudioElement {
@@ -30,13 +29,18 @@ function detachHls(): void {
   }
 }
 
+const listeners = new Set<(state: RadioPlaybackState, station: RadioStation | null) => void>();
+
 export function onRadioStateChange(
   cb: (state: RadioPlaybackState, station: RadioStation | null) => void,
 ): void {
-  callbacks = cb;
+  listeners.add(cb);
 }
+
 function setState(state: RadioPlaybackState): void {
-  callbacks?.(state, current);
+  for (const listener of listeners) {
+    listener(state, current);
+  }
 }
 
 function isHlsStream(station: RadioStation): boolean {

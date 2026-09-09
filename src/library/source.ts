@@ -1,6 +1,7 @@
 import type AudioPlayer from "../audio-player";
 import type { LibraryRecord } from "./store";
 import { resetQueue, type QueueContext } from "../playlists/queue";
+import { engageSource } from "../modes";
 
 export interface TrackSourceView {
   src: string;
@@ -12,8 +13,6 @@ export interface SourceDeps {
   records: readonly LibraryRecord[];
   /** Builds the player-facing source for a record (object URL + title). */
   toSource(record: LibraryRecord): TrackSourceView;
-  /** Stops radio playback before library audio starts. */
-  onTrackActivate(): void;
   /** Notifies the owner that the effective order changed (badge re-render). */
   onOrderApplied(): void;
 }
@@ -75,7 +74,7 @@ export function switchToLibrarySource(): void {
  * a library row or a rebuild takes over.
  */
 export function playRecords(next: LibraryRecord[], startIndex: number): void {
-  deps.onTrackActivate();
+  engageSource("library");
   if (deps.player.isPlaying) {
     deps.player.stop();
   }

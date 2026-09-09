@@ -1,4 +1,5 @@
 import type AudioPlayer from "../audio-player";
+import { onSourceChange } from "../modes";
 import type { LibraryRecord } from "../library/store";
 import { fetchLyrics, type LyricsResult } from "./api";
 import { activeLineIndex, parseLrc, type LrcLine } from "./lrc";
@@ -135,6 +136,12 @@ async function show(record: LibraryRecord): Promise<void> {
  */
 export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
   player = audioPlayer;
+  // a station taking the transport stops the library element: clear the panel
+  onSourceChange(({ source }) => {
+    if (source === "radio") {
+      clearLyrics();
+    }
+  });
   panel = document.querySelector<HTMLDivElement>(".lyrics")!;
   textBox = panel.querySelector<HTMLDivElement>(".lyrics__text")!;
 
@@ -169,9 +176,8 @@ export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
       clearLyrics();
     }
   });
-  player.on("track:timeupdate", (event) => {
-    const audio = (event as Event).target as HTMLAudioElement;
-    lastTime = audio.currentTime;
+  player.on("track:timeupdate", () => {
+    lastTime = player.position;
     if (!panel.hidden && lines.length > 0) {
       setActive(activeLineIndex(lines, lastTime));
     }

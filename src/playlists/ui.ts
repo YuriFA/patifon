@@ -11,7 +11,7 @@ import {
 } from "./store";
 import { getCatalog, setCatalog, findInCatalog } from "./catalog";
 import { startInlineRename } from "./rename";
-import { isPlaylistsMode, setPlaylistsMode } from "./mode";
+import { getMode, onModeChange, registerModeSearch } from "../modes";
 import type { LibraryRecord } from "../library/store";
 import { playRecords, recordAt } from "../library/source";
 import { hideRecommendations, showRecommendations } from "../recommendations/ui";
@@ -20,8 +20,6 @@ export interface PlaylistsUiDeps {
   list: HTMLUListElement;
   search: HTMLInputElement;
   emptyHint: HTMLDivElement;
-  /** Library import buttons, hidden while the playlists view is active. */
-  addButtons: HTMLButtonElement[];
   newButton: HTMLButtonElement;
   backButton: HTMLButtonElement;
   modeButton: HTMLButtonElement;
@@ -30,8 +28,6 @@ export interface PlaylistsUiDeps {
   records(): readonly LibraryRecord[];
   /** Artwork object URL for a record, or null. */
   artworkUrl(record: LibraryRecord): string | null;
-  /** Restores the library list rendering on exit. */
-  onExit(): void;
 }
 
 let deps: PlaylistsUiDeps;
@@ -54,41 +50,34 @@ export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
     deps.backButton.hidden = true;
     render();
   });
-  deps.search.addEventListener("input", () => {
-    if (isPlaylistsMode()) {
-      render();
+  registerModeSearch("playlists", () => {
+    render();
+  });
+  onModeChange(({ mode: next, previous }) => {
+    if (next === "playlists") {
+      enterPlaylistsView();
+    } else if (previous === "playlists") {
+      exitPlaylistsView();
     }
   });
   deps.player.on("track:play", updatePlayingHighlight);
   deps.player.on("track:pause", updatePlayingHighlight);
 }
 
-export function enterPlaylistsView(): void {
-  setPlaylistsMode(true);
+function enterPlaylistsView(): void {
   deps.modeButton.classList.add("library__mode_active");
-  deps.search.value = "";
   deps.search.placeholder = "Search playlists";
-  for (const button of deps.addButtons) {
-    button.hidden = true;
-  }
   deps.newButton.hidden = false;
   deps.backButton.hidden = true;
   render();
   showRecommendations();
 }
 
-export function exitPlaylistsView(): void {
-  setPlaylistsMode(false);
+function exitPlaylistsView(): void {
   deps.modeButton.classList.remove("library__mode_active");
   openId = null;
-  deps.search.value = "";
-  deps.search.placeholder = "Search library";
-  for (const button of deps.addButtons) {
-    button.hidden = false;
-  }
   deps.newButton.hidden = true;
   deps.backButton.hidden = true;
-  deps.onExit();
   hideRecommendations();
 }
 
@@ -103,7 +92,7 @@ function render(): void {
 
 /** Re-renders the playlists view after outside mutations (saved recommendations). */
 export function refreshPlaylistsView(): void {
-  if (isPlaylistsMode()) {
+  if (getMode() === "playlists") {
     render();
   }
 }
@@ -241,7 +230,6 @@ function buildTrackRow(
   meta.className = "library__meta";
   meta.textContent = record.artist ? `${record.artist} - ${record.title}` : record.title;
   row.append(meta);
-
   const actions = document.createElement("div");
   actions.className = "playlists__track-actions";
   const up = rowButton("playlists__move-up", "Move up", "\u2191", () => {
