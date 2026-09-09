@@ -195,8 +195,9 @@ export default class AudioPlayer extends EventEmitter {
   }
 
   rewind(ratio: number): this {
-    if (!Number.isNaN(this.audio.duration)) {
-      this.audio.currentTime = this.audio.duration * ratio;
+    const duration = this.duration;
+    if (duration > 0) {
+      this.audio.currentTime = duration * ratio;
     }
     return this;
   }
