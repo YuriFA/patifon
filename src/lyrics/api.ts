@@ -45,11 +45,19 @@ export async function fetchLyrics(
   const request = (url: string): Promise<Response> =>
     fetch(url, { headers: { "X-User-Agent": CLIENT_HEADER }, signal });
 
-  let response = await request(`${API_URL}?${params}`);
-  if (response.status === 429) {
-    const retryAfter = Number(response.headers.get("Retry-After"));
-    await wait(Number.isFinite(retryAfter) ? Math.min(retryAfter * 1000, MAX_RETRY_WAIT_MS) : 1000);
+  let response: Response;
+  try {
     response = await request(`${API_URL}?${params}`);
+    if (response.status === 429) {
+      const retryAfter = Number(response.headers.get("Retry-After"));
+      await wait(
+        Number.isFinite(retryAfter) ? Math.min(retryAfter * 1000, MAX_RETRY_WAIT_MS) : 1000,
+      );
+      response = await request(`${API_URL}?${params}`);
+    }
+  } catch {
+    // network failure or abort: absence is a normal outcome (see docstring)
+    return null;
   }
   if (!response.ok) {
     return null;
