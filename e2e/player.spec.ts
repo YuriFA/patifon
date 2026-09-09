@@ -49,6 +49,35 @@ test("pause and resume keeps position", async ({ page }) => {
   expect(resumedWidth).toBeGreaterThan(pausedWidth);
 });
 
+test("rewind ignores a non-finite duration (live stream)", async ({ page }) => {
+  await seedLibrary(page);
+  await page.click(playBtn);
+  await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);
+
+  // Freeze playback, then shadow duration with a live-stream Infinity the
+  // same way an endless radio stream reports it.
+  const seekProbe = await page.evaluate(() => {
+    // the debug handle exposes the real element and transport for e2e probes
+    const player = window.player as unknown as {
+      audio: HTMLAudioElement;
+      pause: () => void;
+      rewind: (ratio: number) => unknown;
+    };
+    player.pause();
+    Object.defineProperty(player.audio, "duration", {
+      get: () => Number.POSITIVE_INFINITY,
+      configurable: true,
+    });
+    const before = player.audio.currentTime;
+    player.rewind(0.5);
+    return { before, after: player.audio.currentTime };
+  });
+
+  // the seek must be a no-op: no jump to Infinity or to the buffered end,
+  // and no non-finite assignment exception escaping into the page
+  expect(Math.abs(seekProbe.after - seekProbe.before)).toBeLessThan(0.001);
+});
+
 test("next and previous switch tracks", async ({ page }) => {
   await page.goto("/");
   await dropFile(page, "Artist - Alpha.wav");
