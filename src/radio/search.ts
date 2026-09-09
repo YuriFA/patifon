@@ -10,6 +10,9 @@ export interface SearchDeps {
 
 let timer: number | null = null;
 
+/** Stale-response guard: only the latest issued search may touch the UI. */
+let searchSeq = 0;
+
 export function scheduleSearch(deps: SearchDeps): void {
   if (timer !== null) {
     window.clearTimeout(timer);
@@ -28,14 +31,20 @@ export function cancelScheduledSearch(): void {
 }
 
 async function runSearch(deps: SearchDeps): Promise<void> {
+  const seq = ++searchSeq;
   const query = deps.search.value.trim();
   if (!query) {
     deps.onResults([]);
     return;
   }
   try {
-    deps.onResults(await searchStations(query));
+    const stations = await searchStations(query);
+    if (seq === searchSeq) {
+      deps.onResults(stations);
+    }
   } catch {
-    deps.onError();
+    if (seq === searchSeq) {
+      deps.onError();
+    }
   }
 }

@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { dropFile, expectRowCount, waitForAppReady } from "./helpers";
-import { mockCatalog, searchAndPlayFirst, waitForSavedStationCount } from "./radio.helpers";
+import {
+  mockCatalog,
+  mockStaleSearchRace,
+  searchAndPlayFirst,
+  waitForSavedStationCount,
+} from "./radio.helpers";
 
 test("search lists matching stations with tags and bitrate", async ({ page }) => {
   await mockCatalog(page);
@@ -14,6 +19,23 @@ test("search lists matching stations with tags and bitrate", async ({ page }) =>
   await expect(page.locator(".radio__row").first()).toContainText("Test Radio One");
   await expect(page.locator(".radio__row").first()).toContainText("128 kbps");
   await expect(page.locator(".radio__row").nth(1)).toContainText("96 kbps");
+});
+
+test("a slow stale response does not overwrite fresh search results", async ({ page }) => {
+  const { fulfilled } = await mockStaleSearchRace(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await page.click(".library__mode");
+
+  await page.fill(".library__search", "slow");
+  // let the "slow" query fire past the debounce, then search again
+  await page.waitForTimeout(400);
+  await page.fill(".library__search", "fast");
+  await expect(page.locator(".radio__row")).toContainText("Fast FM");
+
+  // the stale "slow" answer arrives late: the list must stay on "fast"
+  await expect.poll(() => fulfilled).toContain("slow");
+  await expect(page.locator(".radio__row")).toContainText("Fast FM");
 });
 
 test("clicking a station row plays the stream with highlight and live state", async ({ page }) => {

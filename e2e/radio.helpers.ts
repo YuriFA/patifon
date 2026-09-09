@@ -82,3 +82,41 @@ export async function searchAndPlayFirst(page: Page): Promise<void> {
   await expect(page.locator(".radio__row")).toHaveCount(2);
   await page.locator(".radio__row").first().click();
 }
+
+/**
+ * Search mock for the stale-response race: the "slow" query resolves 1.5s
+ * after "fast" has already rendered. Returns the fulfilled query names.
+ */
+export async function mockStaleSearchRace(page: Page): Promise<{ fulfilled: string[] }> {
+  const fulfilled: string[] = [];
+  await page.route("**/json/stations/search*", async (route) => {
+    const name = new URL(route.request().url()).searchParams.get("name") ?? "";
+    if (name === "slow") {
+      // a stalled mirror: resolves long after the newer query has rendered
+      const { promise, resolve } = Promise.withResolvers<void>();
+      setTimeout(resolve, 1_500);
+      await promise;
+    }
+    fulfilled.push(name);
+    const station =
+      name === "slow"
+        ? {
+            stationuuid: "uuid-slow",
+            name: "Slow FM",
+            url_resolved: "https://stream.test/slow",
+            favicon: "",
+            tags: "jazz",
+            bitrate: 64,
+          }
+        : {
+            stationuuid: "uuid-fast",
+            name: "Fast FM",
+            url_resolved: "https://stream.test/fast",
+            favicon: "",
+            tags: "rock",
+            bitrate: 128,
+          };
+    return route.fulfill({ contentType: "application/json", body: JSON.stringify([station]) });
+  });
+  return { fulfilled };
+}
