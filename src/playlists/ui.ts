@@ -11,7 +11,7 @@ import {
 } from "./store";
 import { getCatalog, setCatalog, findInCatalog } from "./catalog";
 import { startInlineRename } from "./rename";
-import { getMode, onModeChange, registerModeSearch, type Mode } from "../modes";
+import { getMode, onModeChange, registerModeSearch } from "../modes";
 import type { LibraryRecord } from "../library/store";
 import { playRecords, recordAt } from "../library/source";
 import { hideRecommendations, showRecommendations } from "../recommendations/ui";
@@ -57,7 +57,7 @@ export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
     if (next === "playlists") {
       enterPlaylistsView();
     } else if (previous === "playlists") {
-      exitPlaylistsView(next);
+      exitPlaylistsView();
     }
   });
   deps.player.on("track:play", updatePlayingHighlight);
@@ -66,7 +66,6 @@ export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
 
 function enterPlaylistsView(): void {
   deps.modeButton.classList.add("library__mode_active");
-  deps.search.value = "";
   deps.search.placeholder = "Search playlists";
   deps.newButton.hidden = false;
   deps.backButton.hidden = true;
@@ -74,16 +73,12 @@ function enterPlaylistsView(): void {
   showRecommendations();
 }
 
-function exitPlaylistsView(next: Mode): void {
+function exitPlaylistsView(): void {
   deps.modeButton.classList.remove("library__mode_active");
   openId = null;
   deps.newButton.hidden = true;
   deps.backButton.hidden = true;
   hideRecommendations();
-  if (next === "library") {
-    deps.search.value = "";
-    deps.search.placeholder = "Search library";
-  }
 }
 
 function render(): void {
@@ -235,7 +230,6 @@ function buildTrackRow(
   meta.className = "library__meta";
   meta.textContent = record.artist ? `${record.artist} - ${record.title}` : record.title;
   row.append(meta);
-
   const actions = document.createElement("div");
   actions.className = "playlists__track-actions";
   const up = rowButton("playlists__move-up", "Move up", "\u2191", () => {

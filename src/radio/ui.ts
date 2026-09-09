@@ -217,14 +217,30 @@ function renderCatalogError(): void {
   deps.emptyHint.textContent = "Radio catalog unavailable - check your connection";
 }
 
+function scheduleCatalogSearch(): void {
+  scheduleSearch({
+    search: deps.search,
+    onResults: (results) => {
+      stations = results;
+      renderStations();
+    },
+    onError: renderCatalogError,
+  });
+}
+
 function enterRadioView(): void {
   deps.modeButton.classList.add("library__mode_active");
-  deps.search.value = "";
   deps.search.placeholder = "Search radio stations";
   // in radio mode the pinned list item represents the station
   hideNowPlaying(nowPlaying);
   stations = [];
-  renderStations();
+  // entering with query text renders the catalog for that text: the search
+  // field serves whichever mode is active
+  if (deps.search.value.trim()) {
+    scheduleCatalogSearch();
+  } else {
+    renderStations();
+  }
   deps.search.focus();
 }
 
@@ -248,16 +264,7 @@ export async function initRadio(deps_: RadioUiDeps): Promise<void> {
       exitRadioView(next);
     }
   });
-  registerModeSearch("radio", () => {
-    scheduleSearch({
-      search: deps.search,
-      onResults: (results) => {
-        stations = results;
-        renderStations();
-      },
-      onError: renderCatalogError,
-    });
-  });
+  registerModeSearch("radio", scheduleCatalogSearch);
   // Hydration is part of boot: the UI must never render an unhydrated list
   savedStations = await loadSavedStations();
   window.radio = {

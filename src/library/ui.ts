@@ -224,18 +224,13 @@ function initLibraryModeControls(): void {
       button.hidden = next !== "library";
     }
     if (next === "library") {
-      librarySearch.value = "";
       librarySearch.placeholder = "Search library";
       renderList();
     }
   });
 }
 
-/**
- * Wires the library UI (import, list, search) into the page and restores the
- * persisted library. The library doubles as the player's playlist: rows map
- * to playlist indices.
- */
+/** Wires the library UI into the page and restores the persisted library; rows map to playlist indices. */
 export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
   librarySearch = document.querySelector<HTMLInputElement>(".library__search")!;
