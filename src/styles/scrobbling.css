@@ -1,0 +1,105 @@
+.player-controls__btn_scrobbling {
+  position: absolute;
+  right: 65px;
+
+  & > .icon {
+    background-image: url("/assets/images/scrobble.svg");
+    filter: grayscale(1) opacity(0.6);
+  }
+
+  &.scrobbling-on > .icon {
+    filter: none;
+  }
+}
+
+.scrobbling-popup {
+  position: absolute;
+  right: 65px;
+  bottom: 60px;
+  max-height: 0;
+  border: none;
+  background-color: var(--bg-color);
+  color: #ffffff;
+  overflow: hidden;
+  user-select: none;
+  transition: max-height 0.1s;
+
+  &.scrobbling-popup__open {
+    max-height: 300px;
+    overflow: visible;
+    border: 1px solid var(--red);
+    transition: max-height 0.3s;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 20px;
+    bottom: -10px;
+    display: block;
+    width: 0;
+    height: 0;
+    border-width: 10px 9px 0 9px;
+    border-color: var(--red) transparent transparent transparent;
+    border-style: solid;
+  }
+}
+
+.scrobbling-popup__header {
+  padding: 10px 20px 6px 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scrobbling-popup__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 20px;
+
+  button {
+    background-color: var(--bg-color);
+    color: var(--font-color);
+    border: 1px solid var(--medium-grey);
+    border-radius: 3px;
+    padding: 3px 10px;
+    font-size: 12px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.scrobbling-popup__token {
+  width: 200px;
+  background-color: var(--bg-color);
+  color: var(--font-color);
+  border: 1px solid var(--medium-grey);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.scrobbling-popup__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.scrobbling-popup__status {
+  padding: 6px 20px 2px 20px;
+  font-size: 12px;
+  color: var(--grey);
+}
+
+.scrobbling-popup__queue {
+  padding: 2px 20px 12px 20px;
+  font-size: 12px;
+  color: var(--medium-grey);
+}

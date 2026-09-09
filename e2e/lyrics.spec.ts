@@ -30,6 +30,19 @@ async function mockLrclib(page: Page, tracks: Record<string, unknown>): Promise<
   return counters;
 }
 
+/** Alpha-channel sum of the columns canvas: > 0 drawn, 0 cleared. */
+function barsAlphaSum(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
+    const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let sum = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      sum += data[i];
+    }
+    return sum;
+  });
+}
+
 async function playFirstRow(page: Page): Promise<void> {
   await expectRowCount(page, 1);
   await page.locator(".library__row").first().click();
@@ -191,4 +204,42 @@ test("a radio takeover clears the panel", async ({ page }) => {
   await searchAndPlayFirst(page);
   await expect(page.locator(".progress__live")).toBeVisible();
   await expect(page.locator(".lyrics")).toBeHidden();
+});
+
+test("the karaoke toggle hides the panel and the visualizer keeps rendering", async ({ page }) => {
+  await mockLrclib(page, { "Song One": SYNCED_TRACK });
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
+  await playFirstRow(page);
+  await expect(page.locator(".lyrics")).toBeVisible();
+  // on: the panel takes the area, the classic renderer stays paused
+  await expect(page.locator(".visualizer-controls__lyrics")).toHaveClass(/lyrics_active/u);
+
+  await page.click(".visualizer-controls__lyrics");
+
+  await expect(page.locator(".lyrics")).toBeHidden();
+  await expect(page.locator(".visualizer-controls__lyrics")).not.toHaveClass(/lyrics_active/u);
+  // the freed area renders again
+  await expect.poll(() => barsAlphaSum(page)).toBeGreaterThan(0);
+});
+
+test("the karaoke choice persists and applies mid-track on enable", async ({ page }) => {
+  await mockLrclib(page, { "Song One": SYNCED_TRACK });
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
+  // off before playing: the panel never takes the area
+  await page.click(".visualizer-controls__lyrics");
+  await playFirstRow(page);
+  await expect(page.locator(".lyrics")).toBeHidden();
+
+  await page.reload();
+  await waitForAppReady(page);
+  await playFirstRow(page);
+  await expect(page.locator(".lyrics")).toBeHidden();
+
+  // enabling mid-track resolves lyrics for the playing track
+  await page.click(".visualizer-controls__lyrics");
+  await expect(page.locator(".lyrics")).toBeVisible();
 });

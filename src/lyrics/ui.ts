@@ -4,9 +4,22 @@ import { fetchLyrics, type LyricsResult } from "./api";
 import { activeLineIndex, parseLrc, type LrcLine } from "./lrc";
 import { lyricsKey, loadCachedLyrics, saveLyrics } from "./store";
 
+const KARAOKE_ENABLED_KEY = "karaoke-enabled";
+
+/** Karaoke display preference; absent value means on (the classic behavior). */
+function karaokeEnabled(): boolean {
+  return localStorage.getItem(KARAOKE_ENABLED_KEY) !== "0";
+}
+
+function setKaraokeEnabled(enabled: boolean): void {
+  localStorage.setItem(KARAOKE_ENABLED_KEY, enabled ? "1" : "0");
+}
+
 export interface LyricsUiDeps {
   /** Record behind the player's current index; null when none. */
   currentRecord: () => LibraryRecord | null;
+  /** Karaoke badge in the visualization area's controls row. */
+  lyricsToggle: HTMLButtonElement;
 }
 
 let player: AudioPlayer;
@@ -125,7 +138,30 @@ export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
   panel = document.querySelector<HTMLDivElement>(".lyrics")!;
   textBox = panel.querySelector<HTMLDivElement>(".lyrics__text")!;
 
+  const syncToggle = () => {
+    deps.lyricsToggle.classList.toggle("visualizer-controls__lyrics_active", karaokeEnabled());
+  };
+  deps.lyricsToggle.addEventListener("click", () => {
+    setKaraokeEnabled(!karaokeEnabled());
+    syncToggle();
+    if (karaokeEnabled()) {
+      // enabling mid-track: resolve lyrics for what is playing right now
+      const record = deps.currentRecord();
+      if (record) {
+        void show(record);
+      }
+    } else {
+      clearLyrics();
+    }
+  });
+  syncToggle();
+
   player.on("track:play", () => {
+    if (!karaokeEnabled()) {
+      // karaoke off: the panel never takes the area, the visualizer keeps it
+      clearLyrics();
+      return;
+    }
     const record = deps.currentRecord();
     if (record) {
       void show(record);

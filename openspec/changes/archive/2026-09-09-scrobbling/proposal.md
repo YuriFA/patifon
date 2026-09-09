@@ -41,6 +41,6 @@ origin (POST `/1/submit-listens` answered 401 for a dummy token, GET
   retry queue.
 - One small control-bar button plus popup (the equalizer-popup pattern) for
   token entry and status.
-- AudioPlayer gains forwarding of the media `ended` event (completion
-  detection).
+- Completion detection works on the player's existing event stream (no
+  changes to AudioPlayer).
 - No changes to radio, lyrics, playlists, or visualization behavior.

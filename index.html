@@ -29,9 +29,17 @@
         </div>
         <div class="library__empty">Drop audio files anywhere, or use "Add files"</div>
         <ul class="library__list"></ul>
+        <div class="recommendations" hidden>
+          <div class="recommendations__head">
+            Created for you <span class="recommendations__brand">ListenBrainz</span>
+          </div>
+          <div class="recommendations__state"></div>
+          <ul class="recommendations__list"></ul>
+        </div>
       </div>
       <div class="audio_visualize">
         <canvas id="visualizer" height="500"></canvas>
+        <canvas class="visualizer__webgl" hidden></canvas>
         <div class="station-now" hidden>
           <img class="station-now__icon" alt="" hidden />
           <span class="station-now__icon-empty">♪</span>
@@ -40,6 +48,25 @@
         </div>
         <div class="lyrics" hidden>
           <div class="lyrics__text"></div>
+        </div>
+        <div class="visualizer-controls">
+          <button
+            class="visualizer-controls__mode"
+            type="button"
+            title="Toggle MilkDrop visualizer"
+          >
+            MilkDrop
+          </button>
+          <button class="visualizer-controls__skip" type="button" title="Next preset" hidden>
+            Next
+          </button>
+          <button
+            class="visualizer-controls__lyrics"
+            type="button"
+            title="Toggle karaoke lyrics display"
+          >
+            Karaoke
+          </button>
         </div>
       </div>
       <div class="bar">
@@ -63,6 +90,32 @@
             </div>
             <div class="volume__control">
               <div class="volume__slider"></div>
+            </div>
+          </div>
+          <div class="player-controls__scrobbling-container">
+            <div class="player-controls__btn player-controls__btn_scrobbling" title="Scrobbling">
+              <div class="icon"></div>
+            </div>
+            <div class="scrobbling-popup">
+              <div class="scrobbling-popup__header">ListenBrainz</div>
+              <div class="scrobbling-popup__row">
+                <input
+                  class="scrobbling-popup__token"
+                  type="password"
+                  placeholder="User token"
+                  autocomplete="off"
+                />
+                <button class="scrobbling-popup__connect">Connect</button>
+              </div>
+              <div class="scrobbling-popup__row">
+                <label class="scrobbling-popup__toggle">
+                  <input type="checkbox" />
+                  <span>Enabled</span>
+                </label>
+                <button class="scrobbling-popup__disconnect">Disconnect</button>
+              </div>
+              <div class="scrobbling-popup__status"></div>
+              <div class="scrobbling-popup__queue"></div>
             </div>
           </div>
           <div class="player-controls__equalizer-container">

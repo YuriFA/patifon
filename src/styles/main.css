@@ -384,6 +384,12 @@ body {
   margin: 0 auto;
 }
 
+/* Same flow slot as the bars canvas: exactly one is visible at a time (the
+   hidden one leaves the flow), so neither positions above the library list */
+.visualizer__webgl {
+  display: block;
+}
+
 /* Library */
 .playlist {
   position: absolute;
@@ -659,6 +665,46 @@ body.drop-hover::after {
   border: 1px solid var(--red);
   border-radius: 3px;
   padding: 0 4px;
+}
+
+.visualizer-controls {
+  position: absolute;
+  /* the visualization area's free corner: below the library header, above
+     the progress strip - both top corners are owned by the header buttons */
+  bottom: 84px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+}
+
+.visualizer-controls__mode,
+.visualizer-controls__skip,
+.visualizer-controls__lyrics {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 3px;
+  padding: 0 4px;
+  /* scenes render behind the row: a dim backing keeps the badges legible */
+  background: rgba(38, 47, 53, 0.55);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--dark-grey-hover);
+  }
+}
+
+/* karaoke on: filled badge reads as an enabled state toggle */
+.visualizer-controls__lyrics_active {
+  background-color: var(--red);
+  color: var(--bg-color);
+
+  &:hover {
+    background-color: var(--red);
+  }
 }
 
 .station-now {

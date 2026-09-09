@@ -106,6 +106,11 @@ export default class AudioPlayer extends EventEmitter {
     return this.analyserRef;
   }
 
+  /** Lazily created audio graph context; null before the first play. */
+  get audioContext(): AudioContext | null {
+    return this.ctx;
+  }
+
   async play(id: number | null = null): Promise<void> {
     if (this.isPlaying) {
       return;

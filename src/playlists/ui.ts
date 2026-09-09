@@ -14,6 +14,7 @@ import { startInlineRename } from "./rename";
 import { isPlaylistsMode, setPlaylistsMode } from "./mode";
 import type { LibraryRecord } from "../library/store";
 import { playRecords, recordAt } from "../library/source";
+import { hideRecommendations, showRecommendations } from "../recommendations/ui";
 
 export interface PlaylistsUiDeps {
   list: HTMLUListElement;
@@ -73,6 +74,7 @@ export function enterPlaylistsView(): void {
   deps.newButton.hidden = false;
   deps.backButton.hidden = true;
   render();
+  showRecommendations();
 }
 
 export function exitPlaylistsView(): void {
@@ -87,6 +89,7 @@ export function exitPlaylistsView(): void {
   deps.newButton.hidden = true;
   deps.backButton.hidden = true;
   deps.onExit();
+  hideRecommendations();
 }
 
 function render(): void {
@@ -98,7 +101,15 @@ function render(): void {
   updatePlayingHighlight();
 }
 
+/** Re-renders the playlists view after outside mutations (saved recommendations). */
+export function refreshPlaylistsView(): void {
+  if (isPlaylistsMode()) {
+    render();
+  }
+}
+
 function renderIndex(): void {
+  showRecommendations();
   const query = deps.search.value.trim().toLowerCase();
   const catalog = getCatalog();
   const visible = query

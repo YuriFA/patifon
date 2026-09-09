@@ -233,22 +233,27 @@ test("playlists drop references to tracks missing from the library", async ({ pa
   await expectRowCount(page, 1);
 
   const trackId = await page.locator(".library__row").nth(0).getAttribute("data-id");
-  await page.evaluate((id) => {
-    const request = indexedDB.open("audio-player");
-    request.addEventListener("success", () => {
-      const db = request.result;
-      const tx = db.transaction("playlists", "readwrite");
-      tx.objectStore("playlists").put({
-        id: "seed-1",
-        name: "Seeded",
-        trackIds: [id, "deleted-track-id"],
-        createdAt: Date.now(),
-      });
-      tx.addEventListener("complete", () => {
-        db.close();
-      });
-    });
-  }, trackId);
+  await page.evaluate(
+    (id) =>
+      new Promise<void>((resolve) => {
+        const request = indexedDB.open("audio-player");
+        request.addEventListener("success", () => {
+          const db = request.result;
+          const tx = db.transaction("playlists", "readwrite");
+          tx.objectStore("playlists").put({
+            id: "seed-1",
+            name: "Seeded",
+            trackIds: [id, "deleted-track-id"],
+            createdAt: Date.now(),
+          });
+          tx.addEventListener("complete", () => {
+            db.close();
+            resolve();
+          });
+        });
+      }),
+    trackId,
+  );
 
   await page.reload();
   await waitForAppReady(page);

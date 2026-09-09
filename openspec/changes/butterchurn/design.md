@@ -62,6 +62,14 @@ blendTime)`, `renderVisualizer()` per frame; presets come from the
    `stop()`s (loop paused, no scene updates) and on radio takeover the
    canvas is cleared - the columns renderer's exact rules, implemented once
    in the mode controller rather than duplicated per engine.
+8. **Karaoke toggle.** The lyrics panel takes the area from the visualizer
+   while shown (existing exclusion rule), which in MilkDrop mode reads as a
+   black screen with text. Rather than weakening the exclusion rule, the
+   panel's visibility becomes a user choice: a karaoke badge in the controls
+   row toggles the display, the preference persists in localStorage
+   (`karaoke-enabled`, the scrobbling "1"/"0" convention, default on), and
+   with karaoke off the panel never shows so the active mode keeps rendering.
+   The badge is owned by the lyrics module and works without WebGL2.
 
 ## Risks / Trade-offs
 
