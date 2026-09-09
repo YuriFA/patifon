@@ -8,10 +8,10 @@ export function formatDuration(seconds: number): string {
 }
 
 export function validateInRange(value: number, min: number, max: number): number {
-  if (max && value > max) {
+  if (value > max) {
     return max;
   }
-  if (min && value < min) {
+  if (value < min) {
     return min;
   }
   return value;
