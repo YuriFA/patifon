@@ -15,11 +15,10 @@
 .scrobbling-popup {
   position: absolute;
   right: 65px;
-  bottom: 60px;
+  bottom: 72px;
   max-height: 0;
   border: none;
   background-color: var(--bg-color);
-  color: #ffffff;
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;

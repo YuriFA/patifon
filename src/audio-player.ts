@@ -101,6 +101,9 @@ export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
     if (this.gain) {
       this.gain.gain.value = clamped;
     }
+    // volume lives in the WebAudio gain, so the element never fires this on
+    // its own: dispatch it so UI bridges and OS surfaces observe changes
+    this.audio.dispatchEvent(new Event("volumechange"));
   }
 
   get equalizer(): Equalizer | null {

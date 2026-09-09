@@ -5,28 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Audio Player</title>
     <link rel="icon" type="image/svg+xml" href="/assets/images/icon.svg" />
-    <meta name="theme-color" content="#262f35" />
+    <meta name="theme-color" content="#f4f1ea" />
   </head>
   <body>
     <div class="audio_player">
       <div class="playlist">
-        <div class="library__header">
-          <button class="playlists__back" type="button" hidden>All playlists</button>
-          <button class="library__mode-playlists" type="button" title="Toggle playlists view">
-            Playlists
-          </button>
-          <button class="library__mode" type="button" title="Toggle radio mode">Radio</button>
-          <input
-            class="library__search"
-            type="search"
-            placeholder="Search library"
-            autocomplete="off"
-          />
-          <button class="library__add" type="button">Add files</button>
-          <button class="library__add-dir" type="button" hidden>Add folder</button>
-          <button class="playlists__new" type="button" hidden>New playlist</button>
-          <input class="library__file-input" type="file" multiple accept="audio/*" hidden />
-        </div>
+        <div class="library__header" id="sidebar-root"></div>
         <div class="library__empty">Drop audio files anywhere, or use "Add files"</div>
         <ul class="library__list"></ul>
         <div class="recommendations" hidden>
@@ -36,6 +20,7 @@
           <div class="recommendations__state"></div>
           <ul class="recommendations__list"></ul>
         </div>
+        <div id="library-rows-root" hidden></div>
       </div>
       <div class="audio_visualize">
         <canvas id="visualizer" height="500"></canvas>
@@ -69,29 +54,14 @@
           </button>
         </div>
       </div>
+      <div class="progress">
+        <div id="seek-root"></div>
+        <span class="progress__live" hidden>LIVE</span>
+      </div>
       <div class="bar">
-        <div class="progress">
-          <div class="progress__bar"></div>
-          <span class="progress__live" hidden>LIVE</span>
-        </div>
         <div class="player-controls">
-          <div class="player-controls__btn player-controls__btn_prev" title="Previous track">
-            <div class="icon"></div>
-          </div>
-          <div class="player-controls__btn player-controls__btn_play" title="Play">
-            <div class="icon"></div>
-          </div>
-          <div class="player-controls__btn player-controls__btn_next" title="Next track">
-            <div class="icon"></div>
-          </div>
-          <div class="player-controls__volume-container">
-            <div class="volume__btn" title="Mute">
-              <div class="volume__icon"></div>
-            </div>
-            <div class="volume__control">
-              <div class="volume__slider"></div>
-            </div>
-          </div>
+          <div id="transport-root"></div>
+          <div id="volume-root"></div>
           <div class="player-controls__scrobbling-container">
             <div class="player-controls__btn player-controls__btn_scrobbling" title="Scrobbling">
               <div class="icon"></div>
@@ -202,6 +172,6 @@
         </div>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

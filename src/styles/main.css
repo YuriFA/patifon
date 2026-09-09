@@ -3,31 +3,39 @@
 }
 
 :root {
-  --red: #ce3d60;
-  --grey: #bdc8d0;
-  --medium-grey: #8297a5;
-  --dark-grey-hover: #363942;
-  --font-color: #c6cbd1;
-  --bg-color: #262f35;
+  /* HI-FI SYSTEM tokens (ADR-0001; the 2026-09-09 mockup is the direction).
+     Light warm surfaces, mono type, one red accent. */
+  --surface: #f4f1ea;
+  --surface-raised: #fbf9f4;
+  --surface-sunken: #ece8dd;
+  --surface-hover: #e7e2d4;
+  --text: #1c1b17;
+  --text-dim: #6f6a5e;
+  --text-faint: #948d7d;
+  --accent: #e33d3d;
+  --line: #d9d3c5;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Legacy names from the dark theme: unmigrated regions read these, so they
+     follow the light tokens until phases 2-3 rewrite them. */
+  --red: var(--accent);
+  --grey: var(--text-faint);
+  --medium-grey: var(--text-dim);
+  --dark-grey-hover: var(--surface-hover);
+  --font-color: var(--text);
+  --bg-color: var(--surface);
 }
 
 * {
   padding: 0;
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  color: var(--font-color);
+  font-family: var(--font-mono);
+  color: var(--text);
 }
 
 body {
   overflow: hidden;
-  background-color: var(--bg-color);
+  background-color: var(--surface);
 }
 
 .audio_player {
@@ -36,21 +44,40 @@ body {
   margin-left: auto;
   margin-right: auto;
   overflow: hidden;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  grid-template-rows: 1fr auto auto;
+  grid-template-areas:
+    "sidebar main"
+    "progress progress"
+    "transport transport";
+}
+
+/* Focus visibility: one ring for every control the redesign renders. */
+:where(button, input, [tabindex], [role="slider"]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .bar {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 60px;
+  grid-area: transport;
+  height: 64px;
   user-select: none;
+  display: flex;
+  align-items: center;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--line);
 }
 
 .progress {
-  position: absolute;
-  bottom: 60px;
-  width: 100%;
-  height: 15px;
+  grid-area: progress;
+  position: relative;
+  height: 26px;
+  user-select: none;
+}
+
+#seek-root {
+  height: 100%;
 }
 
 .progress__wave {
@@ -59,7 +86,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  /* clicks pass through to the RangeSlider, which keeps owning seek */
+  /* clicks pass through to the seek slider, which keeps owning seek */
   pointer-events: none;
 }
 
@@ -67,135 +94,217 @@ body {
   display: block;
 }
 
-.progress_wave .slider-horiz {
+.progress_wave .progress__bar {
   /* invisible but hit-testable: the canvas paints the visuals */
   opacity: 0;
 }
 
+/* The seek control: a slider whose track hosts the waveform strip canvas. */
 .progress__bar {
+  position: relative;
   height: 100%;
-  background-color: #eeeeee;
   cursor: pointer;
+  touch-action: none;
+}
 
-  & > .slider-horiz__track {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    margin: 0;
-    border-radius: 0;
+.progress__bar .slider-horiz__track {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
 
-    & > .slider-horiz__filled {
-      height: 100%;
-      border-radius: 0;
-    }
-  }
+.progress__bar .slider-horiz__filled {
+  height: 100%;
+  border-radius: 0;
+}
+
+.progress__bar .slider-horiz__buffer {
+  position: absolute;
+  inset: 0;
+  height: 100%;
 }
 
 .player-controls {
   user-select: none;
   padding-left: 15px;
+  padding-right: 15px;
   display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  /* anchor for the absolute scrobbling/equalizer triggers and popups */
+  position: relative;
 }
 
+/* the islands render inline controls: their roots join the flex row */
+#transport-root,
+#volume-root {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* The invisible native range input owns interaction for both sliders. */
+.slider-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.slider-input:disabled {
+  cursor: default;
+}
+
+/* Transport buttons render their glyphs as inline SVG (currentColor). */
 .player-controls__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
-  padding: 10px;
-  opacity: 0.8;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text);
+  opacity: 0.85;
   cursor: pointer;
 
   &:hover {
     opacity: 1;
-    background-color: var(--dark-grey-hover);
+    background-color: var(--surface-hover);
   }
 
+  &[aria-disabled="true"] {
+    opacity: 0.35;
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* the equalizer and scrobbling triggers keep their sprite icons for now */
   .icon {
-    width: 28px;
-    height: 28px;
-    margin: 6px;
+    width: 24px;
+    height: 24px;
     background: center center no-repeat;
     background-size: 100% 100%;
   }
 
-  &.player-controls__btn_prev > .icon {
-    background-image: url("/assets/images/prev.svg");
-  }
-
-  &.player-controls__btn_play > .icon {
-    background-image: url("/assets/images/play.svg");
-  }
-
-  &.player-controls__btn_next > .icon {
-    background-image: url("/assets/images/next.svg");
-  }
-
-  &.player-controls__btn_pause > .icon {
-    background-image: url("/assets/images/pause.svg");
-  }
-
   &.player-controls__btn_equalizer {
-    position: absolute;
-    right: 15px;
-
     & > .icon {
       background-image: url("/assets/images/equalizer.svg");
     }
   }
 }
 
+.player-controls__btn_play {
+  width: 48px;
+  height: 48px;
+  color: var(--accent);
+}
+
+/* scrobbling and equalizer triggers stay absolute against .player-controls */
+
 .player-controls__volume-container {
-  vertical-align: top;
-  display: inline-block;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  margin-left: 12px;
 }
 
 .volume__btn {
-  display: inline-block;
-  vertical-align: top;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text);
+  opacity: 0.85;
   cursor: pointer;
-  opacity: 0.8;
 
   &:hover {
     opacity: 1;
+    background-color: var(--surface-hover);
   }
 
   & > .volume__icon {
-    width: 24px;
-    height: 24px;
-    margin: 8px;
-    background: url("/assets/images/volume.svg") center center no-repeat;
-    background-position: 0 0;
-
-    &.volume__icon_half {
-      background-position: 0 -24px;
-    }
-
-    &.volume__icon_mute {
-      background-position: 0 -48px;
-    }
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 }
 
 .volume__control {
-  display: inline-block;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
   padding: 4px 0;
 
   & > .volume__slider {
+    position: relative;
     width: 136px;
-    height: 32px;
+    height: 24px;
+    cursor: pointer;
+    touch-action: none;
+
+    .slider-horiz__track {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      margin-top: -2px;
+      border-radius: 2px;
+      background-color: var(--line);
+    }
+
+    .slider-horiz__filled {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: 4px;
+      margin-top: -2px;
+      border-radius: 2px;
+      background-color: var(--accent);
+    }
+
+    .slider-horiz__handle {
+      position: absolute;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      box-sizing: border-box;
+      border-radius: 50%;
+      background: var(--surface-raised);
+      border: 2px solid var(--accent);
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      outline: none;
+    }
   }
 }
 
 .equalizer-popup {
   position: absolute;
   right: 15px;
-  bottom: 60px;
+  bottom: 72px;
   max-height: 0;
   border: none;
-  background-color: var(--bg-color);
-  color: #ffffff;
+  background-color: var(--surface-raised);
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;
@@ -205,7 +314,7 @@ body {
     overflow: visible;
     border: 1px solid var(--red);
     transition: max-height 0.3s;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(28, 27, 23, 0.18);
   }
 
   &::after {
@@ -286,52 +395,6 @@ body {
   }
 }
 
-.slider-horiz {
-  position: relative;
-  cursor: pointer;
-
-  .slider-horiz__track {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    margin-top: -3px;
-    border-radius: 3px;
-    background-color: var(--grey);
-  }
-
-  .slider-horiz__filled {
-    position: absolute;
-    width: 0%;
-    height: 6px;
-    border-radius: 3px;
-    background-color: var(--red);
-  }
-
-  .slider-horiz__handle {
-    position: absolute;
-    top: -5px;
-    right: -8px;
-    z-index: 2;
-    display: block;
-    width: 16px;
-    height: 16px;
-    box-sizing: border-box;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
-    outline: none;
-  }
-
-  .slider-horiz__buffer {
-    z-index: 2;
-    height: 100%;
-    background-color: var(--medium-grey);
-  }
-}
-
 .slider-vert {
   position: relative;
   cursor: pointer;
@@ -390,36 +453,46 @@ body {
   display: block;
 }
 
-/* Library */
+/* Visualization area */
+.audio_visualize {
+  grid-area: main;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+/* Library sidebar */
 .playlist {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 90px;
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--line);
+  min-height: 0;
 }
 
 .library__header {
   display: flex;
-  gap: 8px;
-  padding: 12px 15px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
 }
 
 .library__search {
-  flex: 1;
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
+  order: -1;
+  flex: 1 1 100%;
+  min-width: 0;
+  background-color: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 3px;
   padding: 4px 8px;
   font-size: 13px;
   outline: none;
 
   &:focus {
-    border-color: var(--red);
+    border-color: var(--accent);
   }
 }
 
@@ -427,29 +500,29 @@ body {
 .library__add-dir,
 .playlists__new,
 .playlists__back {
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
+  background-color: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 13px;
+  padding: 4px 8px;
+  font-size: 12px;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--red);
+    border-color: var(--accent);
   }
 }
 
 .library__empty {
   padding: 30px 15px;
-  color: var(--medium-grey);
-  font-size: 14px;
+  color: var(--text-dim);
+  font-size: 13px;
   text-align: center;
 }
 
 .library__list {
   margin: 0;
-  padding: 0 15px;
+  padding: 0 8px 15px 15px;
   list-style: none;
 }
 
@@ -464,12 +537,12 @@ body {
   border-left: 2px solid transparent;
 
   &:hover {
-    background-color: var(--dark-grey-hover);
+    background-color: var(--surface-hover);
   }
 
   &.library__row_playing {
-    background-color: #2e3540;
-    border-left-color: var(--red);
+    background-color: var(--surface-raised);
+    border-left-color: var(--accent);
   }
 }
 
@@ -671,7 +744,7 @@ body.drop-hover::after {
   position: absolute;
   /* the visualization area's free corner: below the library header, above
      the progress strip - both top corners are owned by the header buttons */
-  bottom: 84px;
+  bottom: 16px;
   right: 12px;
   z-index: 2;
   display: flex;
@@ -689,7 +762,7 @@ body.drop-hover::after {
   border-radius: 3px;
   padding: 0 4px;
   /* scenes render behind the row: a dim backing keeps the badges legible */
-  background: rgba(38, 47, 53, 0.55);
+  background: rgba(251, 249, 244, 0.72);
   cursor: pointer;
 
   &:hover {
@@ -753,7 +826,7 @@ body.drop-hover::after {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 60px;
+  bottom: 0;
   overflow-y: auto;
   padding: 40px 20%;
   text-align: center;

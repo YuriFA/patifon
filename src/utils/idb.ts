@@ -62,7 +62,15 @@ function asPromise<T>(request: IDBRequest<T>): Promise<T> {
 export async function idbPut(store: string, value: unknown, key?: IDBValidKey): Promise<void> {
   const db = await openDatabase();
   const tx = db.transaction(store, "readwrite");
-  await asPromise(tx.objectStore(store).put(value, key));
+  const done = new Promise<void>((resolve, reject) => {
+    tx.addEventListener("complete", () => resolve());
+    tx.addEventListener("abort", () => reject(tx.error ?? new Error("transaction aborted")));
+    tx.addEventListener("error", () => reject(tx.error ?? new Error("transaction failed")));
+  });
+  tx.objectStore(store).put(value, key);
+  // resolve on transaction completion, not request success: durability
+  // requires the commit, otherwise an immediate reload rolls the write back
+  await done;
 }
 
 export async function idbGetAll<T>(store: string): Promise<T[]> {

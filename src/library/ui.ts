@@ -3,7 +3,6 @@ import Fuse from "fuse.js";
 import type AudioPlayer from "../audio-player";
 import { importFiles } from "./import";
 import { loadTracks, saveTrack, type LibraryRecord } from "./store";
-import { createAddToPlaylistButton } from "../playlists/picker";
 import { pendingQueueIds, prunePlayed } from "../playlists/queue";
 import {
   initSource,
@@ -13,7 +12,6 @@ import {
   switchToLibrarySource,
   markLibrarySource,
 } from "./source";
-import { createPlayNextButton } from "./row-actions";
 import { initDropzone } from "./dropzone";
 import { formatDuration } from "../utils";
 import { engageSource, onModeChange, registerModeSearch } from "../modes";
@@ -25,7 +23,6 @@ const FUSE_OPTIONS = {
 };
 let player: AudioPlayer;
 let librarySearch: HTMLInputElement;
-let libraryList: HTMLUListElement;
 let libraryEmpty: HTMLDivElement;
 
 let fuse = new Fuse<LibraryRecord>([], FUSE_OPTIONS);
@@ -59,19 +56,69 @@ function artworkUrlFor(record: LibraryRecord): string | null {
   return url;
 }
 
-function updateHighlight(): void {
-  const playing = recordAt(player.currentTrackIndex);
-  const queued = new Set(pendingQueueIds());
-  libraryList.querySelectorAll<HTMLElement>(".library__row").forEach((row) => {
-    row.classList.toggle(
-      "library__row_playing",
-      player.isPlaying && playing !== null && row.dataset.id === playing.id,
-    );
-    row.classList.toggle("library__row_queued", queued.has(row.dataset.id ?? ""));
-  });
+export interface LibraryRowView {
+  record: LibraryRecord;
+  label: string;
+  title: string;
+  duration: string;
+  artworkUrl: string | null;
 }
 
-function playRecord(record: LibraryRecord): void {
+export interface LibraryViewSnapshot {
+  rows: LibraryRowView[];
+  playingId: string | null;
+  playing: boolean;
+  queuedIds: string[];
+}
+
+type LibraryViewListener = () => void;
+const viewListeners = new Set<LibraryViewListener>();
+
+/** The view change fan-out; also owns the vanilla empty hint. */
+function notifyView(): void {
+  if (libraryEmpty) {
+    libraryEmpty.hidden = records.length > 0;
+  }
+  for (const listener of viewListeners) {
+    listener();
+  }
+}
+
+/** Subscribes the rows island to library changes. */
+export function subscribeLibraryView(listener: LibraryViewListener): () => void {
+  viewListeners.add(listener);
+  return () => viewListeners.delete(listener);
+}
+
+/** A consistent snapshot of the visible rows plus playback/queue state. */
+export function libraryViewSnapshot(): LibraryViewSnapshot {
+  if (!player || !librarySearch) {
+    // The island mounts before initLibrary wires the element references.
+    return { rows: [], playingId: null, playing: false, queuedIds: [] };
+  }
+  const query = librarySearch.value.trim();
+  const visible = query ? fuse.search(query).map((result) => result.item) : [...records];
+  const playing = recordAt(player.currentTrackIndex);
+  const rows = visible.map((record) => {
+    const label = record.artist ? `${record.artist} - ${record.title}` : record.title;
+    return {
+      record,
+      label,
+      title: record.album ? `${record.album} - ${label}` : label,
+      duration: formatDuration(record.duration),
+      artworkUrl: record.artwork ? artworkUrlFor(record) : null,
+    };
+  });
+  return {
+    rows,
+    playingId: playing?.id ?? null,
+    playing: player.isPlaying,
+    queuedIds: [...pendingQueueIds()],
+  };
+}
+
+/** Row activation from the island: identical to the old row click. */
+export function activateLibraryRecord(record: LibraryRecord): void {
   const index = records.findIndex((r) => r.id === record.id);
   if (index === -1) {
     return;
@@ -85,56 +132,6 @@ function playRecord(record: LibraryRecord): void {
     player.stop();
   }
   void player.play(index);
-  updateHighlight();
-}
-
-function buildRow(record: LibraryRecord): HTMLLIElement {
-  const row = document.createElement("li");
-  row.className = "library__row";
-  row.dataset.id = record.id;
-
-  if (record.artwork) {
-    const thumb = document.createElement("img");
-    thumb.className = "library__thumb";
-    thumb.src = artworkUrlFor(record) ?? "";
-    thumb.alt = "";
-    row.append(thumb);
-  } else {
-    const placeholder = document.createElement("span");
-    placeholder.className = "library__thumb library__thumb_empty";
-    placeholder.textContent = "\u266A";
-    row.append(placeholder);
-  }
-
-  const meta = document.createElement("div");
-  meta.className = "library__meta";
-  meta.textContent = record.artist ? `${record.artist} - ${record.title}` : record.title;
-  meta.title = record.album ? `${record.album} - ${meta.textContent}` : meta.textContent;
-  row.append(meta);
-
-  const duration = document.createElement("span");
-  duration.className = "library__duration";
-  duration.textContent = formatDuration(record.duration);
-  row.append(duration);
-
-  row.append(createAddToPlaylistButton(record.id));
-  row.append(createPlayNextButton(record));
-
-  row.addEventListener("click", () => {
-    playRecord(record);
-  });
-
-  return row;
-}
-
-function renderList(): void {
-  const query = librarySearch.value.trim();
-  const visible = query ? fuse.search(query).map((result) => result.item) : [...records];
-
-  libraryList.replaceChildren(...visible.map((record) => buildRow(record)));
-  libraryEmpty.hidden = records.length > 0;
-  libraryEmpty.textContent = 'Drop audio files anywhere, or use "Add files"';
-  updateHighlight();
 }
 
 /** Library records in library order, for views built on top of them. */
@@ -142,9 +139,9 @@ export function libraryRecords(): readonly LibraryRecord[] {
   return records;
 }
 
-/** Re-renders the library list when radio mode hands the list back. */
+/** Signals the rows island to re-render when radio hands the list back. */
 export function rerenderLibraryList(): void {
-  renderList();
+  notifyView();
 }
 
 function rebuildPlaylist(): void {
@@ -160,7 +157,7 @@ function rebuildPlaylist(): void {
   markLibrarySource();
   player.replaceTracks(records.map((record) => ({ src: urlFor(record), name: record.title })));
   fuse = new Fuse(records, FUSE_OPTIONS);
-  renderList();
+  notifyView();
 }
 
 async function addFiles(files: Iterable<File>): Promise<void> {
@@ -211,13 +208,12 @@ function initImportControls(): void {
   }
 }
 
-/** Library affordances per mode: import buttons exist only in the library view. */
 function initLibraryModeControls(): void {
   const addButtons = document.querySelectorAll<HTMLButtonElement>(
     ".library__add, .library__add-dir",
   );
   registerModeSearch("library", () => {
-    renderList();
+    notifyView();
   });
   onModeChange(({ mode: next }) => {
     for (const button of addButtons) {
@@ -225,8 +221,10 @@ function initLibraryModeControls(): void {
     }
     if (next === "library") {
       librarySearch.placeholder = "Search library";
-      renderList();
     }
+    // every mode flip hands the list region over: the rows island must
+    // mount or unmount its rows in the same tick as the vanilla writers
+    notifyView();
   });
 }
 
@@ -234,7 +232,6 @@ function initLibraryModeControls(): void {
 export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
   librarySearch = document.querySelector<HTMLInputElement>(".library__search")!;
-  libraryList = document.querySelector<HTMLUListElement>(".library__list")!;
   libraryEmpty = document.querySelector<HTMLDivElement>(".library__empty")!;
   initLibraryModeControls();
 
@@ -242,7 +239,7 @@ export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
     player: audioPlayer,
     records,
     toSource,
-    onOrderApplied: renderList,
+    onOrderApplied: notifyView,
   });
 
   initDropzone((files) => void addFiles(files));
@@ -253,12 +250,12 @@ export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
   player.on("track:play", () => {
     // a queued track reached the current position: retire its badge
     if (prunePlayed(playbackOrder(), player.currentTrackIndex)) {
-      renderList();
+      notifyView();
     }
-    updateHighlight();
+    notifyView();
   });
   player.on("track:pause", () => {
-    updateHighlight();
+    notifyView();
   });
 
   // Bootstrap: restore the persisted library

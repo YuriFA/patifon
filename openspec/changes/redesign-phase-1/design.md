@@ -104,3 +104,14 @@ each wave; rollback is reverting the branch. No storage or API changes.
 ## Open Questions
 
 None - scope, stack and seam are settled by ADR-0001 and the roadmap.
+
+## Amendment (implementation)
+
+Decision 5's react-aria route hit its planned fallback: over preact/compat,
+react-aria's event plumbing (usePress/useSlider pointer and press handlers)
+never fires, while prop rendering works. The sliders are native
+`input[type=range]` elements layered invisibly over the styled track -
+keyboard, pointer and screen-reader semantics come from the platform - and
+transport/mute are native buttons. react-aria, react-stately and the react
+aliases were removed; the a11y spec scenarios are covered by native
+semantics.
