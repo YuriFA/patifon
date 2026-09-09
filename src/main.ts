@@ -12,28 +12,16 @@ import {
   libraryMetadata,
   libraryArtworkUrl,
   libraryRecords,
-  rerenderLibraryList,
 } from "./library/ui";
-import {
-  initRadio,
-  isRadioMode,
-  isStationEngaged,
-  stopPlayback,
-  toggleMode,
-  toggleStationPlayback,
-} from "./radio/ui";
+import { initRadio, isStationEngaged, stopPlayback, toggleStationPlayback } from "./radio/ui";
 import { initVisualizer } from "./visualizer/controller";
-import { initLyrics, isLyricsVisible, clearLyrics } from "./lyrics/ui";
+import { initLyrics, isLyricsVisible } from "./lyrics/ui";
 import { initWaveformStrip } from "./waveform/strip";
-import {
-  initPlaylists,
-  enterPlaylistsView,
-  exitPlaylistsView,
-  refreshPlaylistsView,
-} from "./playlists/ui";
+import { initPlaylists, refreshPlaylistsView } from "./playlists/ui";
 import { initScrobbling } from "./scrobbling/ui";
-import { isPlaylistsMode } from "./playlists/mode";
 import { initRecommendations } from "./recommendations/ui";
+import { getMode, registerSourceStop, routeSearch, setMode } from "./modes";
+import { initTransportButton } from "./transport";
 
 declare global {
   interface Window {
@@ -84,32 +72,28 @@ const progressSlider = new RangeSlider(progressBar, {
 });
 
 let bufferRatio = 0;
-const updateBuffer = (event: Event) => {
-  const audio = event.target as HTMLAudioElement;
-  const buffered = audio.buffered;
-  bufferRatio = buffered.length > 0 ? buffered.end(buffered.length - 1) / audio.duration : 0;
+const updateBuffer = () => {
+  bufferRatio = player.bufferedRatio;
   progressSlider.setBuffer(bufferRatio);
 };
 
 player.on("track:progress", updateBuffer);
 player.on("track:loadeddata", updateBuffer);
 player.on("track:canplaythrough", updateBuffer);
-player.on("track:timeupdate", (event) => {
-  const audio = (event as Event).target as HTMLAudioElement;
-  const ratio = audio.currentTime / audio.duration;
-  progressSlider.setValue(ratio);
+player.on("track:timeupdate", () => {
+  const { duration } = player;
+  progressSlider.setValue(duration > 0 ? player.position / duration : 0);
 });
-// Player controls: transport routes to the active source (library or radio)
+// Player controls: transport routes to the active source (library or radio);
+// the glyph itself is derived by the transport module from source state.
 playBtn.addEventListener("click", () => {
   if (isStationEngaged()) {
     toggleStationPlayback();
     return;
   }
   if (player.isPlaying) {
-    playBtn.classList.remove("player-controls__btn_pause");
     player.pause();
   } else {
-    playBtn.classList.add("player-controls__btn_pause");
     void player.play();
   }
 });
@@ -118,7 +102,6 @@ playNextBtn.addEventListener("click", () => {
   if (isStationEngaged()) {
     return;
   }
-  playBtn.classList.add("player-controls__btn_pause");
   void player.playNext();
 });
 
@@ -126,7 +109,6 @@ playPrevBtn.addEventListener("click", () => {
   if (isStationEngaged()) {
     return;
   }
-  playBtn.classList.add("player-controls__btn_pause");
   void player.playPrev();
 });
 
@@ -177,35 +159,25 @@ presetSelect.addEventListener("change", () => {
 // The call is fire-and-forget: the browser's grant decision is its own.
 void navigator.storage.persist();
 
+// Source takeover: each audible source registers its stop; engagements route
+// through the mode module so exactly one source plays at a time.
+registerSourceStop("library", () => player.stop());
+registerSourceStop("radio", stopPlayback);
+
 // Library: import, persistence, search - also drives the playlist.
-// Activating a library track stops a playing radio station first.
-await initLibrary(player, () => {
-  stopPlayback();
-});
+await initLibrary(player);
 
 // Radio mode: catalog search and live streams on the shared transport
 await initRadio({
   list: document.querySelector<HTMLUListElement>(".library__list")!,
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
-  addButtons: [
-    document.querySelector<HTMLButtonElement>(".library__add")!,
-    document.querySelector<HTMLButtonElement>(".library__add-dir")!,
-  ],
   modeButton: document.querySelector<HTMLButtonElement>(".library__mode")!,
-  playButton: playBtn,
   progress: document.querySelector<HTMLElement>(".progress")!,
   liveBadge: document.querySelector<HTMLElement>(".progress__live")!,
   nowPlaying: document.querySelector<HTMLElement>(".station-now")!,
   getVolume: () => player.volume,
   isMuted: () => player.muted,
-  onModeExit: rerenderLibraryList,
-  // a station taking the transport stops the library track
-  onStationActivate: () => {
-    playBtn.classList.remove("player-controls__btn_pause");
-    player.stop();
-    clearLyrics();
-  },
 });
 
 // Playlists view: third mode alongside library and radio; the modes are
@@ -214,17 +186,12 @@ await initPlaylists({
   list: document.querySelector<HTMLUListElement>(".library__list")!,
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
-  addButtons: [
-    document.querySelector<HTMLButtonElement>(".library__add")!,
-    document.querySelector<HTMLButtonElement>(".library__add-dir")!,
-  ],
   newButton: document.querySelector<HTMLButtonElement>(".playlists__new")!,
   backButton: document.querySelector<HTMLButtonElement>(".playlists__back")!,
   modeButton: document.querySelector<HTMLButtonElement>(".library__mode-playlists")!,
   player,
   records: libraryRecords,
   artworkUrl: libraryArtworkUrl,
-  onExit: rerenderLibraryList,
 });
 
 // "Created for you": ListenBrainz recommendation playlists, matched to the library
@@ -237,25 +204,21 @@ initRecommendations({
   onSaved: refreshPlaylistsView,
 });
 
+// Mode buttons toggle between their view and the library; exclusivity is the
+// mode module's job, not the handlers'.
+document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("click", () => {
+  setMode(getMode() === "radio" ? "library" : "radio");
+});
 document
   .querySelector<HTMLButtonElement>(".library__mode-playlists")!
   .addEventListener("click", () => {
-    if (isPlaylistsMode()) {
-      exitPlaylistsView();
-      return;
-    }
-    // modes are exclusive: leave radio mode (audio keeps playing) first
-    if (isRadioMode()) {
-      toggleMode();
-    }
-    enterPlaylistsView();
+    setMode(getMode() === "playlists" ? "library" : "playlists");
   });
 
-document.querySelector<HTMLButtonElement>(".library__mode")!.addEventListener("click", () => {
-  // runs after radio's own handler: radio just took the view, yield playlists
-  if (isRadioMode() && isPlaylistsMode()) {
-    exitPlaylistsView();
-  }
+// One listener owns the shared search field; the active mode's handler runs.
+const searchInput = document.querySelector<HTMLInputElement>(".library__search")!;
+searchInput.addEventListener("input", () => {
+  routeSearch(searchInput.value);
 });
 
 // OS media surfaces (media keys, lock screen): metadata + transport controls
@@ -269,7 +232,7 @@ initVisualizer({
   barsCanvas: visualizerCanvas,
   webglCanvas,
   controlsRoot: document.querySelector<HTMLElement>(".visualizer-controls")!,
-  shouldDraw: () => !isRadioMode() && !isLyricsVisible(),
+  shouldDraw: () => getMode() !== "radio" && !isLyricsVisible(),
 });
 // ListenBrainz scrobbling: popup + token, listen tracking, retry queue
 initScrobbling(player, { currentRecord: currentLibraryRecord });
@@ -277,8 +240,9 @@ initWaveformStrip({
   player,
   progress: document.querySelector<HTMLDivElement>(".progress")!,
   getBufferRatio: () => bufferRatio,
-  isRadioActive: () => isStationEngaged() || isRadioMode(),
+  isRadioActive: () => isStationEngaged() || getMode() === "radio",
   currentRecord: currentLibraryRecord,
 });
+initTransportButton(playBtn, player);
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;

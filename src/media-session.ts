@@ -40,11 +40,6 @@ function activeSource(): MediaSessionSource | null {
   return radioSource ?? librarySource;
 }
 
-function audioFromEvent(event: unknown): HTMLAudioElement | null {
-  const target = (event as Event | undefined)?.target;
-  return target instanceof HTMLAudioElement ? target : null;
-}
-
 function setAction(
   ms: MediaSession,
   action: MediaSessionAction,
@@ -134,16 +129,16 @@ export function refreshMediaSession(): void {
 }
 
 /** Publishes current position/duration/rate; browsers rejecting a combination throw, which we swallow. */
-function updateSessionPositionState(ms: MediaSession, event: unknown): void {
-  const audio = audioFromEvent(event);
-  if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
+function updateSessionPositionState(ms: MediaSession, player: AudioPlayer): void {
+  const duration = player.duration;
+  if (duration <= 0) {
     return;
   }
   try {
     ms.setPositionState({
-      duration: audio.duration,
-      playbackRate: audio.playbackRate,
-      position: Math.min(Math.max(audio.currentTime, 0), audio.duration),
+      duration,
+      playbackRate: player.playbackRate,
+      position: Math.min(Math.max(player.position, 0), duration),
     });
   } catch {
     // Unsupported rate/duration combination in this browser
@@ -187,7 +182,7 @@ export function initMediaSession(player: AudioPlayer, metadataProvider: Metadata
       ms.playbackState = "paused";
     }
   });
-  player.on("track:timeupdate", (event) => {
-    updateSessionPositionState(ms, event);
+  player.on("track:timeupdate", () => {
+    updateSessionPositionState(ms, player);
   });
 }

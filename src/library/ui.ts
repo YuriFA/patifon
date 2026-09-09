@@ -1,10 +1,8 @@
-import { isRadioMode } from "../radio/ui";
 import type { MediaSessionMetadata } from "../media-session";
 import Fuse from "fuse.js";
 import type AudioPlayer from "../audio-player";
 import { importFiles } from "./import";
 import { loadTracks, saveTrack, type LibraryRecord } from "./store";
-import { isPlaylistsMode } from "../playlists/mode";
 import { createAddToPlaylistButton } from "../playlists/picker";
 import { pendingQueueIds, prunePlayed } from "../playlists/queue";
 import {
@@ -18,6 +16,7 @@ import {
 import { createPlayNextButton } from "./row-actions";
 import { initDropzone } from "./dropzone";
 import { formatDuration } from "../utils";
+import { engageSource, onModeChange, registerModeSearch } from "../modes";
 
 const FUSE_OPTIONS = {
   keys: ["title", "artist", "album"],
@@ -28,8 +27,7 @@ let player: AudioPlayer;
 let librarySearch: HTMLInputElement;
 let libraryList: HTMLUListElement;
 let libraryEmpty: HTMLDivElement;
-/** Called before a library track starts: main.ts stops radio playback there. */
-let onTrackActivate: () => void = () => {};
+
 let fuse = new Fuse<LibraryRecord>([], FUSE_OPTIONS);
 
 const records: LibraryRecord[] = [];
@@ -78,7 +76,7 @@ function playRecord(record: LibraryRecord): void {
   if (index === -1) {
     return;
   }
-  onTrackActivate();
+  engageSource("library");
   // A playlist owns the player order until a library row takes it back.
   if (!isPlayingLibrary()) {
     switchToLibrarySource();
@@ -213,34 +211,42 @@ function initImportControls(): void {
   }
 }
 
+/** Library affordances per mode: import buttons exist only in the library view. */
+function initLibraryModeControls(): void {
+  const addButtons = document.querySelectorAll<HTMLButtonElement>(
+    ".library__add, .library__add-dir",
+  );
+  registerModeSearch("library", () => {
+    renderList();
+  });
+  onModeChange(({ mode: next }) => {
+    for (const button of addButtons) {
+      button.hidden = next !== "library";
+    }
+    if (next === "library") {
+      librarySearch.value = "";
+      librarySearch.placeholder = "Search library";
+      renderList();
+    }
+  });
+}
+
 /**
  * Wires the library UI (import, list, search) into the page and restores the
  * persisted library. The library doubles as the player's playlist: rows map
  * to playlist indices.
  */
-export async function initLibrary(
-  audioPlayer: AudioPlayer,
-  trackActivate: () => void,
-): Promise<void> {
+export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
-  onTrackActivate = trackActivate;
   librarySearch = document.querySelector<HTMLInputElement>(".library__search")!;
   libraryList = document.querySelector<HTMLUListElement>(".library__list")!;
   libraryEmpty = document.querySelector<HTMLDivElement>(".library__empty")!;
-
-  const search = document.querySelector<HTMLInputElement>(".library__search");
-  search?.addEventListener("input", () => {
-    // In radio and playlists modes their modules own the search box and list
-    if (!isRadioMode() && !isPlaylistsMode()) {
-      renderList();
-    }
-  });
+  initLibraryModeControls();
 
   initSource({
     player: audioPlayer,
     records,
     toSource,
-    onTrackActivate: trackActivate,
     onOrderApplied: renderList,
   });
 
@@ -254,8 +260,6 @@ export async function initLibrary(
     if (prunePlayed(playbackOrder(), player.currentTrackIndex)) {
       renderList();
     }
-  });
-  player.on("track:play", () => {
     updateHighlight();
   });
   player.on("track:pause", () => {

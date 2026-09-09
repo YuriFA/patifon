@@ -48,6 +48,7 @@ both are framework-independent and block nothing else.
   payload shapes become part of the capability's specified surface.
 
 ## Impact
+
 - New mode-state module owning the mode enum, transitions, and change
   notifications; `main.ts` wiring shrinks to subscriptions.
 - AudioPlayer: typed `on`/`off`/`emit` overloads backed by an event-map

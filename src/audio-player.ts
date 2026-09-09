@@ -4,21 +4,12 @@ import Equalizer from "./equalizer";
 import type { EqualizerPreset } from "./equalizer";
 import Analyser from "./analyser";
 import EventEmitter from "./utils/event-emitter";
+import { MEDIA_EVENTS_FORWARDED, type AudioPlayerEvents } from "./audio-player-events";
 
 export interface AudioPlayerSettings {
   equalizer?: boolean;
   analyser?: boolean;
 }
-
-const MEDIA_EVENTS_FORWARDED = [
-  "progress",
-  "loadeddata",
-  "canplaythrough",
-  "loadedmetadata",
-  "timeupdate",
-  "play",
-  "pause",
-] as const;
 
 /**
  * Owns a single HTMLAudioElement for the whole playlist: switching tracks only
@@ -28,7 +19,7 @@ const MEDIA_EVENTS_FORWARDED = [
 // The custom emitter keeps the historical on/off/emit API with plain argument
 // payloads; EventTarget would force CustomEvent wrapping for no behavioral gain.
 // eslint-disable-next-line unicorn/prefer-event-target
-export default class AudioPlayer extends EventEmitter {
+export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
   readonly playlist: Playlist;
   readonly settings: AudioPlayerSettings;
   currentTrackIndex = 0;
@@ -79,6 +70,20 @@ export default class AudioPlayer extends EventEmitter {
   /** Element position in seconds. */
   get position(): number {
     return this.audio.currentTime;
+  }
+
+  /** Element playback rate. */
+  get playbackRate(): number {
+    return this.audio.playbackRate;
+  }
+
+  /** Fraction of the current source buffered (0..1); 0 before metadata loads. */
+  get bufferedRatio(): number {
+    const buffered = this.audio.buffered;
+    const { duration } = this.audio;
+    return buffered.length > 0 && Number.isFinite(duration) && duration > 0
+      ? buffered.end(buffered.length - 1) / duration
+      : 0;
   }
 
   get volume(): number {

@@ -1,16 +1,21 @@
-type Listener = (...args: never[]) => void;
+type Listener<T> = (payload: T) => void;
 
-export default class EventEmitter {
-  private readonly events = new Map<string, Listener[]>();
+/**
+ * Minimal event emitter keyed by an event-name -> payload type map: all name
+ * and payload checking happens at compile time through TEvents, the runtime
+ * stays a plain Map of listener arrays with single-payload dispatch.
+ */
+export default class EventEmitter<TEvents extends Record<string, unknown>> {
+  private readonly events = new Map<keyof TEvents, Listener<never>[]>();
 
-  on(event: string, callback: Listener): this {
+  on<K extends keyof TEvents>(event: K, callback: Listener<TEvents[K]>): this {
     const listeners = this.events.get(event) ?? [];
     listeners.push(callback);
     this.events.set(event, listeners);
     return this;
   }
 
-  off(event: string, callback: Listener): this {
+  off<K extends keyof TEvents>(event: K, callback: Listener<TEvents[K]>): this {
     const listeners = this.events.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);
@@ -21,12 +26,12 @@ export default class EventEmitter {
     return this;
   }
 
-  emit(event: string, ...args: unknown[]): this {
+  emit<K extends keyof TEvents>(event: K, payload: TEvents[K]): this {
     const listeners = this.events.get(event);
     if (listeners) {
       const snapshot = [...listeners];
       for (const callback of snapshot) {
-        (callback as (...a: unknown[]) => void)(...args);
+        (callback as Listener<never>)(payload as never);
       }
     }
     return this;
