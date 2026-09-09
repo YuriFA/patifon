@@ -1,44 +1,37 @@
 {
-  "name": "audio_player",
-  "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "name": "audio-player",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Web Audio API audio player with equalizer and visualizer",
+  "type": "module",
   "scripts": {
-    "start": "browser-sync start --server --files '*.css, *.html, *.js'"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test"
   },
-  "babel": {
-    "presets": [
-      "es2015"
-    ],
-    "minified": false
+  "dependencies": {
+    "fuse.js": "^7.5.0",
+    "hls.js": "^1.7.2",
+    "music-metadata": "^11.15.0"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-eslint": "^7.2.3",
-    "babel-preset-es2015": "^6.24.1",
-    "babelify": "^7.3.0",
-    "browser-sync": "^2.18.12",
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb": "^15.0.2",
-    "eslint-plugin-import": "^2.7.0",
-    "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-react": "^7.1.0",
-    "gulp": "^3.9.1",
-    "gulp-autoprefixer": "^4.0.0",
-    "gulp-browserify": "^0.5.1",
-    "gulp-clean-css": "^3.7.0",
-    "gulp-html-prettify": "0.0.1",
-    "gulp-plumber": "^1.1.0",
-    "gulp-rename": "^1.2.2",
-    "gulp-sass": "^3.1.0",
-    "gulp-uglify": "^3.0.0",
-    "gulp-watch": "^4.3.11",
-    "require-dir": "^0.3.2",
-    "run-sequence": "^2.0.0",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-paths": "^2.1.0",
-    "vinyl-source-stream": "^1.1.0"
+    "@fission-ai/openspec": "^1.12.0",
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^26.4.1",
+    "butterchurn": "^2.6.7",
+    "butterchurn-presets": "^2.4.7",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.2.2",
+    "vite-plugin-pwa": "^1.3.0"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }

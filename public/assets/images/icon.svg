@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    App icon: dark rounded square matching the UI background, a red play
+    triangle in the accent color, and an equalizer hint in the corner.
+    The glyph stays within the inner 80% so the same path works as a
+    maskable icon.
+  -->
+  <rect width="512" height="512" rx="96" fill="#262f35" />
+  <g fill="#ce3d60">
+    <path d="M 176 156 L 176 356 L 356 256 Z" />
+  </g>
+  <g fill="#ce3d60" opacity="0.55">
+    <rect x="356" y="216" width="20" height="80" rx="10" />
+    <rect x="396" y="236" width="20" height="40" rx="10" />
+  </g>
+</svg>
