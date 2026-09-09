@@ -108,6 +108,45 @@ test("missing lyrics keep the panel hidden and playback unaffected", async ({ pa
   expect(counters.requests).toEqual(["Unknown Song"]);
 });
 
+test("a network failure behaves like no lyrics", async ({ page }) => {
+  const requests: string[] = [];
+  await page.addInitScript(() => {
+    // test-only recorder hanging off the page global
+    const w = window as unknown as { unhandledRejections: string[] };
+    w.unhandledRejections = [];
+    window.addEventListener("unhandledrejection", (event) => {
+      w.unhandledRejections.push(String(event.reason));
+    });
+  });
+  await page.route("**/lrclib.net/api/get*", (route) => {
+    const url = new URL(route.request().url());
+    requests.push(url.searchParams.get("track_name") ?? "");
+    return route.abort();
+  });
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropTaggedWav(page, "offline-song.wav", {
+    title: "Offline Song",
+    artist: "Offline Artist",
+  });
+  await playFirstRow(page);
+
+  // A dead network is the same as "no lyrics": the panel stays hidden,
+  // playback continues, and the rejection must not escape as an
+  // unhandled page error.
+  await expect(page.locator(".lyrics")).toBeHidden();
+  await expect.poll(() => requests).toEqual(["Offline Song"]);
+  await expect.poll(() => currentTime(page), { timeout: 5_000 }).toBeGreaterThan(0.5);
+  // let a possible rejection settle
+  await page.waitForTimeout(500);
+  const unhandled = await page.evaluate(() => {
+    // test-only recorder hanging off the page global
+    const w = window as unknown as { unhandledRejections: string[] };
+    return w.unhandledRejections;
+  });
+  expect(unhandled).toEqual([]);
+});
+
 test("untagged tracks never request lyrics", async ({ page }) => {
   const counters = await mockLrclib(page, { "Song One": SYNCED_TRACK });
   await page.goto("/");
