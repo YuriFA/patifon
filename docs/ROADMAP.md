@@ -14,9 +14,13 @@ Decisions recorded on 2026-09-07 during the planning session:
 - Demo content: no binary audio files in the repo; e2e uses a generated
   sine-wave WAV fixture.
 
-Decision recorded on 2026-09-09 (ADR-0001): the UI redesign adopts
-**Preact + @preact/signals + react-aria** for the view layer; the playback
-core stays vanilla TypeScript modules.
+Decision recorded on 2026-09-09 (ADR-0001, amended 2026-09-10): the UI
+redesign adopts **Preact + @preact/signals** for the view layer; the
+playback core stays vanilla TypeScript modules. Accessibility is
+native-first, with Zag.js sanctioned for hard patterns (dialog focus trap,
+combobox); react-aria was tried and dropped (does not work over
+`preact/compat`, Adobe declined Preact support). Research:
+`docs/research/preact-component-libraries.md`.
 
 ## Completed phases (OpenSpec changes, archived)
 
@@ -42,13 +46,15 @@ core stays vanilla TypeScript modules.
 
 ## Current phase: UI redesign (HI-FI SYSTEM direction)
 
-Stack per ADR-0001 (Preact + signals + react-aria; vanilla core). Waves,
-one OpenSpec change each:
+Stack per ADR-0001 (amended): Preact + signals; vanilla core; native-first
+a11y, Zag.js for hard patterns. Waves, one OpenSpec change each:
 
-1. **redesign-phase-1** - foundation + library + transport on Preact:
-   sidebar layout, track rows, filter, shared row/list primitives,
-   accessible slider/tabs, transport bar with waveform seek; behavioral e2e
-   preserved via `window.*` handles, layout selectors rewritten.
+1. **redesign-phase-1** (implemented 2026-09-10, commit `edcced6`) -
+   foundation + library + transport on Preact: sidebar layout, track rows
+   as a portal into the shared list, filter, signals bridge, native
+   accessible transport/seek/volume controls with keyboard scenarios;
+   behavioral e2e preserved via `window.*` handles, layout selectors
+   rewritten; `idbPut` durability fix (transaction completion).
 2. **redesign-phase-2** - visualization area modes: lyrics panel, bars,
    vinyl turntable (new), Butterchurn; now-playing treatment.
 3. **redesign-phase-3** - radio, playlists, recommendations, EQ popup,
