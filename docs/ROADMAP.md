@@ -1,10 +1,9 @@
 # Audio Player Roadmap
 
-This roadmap is the master plan for modernizing and developing the audio player.
-Each phase is implemented as an OpenSpec change (`openspec/changes/`), authored
-one at a time, in this order. Phase specs distill what they need from
-`docs/research/`; the corresponding research file is deleted once its facts are
-captured in specs (per-phase consumption).
+This roadmap is the master plan for modernizing and developing the audio
+player. Each phase is implemented as an OpenSpec change
+(`openspec/changes/`), authored one at a time, in this order. Decisions are
+recorded as ADRs (`docs/adr/`); domain language lives in `CONTEXT.md`.
 
 Decisions recorded on 2026-09-07 during the planning session:
 
@@ -15,65 +14,63 @@ Decisions recorded on 2026-09-07 during the planning session:
 - Demo content: no binary audio files in the repo; e2e uses a generated
   sine-wave WAV fixture.
 
-## Phases (OpenSpec changes, in order)
+Decision recorded on 2026-09-09 (ADR-0001): the UI redesign adopts
+**Preact + @preact/signals + react-aria** for the view layer; the playback
+core stays vanilla TypeScript modules.
 
-1. **migrate-toolchain** - Vite 8, TypeScript strict (all modules converted),
-   plain modern CSS (native nesting, no SCSS/Tailwind), oxlint + oxfmt,
-   `tsc --noEmit`, Playwright smoke test, audio fixes (autoplay `resume()`,
-   `createMediaElementSource` leak, logging cleanup, `EventEmmiter` rename),
-   clean cutover: the gulp/browserify/babel/eslint-3 stack is deleted.
-   Sources: `docs/research/refresh-and-development-directions.md` (sections 1-2).
+## Completed phases (OpenSpec changes, archived)
 
-2. **local-library** - drag-and-drop + File System Access API (Chromium, with
-   `<input>`/DnD fallback), tags via `music-metadata` (`parseBlob`), IndexedDB
-   persistence for playlists/covers, Fuse.js fuzzy search.
-   Sources: research round 1 section 3.2; `music-metadata`
-   https://github.com/Borewit/music-metadata, Fuse.js https://www.fusejs.io/.
+1. **migrate-toolchain** - Vite 8, TypeScript strict, plain modern CSS,
+   oxlint + oxfmt, `tsc --noEmit`, Playwright; gulp/browserify/babel stack
+   deleted.
+2. **local-library** - drag-and-drop + File System Access API, tags via
+   `music-metadata`, IndexedDB persistence, Fuse.js fuzzy search.
+3. **media-session** - OS/lock-screen transport controls and metadata.
+4. **pwa** - `vite-plugin-pwa` offline shell, `navigator.storage.persist()`.
+5. **radio-mode** - radio-browser catalog, HLS via hls.js.
+6. **synced-lyrics** - LRCLIB fetch + karaoke highlighting, IndexedDB cache.
+7. **track-waveform + visualizer-v2** - offline-rendered waveform peaks,
+   waveform seek strip, bars visualizer.
+8. **playlists** - user playlists from library tracks, reorder, queue.
+9. **scrobbling** - ListenBrainz submits, retry queue, throttled
+   playing-now.
+10. **recommendations** - ListenBrainz top releases matched to the library,
+    save-as-playlist.
+11. **butterchurn** - MilkDrop WebGL2 visualizer mode, lazy chunk.
+12. **app-modes** - centralized mode state machine, typed playback event
+    contract, derived UI, single-audible-source takeover.
 
-3. **media-session** - Media Session API: OS/lock-screen/headset transport
-   controls, `MediaMetadata` (title/artist/album/artwork), `setActionHandler`,
-   `playbackState`. Chrome 73+/Firefox 82+/Safari 15+ per MDN BCD.
-   Sources: https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API,
-   https://web.dev/articles/media-session.
+## Current phase: UI redesign (HI-FI SYSTEM direction)
 
-4. **pwa** - `vite-plugin-pwa` (Workbox service worker, manifest injection),
-   offline app shell, `navigator.storage.persist()` for the IndexedDB library.
-   Sources: https://vite-pwa-org.netlify.app/, https://web.dev/learn/pwa/offline-data.
+Stack per ADR-0001 (Preact + signals + react-aria; vanilla core). Waves,
+one OpenSpec change each:
 
-5. **radio-mode** - community radio catalog via radio-browser API
-   (DNS-lookup server discovery, talking User-Agent, `/json/url` click
-   ranking), HLS playback via hls.js feeding the existing media element.
-   Sources: https://api.radio-browser.info/, https://github.com/video-dev/hls.js.
+1. **redesign-phase-1** - foundation + library + transport on Preact:
+   sidebar layout, track rows, filter, shared row/list primitives,
+   accessible slider/tabs, transport bar with waveform seek; behavioral e2e
+   preserved via `window.*` handles, layout selectors rewritten.
+2. **redesign-phase-2** - visualization area modes: lyrics panel, bars,
+   vinyl turntable (new), Butterchurn; now-playing treatment.
+3. **redesign-phase-3** - radio, playlists, recommendations, EQ popup,
+   scrobbling popup; volume knob (custom a11y rotary).
 
-6. **synced-lyrics** - LRCLIB: `GET /api/get` best-match by title+artist
-   (duration within +/-2s is crucial), `syncedLyrics` LRC timestamps drive
-   karaoke highlighting by `audio.currentTime`; cache in IndexedDB; identify
-   via `Lrclib-Client` header (browsers cannot set User-Agent); honor 429 +
-   `Retry-After`. Sources: https://lrclib.net/docs.
-
-7. **visualizer-v2** - wavesurfer.js (waveform, regions, BSD-3) + track peaks
-   pre-rendered offline via `decodeAudioData`/`OfflineAudioContext` and cached,
-   beat detection for rhythm-synced effects (web-audio-beat-detector or
-   realtime-bpm-analyzer); optional spectrum engine (Butterchurn WebGL2 /
-   audioMotion-analyzer, note AGPL on the latter).
-   Sources: https://wavesurfer.xyz/, https://developer.mozilla.org/en-US/docs/Web/API/OfflineAudioContext,
-   https://github.com/jberg/butterchurn, https://github.com/hvianna/audioMotion-analyzer.
+The 2026-09-09 mockup is the direction reference, not a pixel contract.
 
 ## Backlog (deferred, revisit when stated)
 
-- **ListenBrainz scrobbling + ML recommendations** - after `pwa`, once there is
-  a real listening history. API: https://listenbrainz.readthedocs.io/
-- **Subsonic/Navidrome client** - if a self-hosted server appears.
-  API: http://www.subsonic.org/pages/api.jsp, https://www.navidrome.org/docs/developers/subsonic-api/
-- **Desktop packaging (Tauri)** - when the web version is stable; verify Web
-  Audio in WKWebView/WebKitGTK first. https://v2.tauri.app/start/
 - **Local AI transcription (transformers.js, Whisper)** - unique feature,
   heavy on resources. https://huggingface.co/docs/transformers.js/index
+- **Subsonic/Navidrome client** - if a self-hosted server appears.
+  API: http://www.subsonic.org/pages/api.jsp,
+  https://www.navidrome.org/docs/developers/subsonic-api/
+- **Desktop packaging (Tauri)** - when the web version is stable; verify
+  Web Audio and Preact islands in WKWebView/WebKitGTK first.
+  https://v2.tauri.app/start/
 
 ## Tooling notes (settled 2026-09-07)
 
 - Linter: `oxlint` (stable 1.x, 870 rules) - https://oxc.rs/docs/guide/usage/linter.html
-- Formatter: `oxfmt` (beta 0.x, Prettier-conformant; swap to Prettier is cheap
-  if 0.x churn hurts) - https://oxc.rs/blog/2026-02-24-oxfmt-beta
+- Formatter: `oxfmt` (beta 0.x, Prettier-conformant; swap to Prettier is
+  cheap if 0.x churn hurts) - https://oxc.rs/blog/2026-02-24-oxfmt-beta
 - Type checking: `tsc --noEmit` (NOT the experimental `oxlint --type-check`)
 - Node >= 20.19 (matches oxlint engines and Vite 8 requirements)
