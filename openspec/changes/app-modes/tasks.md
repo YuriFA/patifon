@@ -22,5 +22,5 @@
 
 ## 5. Verification
 
-- [ ] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
-- [ ] 5.2 Manual pass in a real browser: library -> radio -> playlists -> library round trip with playback engaged, station card in library view, lyrics/waveform clearing on takeover, transport icon correct at every step. Verify: checklist noted in the change summary.
+- [x] 5.1 Full matrix `npm run lint && npm run typecheck && npm run format:check && npm run build && npm run test:e2e`. Verify: exit 0.
+- [x] 5.2 Manual pass in a real browser: library -> radio -> playlists -> library round trip with playback engaged, station card in library view, lyrics/waveform clearing on takeover, transport icon correct at every step. Verify: checklist noted in the change summary.
