@@ -1,6 +1,7 @@
 # scrobbling Specification
 
 ## Purpose
+
 Submit library playback to ListenBrainz: a validated user token,
 playing-now listens, completed listens, and offline-safe retries.
 
