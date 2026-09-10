@@ -40,16 +40,16 @@ store both the plain text and the synced form when available.
 
 ### Requirement: Synchronized lyrics display
 
-While a library track plays and synced lyrics are available, the system SHALL
-show the lyrics with the line matching the current playback position
-highlighted, following the position as it changes. Activating a line SHALL
-seek playback to that line's timestamp. Plain text lyrics SHALL be shown
-without highlight or seeking when no synced form exists.
+While a library track plays, the LYRICS tab is selected, and synced lyrics
+are available, the system SHALL show the lyrics with the line matching the
+current playback position highlighted, following the position as it
+changes. Activating a line SHALL seek playback to that line's timestamp.
+Plain text lyrics SHALL be shown without highlight or seeking when no
+synced form exists.
 
 #### Scenario: Highlight follows playback
 
-- **WHEN** synced lyrics are shown and the playback position passes a
-  timestamp
+- **WHEN** synced lyrics are shown and the playback position passes a timestamp
 - **THEN** the corresponding line becomes the highlighted one
 
 #### Scenario: Clicking a line seeks
@@ -80,28 +80,30 @@ lyrics, never as an error surface.
 - **WHEN** playback stops or a radio station takes over
 - **THEN** the lyrics panel is removed from the visualization area
 
-### Requirement: Karaoke display toggle
+### Requirement: Lyrics view mode
 
-The lyrics panel display SHALL be gated by a user toggle in the
-visualization area's control badges. With the toggle off, the panel SHALL
-NOT be shown for any track, and the active visualizer mode SHALL keep
-rendering the area. With the toggle on, the panel behaves as specified by
-the lyrics capability, including resolving lyrics for the track that is
-already playing when the toggle is switched on. The choice SHALL persist
-across reloads and SHALL default to on.
+The lyrics panel display SHALL be gated by the area's LYRICS tab instead
+of a badge toggle. While a different tab is selected, the panel SHALL NOT
+be shown for any track, and the selected mode SHALL keep rendering the
+area. Selecting the LYRICS tab SHALL resolve and show lyrics for the
+track that is already playing, exactly as the removed toggle's on-state
+did. When no lyrics resolve for the playing track while the LYRICS tab
+is selected, the area SHALL show a muted empty state instead of a blank
+area.
 
-#### Scenario: Karaoke off keeps the visualizer running
+#### Scenario: Another tab keeps its mode rendering
 
-- **WHEN** the toggle is switched off while a track with lyrics plays
-- **THEN** the lyrics panel is hidden and the visualization keeps rendering
+- **WHEN** the user selects the VISUALIZER or VINYL tab while a track with
+  lyrics plays
+- **THEN** the lyrics panel is hidden and the selected mode keeps rendering
 
-#### Scenario: Enabling mid-track shows the current lyrics
+#### Scenario: Selecting mid-track shows the current lyrics
 
-- **WHEN** the toggle is switched on while a track with lyrics plays
+- **WHEN** the user selects the LYRICS tab while a track with lyrics plays
 - **THEN** the lyrics panel appears for the playing track
 
-#### Scenario: Toggle state persists across reloads
+#### Scenario: Empty state without lyrics
 
-- **WHEN** karaoke is switched off and the page reloads with a lyrics-capable
-  track playing
-- **THEN** the panel stays hidden until the toggle is switched on
+- **WHEN** the LYRICS tab is selected and no lyrics exist for the track
+- **THEN** the area shows a muted no-lyrics empty state and playback is
+  unaffected

@@ -55,8 +55,11 @@ a11y, Zag.js for hard patterns. Waves, one OpenSpec change each:
    accessible transport/seek/volume controls with keyboard scenarios;
    behavioral e2e preserved via `window.*` handles, layout selectors
    rewritten; `idbPut` durability fix (transaction completion).
-2. **redesign-phase-2** - visualization area modes: lyrics panel, bars,
-   vinyl turntable (new), Butterchurn; now-playing treatment.
+2. **redesign-phase-2** (implemented 2026-09-10, commit `2ade0e2`) -
+   visualization area modes: LYRICS/VINYL/VISUALIZER tabs, Warm Earth theme
+   tokens + dark transport, vinyl turntable with functional pitch fader and
+   progress-tracking tonearm, now-playing panel; karaoke badge replaced by
+   the lyrics tab.
 3. **redesign-phase-3** - radio, playlists, recommendations, EQ popup,
    scrobbling popup; volume knob (custom a11y rotary).
 
