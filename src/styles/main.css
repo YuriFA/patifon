@@ -950,8 +950,8 @@ body.drop-hover::after {
 }
 
 /* Tonearm: metal post, pivot bearing, straight arm and cartridge head.
-   The whole assembly swings around the pivot; engaged = head on the
-   record, at rest = swung out. */
+   The assembly swings around the pivot; the angle is bound inline from the
+   player's position (outer groove -> label), like a real turntable. */
 .vinyl-deck__tonearm {
   position: absolute;
   top: 7%;
@@ -959,13 +959,8 @@ body.drop-hover::after {
   width: 36%;
   height: 64%;
   transform-origin: 86% 11%;
-  transform: rotate(-18deg);
-  transition: transform 0.7s cubic-bezier(0.32, 0.9, 0.35, 1);
+  transition: transform 0.25s ease-out;
   pointer-events: none;
-}
-
-.vinyl-deck_playing .vinyl-deck__tonearm {
-  transform: rotate(12deg);
 }
 
 /* Gray cylinder behind the pivot (the counterweight post). */

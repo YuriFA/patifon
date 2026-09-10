@@ -1,5 +1,6 @@
 import { effect } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import type { RefObject } from "preact";
 import type AudioPlayer from "../audio-player";
 import { bridge } from "./bridge";
 import { areaMode } from "../visualizer/area-mode";
@@ -15,6 +16,36 @@ function rateToPitch(rate: number): number {
 
 function formatPitch(pitch: number): string {
   return pitch > 0 ? `+${pitch}` : String(pitch);
+}
+
+const ARM_OUTER = 13;
+const ARM_INNER = 23;
+
+/**
+ * Tonearm swing (deg), like a real turntable: the stylus starts on the
+ * outer groove and drifts toward the label as the track progresses. Driven
+ * by the player's real position, so seeks and track changes move it too.
+ */
+function armAngle(player: AudioPlayer): number {
+  const { duration } = player;
+  const progress = duration > 0 ? Math.min(1, Math.max(0, player.position / duration)) : 0;
+  return ARM_OUTER + (ARM_INNER - ARM_OUTER) * progress;
+}
+
+/**
+ * Binds the tonearm's inline swing angle to the player's real position.
+ */
+function useTonearm(player: AudioPlayer, armRef: RefObject<HTMLDivElement | null>): void {
+  useEffect(() => {
+    const arm = armRef.current;
+    if (!arm) return;
+    const syncArm = () => {
+      arm.style.transform = `rotate(${armAngle(player)}deg)`;
+    };
+    syncArm();
+    player.on("track:timeupdate", syncArm);
+    return () => player.off("track:timeupdate", syncArm);
+  }, [player, armRef]);
 }
 
 /**
@@ -86,6 +117,8 @@ function PitchFader({ player }: { player: AudioPlayer }) {
  */
 export function VinylDeck({ player }: { player: AudioPlayer }) {
   const deckRef = useRef<HTMLDivElement>(null);
+  const armRef = useRef<HTMLDivElement>(null);
+  useTonearm(player, armRef);
 
   useEffect(() => {
     const sync = () => {
@@ -116,7 +149,7 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
             </div>
           </div>
         </div>
-        <div class="vinyl-deck__tonearm">
+        <div ref={armRef} class="vinyl-deck__tonearm">
           <div class="vinyl-deck__arm-post" />
           <div class="vinyl-deck__arm-pivot" />
           <div class="vinyl-deck__arm" />
