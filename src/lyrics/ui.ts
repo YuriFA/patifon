@@ -1,26 +1,15 @@
+import { effect } from "@preact/signals";
 import type AudioPlayer from "../audio-player";
 import { onSourceChange } from "../modes";
 import type { LibraryRecord } from "../library/store";
 import { fetchLyrics, type LyricsResult } from "./api";
 import { activeLineIndex, parseLrc, type LrcLine } from "./lrc";
 import { lyricsKey, loadCachedLyrics, saveLyrics } from "./store";
-
-const KARAOKE_ENABLED_KEY = "karaoke-enabled";
-
-/** Karaoke display preference; absent value means on (the classic behavior). */
-function karaokeEnabled(): boolean {
-  return localStorage.getItem(KARAOKE_ENABLED_KEY) !== "0";
-}
-
-function setKaraokeEnabled(enabled: boolean): void {
-  localStorage.setItem(KARAOKE_ENABLED_KEY, enabled ? "1" : "0");
-}
+import { areaMode } from "../visualizer/area-mode";
 
 export interface LyricsUiDeps {
   /** Record behind the player's current index; null when none. */
   currentRecord: () => LibraryRecord | null;
-  /** Karaoke badge in the visualization area's controls row. */
-  lyricsToggle: HTMLButtonElement;
 }
 
 let player: AudioPlayer;
@@ -31,20 +20,21 @@ let lines: LrcLine[] = [];
 let currentKey: string | null = null;
 let activeIndex = -1;
 let lastTime = 0;
+let emptyState: HTMLDivElement;
 let controller: AbortController | null = null;
 
 export function isLyricsVisible(): boolean {
   return !panel.hidden;
 }
 
-/** Radio takeover / stop: the area returns to the waveform. */
+/** Radio takeover / leaving the LYRICS tab: the panel is removed. */
 export function clearLyrics(): void {
   controller?.abort();
   controller = null;
-  currentKey = null;
   lines = [];
   activeIndex = -1;
   textBox.replaceChildren();
+  emptyState.hidden = true;
   panel.hidden = true;
 }
 
@@ -96,7 +86,8 @@ function render(lyrics: LyricsResult): void {
 
 async function show(record: LibraryRecord): Promise<void> {
   if (!record.artist || !record.title) {
-    // filename-only imports carry nothing searchable
+    // filename-only imports carry nothing searchable: muted empty state
+    showEmpty();
     return;
   }
   const key = lyricsKey(record.artist, record.title);
@@ -105,6 +96,8 @@ async function show(record: LibraryRecord): Promise<void> {
     return;
   }
   currentKey = key;
+  panel.hidden = false;
+  emptyState.hidden = true;
   const cached = await loadCachedLyrics(key);
   if (currentKey !== key) {
     // another track started while reading the cache
@@ -121,18 +114,28 @@ async function show(record: LibraryRecord): Promise<void> {
     return;
   }
   if (!fetched) {
-    // no lyrics is a silent normal outcome
-    clearLyrics();
+    // no lyrics is a normal outcome: the LYRICS tab shows a muted empty state
+    showEmpty();
     return;
   }
   void saveLyrics(key, fetched);
   render(fetched);
 }
 
+function showEmpty(): void {
+  textBox.replaceChildren();
+  lines = [];
+  activeIndex = -1;
+  panel.hidden = false;
+  emptyState.hidden = false;
+}
+
 /**
  * Wires the lyrics panel: fetch/cache on library playback, highlight the
- * singing line, seek on line click. Radio never reaches here - it plays on
- * its own audio element - and its takeover calls clearLyrics explicitly.
+ * singing line, seek on line click. The LYRICS tab gates the panel - the
+ * area shows it exactly while that tab is selected. Radio never reaches
+ * here - it plays on its own audio element - and its takeover calls
+ * clearLyrics explicitly.
  */
 export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
   player = audioPlayer;
@@ -144,29 +147,26 @@ export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
   });
   panel = document.querySelector<HTMLDivElement>(".lyrics")!;
   textBox = panel.querySelector<HTMLDivElement>(".lyrics__text")!;
+  emptyState = panel.querySelector<HTMLDivElement>(".lyrics__empty")!;
 
-  const syncToggle = () => {
-    deps.lyricsToggle.classList.toggle("visualizer-controls__lyrics_active", karaokeEnabled());
-  };
-  deps.lyricsToggle.addEventListener("click", () => {
-    setKaraokeEnabled(!karaokeEnabled());
-    syncToggle();
-    if (karaokeEnabled()) {
-      // enabling mid-track: resolve lyrics for what is playing right now
-      const record = deps.currentRecord();
-      if (record) {
-        void show(record);
-      }
+  const syncTab = () => {
+    if (areaMode.value !== "lyrics") {
+      // another tab owns the area: the panel never shows
+      clearLyrics();
+      return;
+    }
+    // entering the LYRICS tab (including mid-track): resolve what is playing
+    const record = deps.currentRecord();
+    if (record) {
+      void show(record);
     } else {
       clearLyrics();
     }
-  });
-  syncToggle();
+  };
+  effect(syncTab);
 
   player.on("track:play", () => {
-    if (!karaokeEnabled()) {
-      // karaoke off: the panel never takes the area, the visualizer keeps it
-      clearLyrics();
+    if (areaMode.value !== "lyrics") {
       return;
     }
     const record = deps.currentRecord();

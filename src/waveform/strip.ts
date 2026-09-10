@@ -15,9 +15,14 @@ export interface WaveformStripDeps {
   currentRecord(): LibraryRecord | null;
 }
 
-const DIM_COLOR = "#6b7280";
-const PLAYED_COLOR = "#e33d3d";
-const BUFFER_COLOR = "rgba(255, 255, 255, 0.18)";
+/** Canvas fills cannot read CSS vars: resolve the theme tokens once. */
+function themeColor(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+let DIM_COLOR = "#6b7280";
+let PLAYED_COLOR = "#e33d3d";
+const BUFFER_COLOR = "rgba(33, 32, 27, 0.12)";
 
 /**
  * The interactive waveform strip: a canvas overlay on the existing seek bar.
@@ -34,6 +39,8 @@ let frameScheduled = false;
 
 export function initWaveformStrip(deps_: WaveformStripDeps): void {
   deps = deps_;
+  PLAYED_COLOR = themeColor("--accent", PLAYED_COLOR);
+  DIM_COLOR = themeColor("--text-faint", DIM_COLOR);
   canvas = document.createElement("canvas");
   canvas.className = "progress__wave";
   deps.progress.append(canvas);

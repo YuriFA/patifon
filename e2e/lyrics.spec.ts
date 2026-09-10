@@ -48,6 +48,11 @@ async function playFirstRow(page: Page): Promise<void> {
   await page.locator(".library__row").first().click();
 }
 
+/** Selects the LYRICS tab: the panel shows only while this tab is active. */
+async function openLyricsTab(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Lyrics" }).click();
+}
+
 function currentTime(page: Page): Promise<number> {
   return page.evaluate(
     () => (window.player as unknown as { audio: HTMLAudioElement }).audio.currentTime,
@@ -70,9 +75,10 @@ test("highlight follows playback and clicking a line seeks", async ({ page }) =>
     album: "Album One",
   });
   await playFirstRow(page);
+  await openLyricsTab(page);
 
   await expect(page.locator(".lyrics")).toBeVisible();
-  expect(counters.requests).toEqual(["Song One"]);
+  await expect.poll(() => counters.requests).toEqual(["Song One"]);
 
   await expect(page.locator(".lyrics__line").first()).toHaveText("First line");
   // after the 1s timestamp passes, the first line becomes active
@@ -94,15 +100,16 @@ test("repeat plays use the IndexedDB cache without new requests", async ({ page 
   await waitForAppReady(page);
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
   await playFirstRow(page);
+  await openLyricsTab(page);
   await expect(page.locator(".lyrics")).toBeVisible();
-  expect(counters.requests).toHaveLength(1);
+  await expect.poll(() => counters.requests).toHaveLength(1);
 
   // a reload replays from the persisted library: still exactly one request
   await page.reload();
   await waitForAppReady(page);
   await playFirstRow(page);
   await expect(page.locator(".lyrics")).toBeVisible();
-  expect(counters.requests).toHaveLength(1);
+  await expect.poll(() => counters.requests).toHaveLength(1);
 });
 
 test("missing lyrics keep the panel hidden and playback unaffected", async ({ page }) => {
@@ -114,11 +121,13 @@ test("missing lyrics keep the panel hidden and playback unaffected", async ({ pa
     artist: "Unknown Artist",
   });
   await playFirstRow(page);
+  await openLyricsTab(page);
 
-  await expect(page.locator(".lyrics")).toBeHidden();
-  // 404 is a normal answer, playback keeps going
+  // the 404 is a normal answer, surfaced as a muted empty state
+  await expect(page.locator(".lyrics__empty")).toBeVisible();
+  await expect.poll(() => counters.requests).toEqual(["Unknown Song"]);
+  // playback keeps going
   await expect.poll(() => currentTime(page), { timeout: 5_000 }).toBeGreaterThan(0.5);
-  expect(counters.requests).toEqual(["Unknown Song"]);
 });
 
 test("a network failure behaves like no lyrics", async ({ page }) => {
@@ -143,11 +152,12 @@ test("a network failure behaves like no lyrics", async ({ page }) => {
     artist: "Offline Artist",
   });
   await playFirstRow(page);
+  await openLyricsTab(page);
 
-  // A dead network is the same as "no lyrics": the panel stays hidden,
+  // A dead network is the same as "no lyrics": the muted empty state shows,
   // playback continues, and the rejection must not escape as an
   // unhandled page error.
-  await expect(page.locator(".lyrics")).toBeHidden();
+  await expect(page.locator(".lyrics__empty")).toBeVisible();
   await expect.poll(() => requests).toEqual(["Offline Song"]);
   await expect.poll(() => currentTime(page), { timeout: 5_000 }).toBeGreaterThan(0.5);
   // let a possible rejection settle
@@ -180,6 +190,7 @@ test("plain lyrics render without highlight or seek", async ({ page }) => {
   await waitForAppReady(page);
   await dropTaggedWav(page, "plain-song.wav", { title: "Plain Song", artist: "Plain Artist" });
   await playFirstRow(page);
+  await openLyricsTab(page);
 
   const plain = page.locator(".lyrics__line_plain");
   await expect(plain).toBeVisible();
@@ -199,6 +210,7 @@ test("a radio takeover clears the panel", async ({ page }) => {
   await waitForAppReady(page);
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
   await playFirstRow(page);
+  await openLyricsTab(page);
   await expect(page.locator(".lyrics")).toBeVisible();
 
   await searchAndPlayFirst(page);
@@ -206,40 +218,46 @@ test("a radio takeover clears the panel", async ({ page }) => {
   await expect(page.locator(".lyrics")).toBeHidden();
 });
 
-test("the karaoke toggle hides the panel and the visualizer keeps rendering", async ({ page }) => {
+test("tab switching gates the panel and the visualizer resumes", async ({ page }) => {
   await mockLrclib(page, { "Song One": SYNCED_TRACK });
   await page.goto("/");
   await waitForAppReady(page);
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
   await playFirstRow(page);
-  await expect(page.locator(".lyrics")).toBeVisible();
-  // on: the panel takes the area, the classic renderer stays paused
-  await expect(page.locator(".visualizer-controls__lyrics")).toHaveClass(/lyrics_active/u);
-
-  await page.click(".visualizer-controls__lyrics");
-
+  // default tab: no panel, the classic renderer owns the area
   await expect(page.locator(".lyrics")).toBeHidden();
-  await expect(page.locator(".visualizer-controls__lyrics")).not.toHaveClass(/lyrics_active/u);
-  // the freed area renders again
+  await expect.poll(() => barsAlphaSum(page)).toBeGreaterThan(0);
+
+  await openLyricsTab(page);
+  await expect(page.locator(".lyrics")).toBeVisible();
+  await expect.poll(() => barsAlphaSum(page)).toBe(0);
+
+  // back to VISUALIZER: the panel hides, the freed area renders again
+  await page.getByRole("button", { name: "Visualizer" }).click();
+  await expect(page.locator(".lyrics")).toBeHidden();
   await expect.poll(() => barsAlphaSum(page)).toBeGreaterThan(0);
 });
 
-test("the karaoke choice persists and applies mid-track on enable", async ({ page }) => {
+test("the LYRICS tab persists and resolves lyrics mid-track on entry", async ({ page }) => {
   await mockLrclib(page, { "Song One": SYNCED_TRACK });
   await page.goto("/");
   await waitForAppReady(page);
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
-  // off before playing: the panel never takes the area
-  await page.click(".visualizer-controls__lyrics");
+  // VISUALIZER default: the panel never takes the area
   await playFirstRow(page);
   await expect(page.locator(".lyrics")).toBeHidden();
 
+  // selecting the tab mid-track resolves lyrics for the playing track
+  await openLyricsTab(page);
+  await expect(page.locator(".lyrics")).toBeVisible();
+
+  // the tab choice survives a reload and re-resolves on the next play
   await page.reload();
   await waitForAppReady(page);
+  await expect(page.getByRole("button", { name: "Lyrics" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await playFirstRow(page);
-  await expect(page.locator(".lyrics")).toBeHidden();
-
-  // enabling mid-track resolves lyrics for the playing track
-  await page.click(".visualizer-controls__lyrics");
   await expect(page.locator(".lyrics")).toBeVisible();
 });

@@ -30,6 +30,11 @@ export const bridge = {
   volume: signal(0),
   muted: signal(false),
   mode: signal<Mode>("library"),
+  /** Library playback rate (0.5..2); radio never scales its stream. */
+  playbackRate: signal(1),
+  /** Active library track metadata for the transport panel; null clears it. */
+  trackTitle: signal<string | null>(null),
+  trackArtist: signal<string | null>(null),
 };
 
 /** Finite duration for the UI: live streams and unknown lengths report 0. */
@@ -80,6 +85,13 @@ export function initBridge(player: AudioPlayer): void {
   });
   bridge.volume.value = player.volume;
   bridge.muted.value = player.muted;
+
+  // The element fires ratechange for setter changes; load() resets are
+  // covered by defaultPlaybackRate, so this only mirrors real rate states.
+  player.on("track:ratechange", () => {
+    bridge.playbackRate.value = player.playbackRate;
+  });
+  bridge.playbackRate.value = player.playbackRate;
 
   onModeChange(({ mode }) => {
     bridge.mode.value = mode;

@@ -1,4 +1,6 @@
+import { effect } from "@preact/signals";
 import type { VisualizerMode } from "./controller";
+import { areaMode } from "./area-mode";
 
 export interface VisualizerControlsDeps {
   /** Overlay container inside the visualization area (`.visualizer-controls`). */
@@ -13,11 +15,9 @@ export interface VisualizerControls {
 }
 
 /**
- * Overlay badges in the visualization area's corner, styled after the radio
- * LIVE badge family: the Bars/MilkDrop toggle (hidden without WebGL2) and the
- * preset skip (MilkDrop only). The toggle names the mode a click switches to.
- * The row also hosts the karaoke badge, which the lyrics module owns and
- * wires; it stays available without WebGL2.
+ * The visualization area's corner badges: the bars/MilkDrop toggle (names
+ * the mode a click switches to) and the MilkDrop preset-skip. Both belong
+ * to the VISUALIZER tab only - phase 2 moved lyrics/vinyl to the area tabs.
  */
 export function createVisualizerControls(deps: VisualizerControlsDeps): VisualizerControls {
   const modeButton = deps.root.querySelector<HTMLButtonElement>(".visualizer-controls__mode")!;
@@ -30,11 +30,13 @@ export function createVisualizerControls(deps: VisualizerControlsDeps): Visualiz
   let mode: VisualizerMode = "bars";
 
   const sync = () => {
-    // the row stays visible without WebGL2: it also hosts the karaoke toggle
-    modeButton.hidden = !supported;
+    const visualizerTab = areaMode.value === "visualizer";
+    modeButton.hidden = !supported || !visualizerTab;
     modeButton.textContent = mode === "bars" ? "MilkDrop" : "Bars";
-    skipButton.hidden = !supported || mode !== "milkdrop";
+    skipButton.hidden = !supported || mode !== "milkdrop" || !visualizerTab;
   };
+
+  effect(sync);
 
   return {
     setSupported(value) {

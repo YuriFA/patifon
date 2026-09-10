@@ -3,21 +3,27 @@
 }
 
 :root {
-  /* HI-FI SYSTEM tokens (ADR-0001; the 2026-09-09 mockup is the direction).
-     Light warm surfaces, mono type, one red accent. */
-  --surface: #f4f1ea;
-  --surface-raised: #fbf9f4;
-  --surface-sunken: #ece8dd;
-  --surface-hover: #e7e2d4;
-  --text: #1c1b17;
+  /* Warm Earth tokens (redesign-phase-2; the Warm Earth canvas draft is the
+     direction, docs/design/superdesign-canvas-phase2.md). Warm beige
+     surfaces, mono type, one teal accent, dark transport strip. */
+  --surface: #ece7db;
+  --surface-raised: #faf8f2;
+  --surface-sunken: #e2dccb;
+  --surface-hover: #ddd6c5;
+  --text: #21201b;
   --text-dim: #6f6a5e;
   --text-faint: #948d7d;
-  --accent: #e33d3d;
-  --line: #d9d3c5;
+  --accent: #178f80;
+  --line: #d5cdba;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
+  /* The transport strip is the one dark region of the shell (draft). */
+  --transport-bg: #262420;
+  --transport-line: #3a372f;
+  --transport-text: #e8e3d5;
+
   /* Legacy names from the dark theme: unmigrated regions read these, so they
-     follow the light tokens until phases 2-3 rewrite them. */
+     follow the light tokens until phase 3 rewrites them. */
   --red: var(--accent);
   --grey: var(--text-faint);
   --medium-grey: var(--text-dim);
@@ -63,10 +69,14 @@ body {
   grid-area: transport;
   height: 64px;
   user-select: none;
-  display: flex;
-  align-items: center;
-  background: var(--surface-raised);
-  border-top: 1px solid var(--line);
+  /* the one dark region: rescope the generic tokens so every control inside
+     picks up light-on-dark without per-component overrides (draft) */
+  background-color: var(--transport-bg);
+  --surface-raised: #2e2b25;
+  --surface-hover: #38342c;
+  --text: var(--transport-text);
+  --text-dim: #a39d8d;
+  --line: var(--transport-line);
 }
 
 .progress {
@@ -743,7 +753,7 @@ body.drop-hover::after {
 .visualizer-controls {
   position: absolute;
   /* the visualization area's free corner: below the library header, above
-     the progress strip - both top corners are owned by the header buttons */
+     the progress strip - the top-right corner is owned by the mode tabs */
   bottom: 16px;
   right: 12px;
   z-index: 2;
@@ -751,33 +761,292 @@ body.drop-hover::after {
   gap: 4px;
 }
 
-.visualizer-controls__mode,
-.visualizer-controls__skip,
-.visualizer-controls__lyrics {
+.visualizer-controls__skip {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--red);
-  border: 1px solid var(--red);
+  color: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: 3px;
   padding: 0 4px;
-  /* scenes render behind the row: a dim backing keeps the badges legible */
-  background: rgba(251, 249, 244, 0.72);
+  /* scenes render behind the row: a dim backing keeps the badge legible */
+  background: rgba(250, 248, 242, 0.72);
   cursor: pointer;
 
   &:hover {
-    background-color: var(--dark-grey-hover);
+    background-color: var(--surface-hover);
   }
 }
 
-/* karaoke on: filled badge reads as an enabled state toggle */
-.visualizer-controls__lyrics_active {
-  background-color: var(--red);
-  color: var(--bg-color);
+/* Mode tabs: top-right of the visualization area (draft). */
+.area-tabs {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+}
+
+.area-tabs__tab {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
 
   &:hover {
-    background-color: var(--red);
+    color: var(--text);
   }
+
+  &[aria-pressed="true"] {
+    color: var(--accent);
+  }
+}
+
+/* Vinyl deck: the VINYL mode's turntable (draft). DOM/CSS only - the
+   platter rotates via animation-play-state, the tonearm is a transform. */
+.vinyl-deck {
+  position: absolute;
+  inset: 24px 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-deck__plinth {
+  position: relative;
+  width: min(62vh, 82%);
+  aspect-ratio: 1.15;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(33, 32, 27, 0.14);
+}
+
+.vinyl-deck__screw {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  box-shadow: inset 0 1px 2px rgba(33, 32, 27, 0.35);
+
+  &_tl {
+    top: 10px;
+    left: 10px;
+  }
+  &_tr {
+    top: 10px;
+    right: 10px;
+  }
+  &_bl {
+    bottom: 10px;
+    left: 10px;
+  }
+  &_br {
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
+.vinyl-deck__platter-wrap {
+  position: absolute;
+  top: 50%;
+  left: 44%;
+  transform: translate(-50%, -50%);
+  width: 72%;
+  aspect-ratio: 1;
+}
+
+.vinyl-deck__platter {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 19%, #14130f 20% 96%, #23211c 97%);
+  box-shadow: inset 0 0 0 2px #0c0b09;
+  animation: vinyl-spin 1.8s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.vinyl-deck_playing .vinyl-deck__platter {
+  animation-play-state: running;
+}
+
+/* grooves: concentric rings over the black vinyl */
+.vinyl-deck__platter::before {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 3px,
+    rgba(250, 248, 242, 0.05) 3px 4px
+  );
+}
+
+.vinyl-deck__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-deck__label-text {
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface-raised);
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-deck__tonearm {
+  position: absolute;
+  top: 6%;
+  right: 8%;
+  width: 34%;
+  height: 60%;
+  transform-origin: 82% 12%;
+  transform: rotate(-24deg);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.vinyl-deck_playing .vinyl-deck__tonearm {
+  transform: rotate(8deg);
+}
+
+.vinyl-deck__arm-base {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+}
+
+.vinyl-deck__arm {
+  position: absolute;
+  top: 12%;
+  right: 10%;
+  width: 5%;
+  height: 86%;
+  background: linear-gradient(#c9c4b6, #a8a294);
+  border-radius: 3px;
+}
+
+.vinyl-deck__head {
+  position: absolute;
+  bottom: -2%;
+  right: 4%;
+  width: 12%;
+  height: 9%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.vinyl-deck__controls {
+  position: absolute;
+  left: 6%;
+  bottom: 8%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.vinyl-deck__start {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+/* Pitch fader: native vertical range styled as a deck fader. */
+.vinyl-deck__pitch {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 22px;
+  height: 110px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.vinyl-deck__pitch-value {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Now playing panel in the transport bar (draft). */
+.now-playing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.now-playing__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.now-playing__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+}
+
+.now-playing__track {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-playing__meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 22px;
+}
+
+.now-playing__meter canvas {
+  height: 22px;
+  width: 44px;
 }
 
 .station-now {
@@ -866,6 +1135,11 @@ body.drop-hover::after {
 
 .lyrics__line_plain {
   cursor: default;
+}
+
+.lyrics__empty {
+  color: var(--text-faint);
+  font-size: 13px;
 }
 
 .radio__star {

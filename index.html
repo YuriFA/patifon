@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Audio Player</title>
     <link rel="icon" type="image/svg+xml" href="/assets/images/icon.svg" />
-    <meta name="theme-color" content="#f4f1ea" />
+    <meta name="theme-color" content="#ece7db" />
   </head>
   <body>
     <div class="audio_player">
@@ -33,7 +33,10 @@
         </div>
         <div class="lyrics" hidden>
           <div class="lyrics__text"></div>
+          <div class="lyrics__empty" hidden>No lyrics for this track</div>
         </div>
+        <div id="vinyl-root"></div>
+        <div id="area-tabs-root"></div>
         <div class="visualizer-controls">
           <button
             class="visualizer-controls__mode"
@@ -45,13 +48,6 @@
           <button class="visualizer-controls__skip" type="button" title="Next preset" hidden>
             Next
           </button>
-          <button
-            class="visualizer-controls__lyrics"
-            type="button"
-            title="Toggle karaoke lyrics display"
-          >
-            Karaoke
-          </button>
         </div>
       </div>
       <div class="progress">
@@ -61,6 +57,7 @@
       <div class="bar">
         <div class="player-controls">
           <div id="transport-root"></div>
+          <div id="nowplaying-root"></div>
           <div id="volume-root"></div>
           <div class="player-controls__scrobbling-container">
             <div class="player-controls__btn player-controls__btn_scrobbling" title="Scrobbling">

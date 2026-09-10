@@ -15,18 +15,22 @@ import {
 } from "./library/ui";
 import { initRadio, isStationEngaged, stopPlayback } from "./radio/ui";
 import { initVisualizer } from "./visualizer/controller";
-import { initLyrics, isLyricsVisible } from "./lyrics/ui";
+import { initLyrics } from "./lyrics/ui";
+import { initBridge, bridge } from "./ui/bridge";
 import { initWaveformStrip } from "./waveform/strip";
 import { initPlaylists, refreshPlaylistsView } from "./playlists/ui";
 import { initScrobbling } from "./scrobbling/ui";
 import { initRecommendations } from "./recommendations/ui";
-import { registerSourceStop } from "./modes";
-import { initBridge, bridge } from "./ui/bridge";
+import { registerSourceStop, onSourceChange } from "./modes";
 import { SidebarHeader } from "./ui/sidebar-header";
 import { LibraryRows } from "./ui/library-view";
 import { TransportControls } from "./ui/transport-controls";
 import { SeekBar } from "./ui/seek-bar";
 import { VolumeControl } from "./ui/volume-control";
+import { AreaTabs } from "./ui/area-tabs";
+import { VinylDeck } from "./ui/vinyl-deck";
+import { NowPlaying } from "./ui/now-playing";
+import { areaMode } from "./visualizer/area-mode";
 
 declare global {
   interface Window {
@@ -59,7 +63,20 @@ window.player = player;
 player.volume = 0.1;
 
 // Core events -> signals; the islands read them and call player/radio APIs.
+
 initBridge(player);
+
+// Transport panel: library metadata only - radio keeps its station card and
+// the panel clears (spec). Pause keeps the last track visible; stop/radio
+// clear it through the source change.
+const syncNowPlaying = () => {
+  const record = bridge.source.value === "library" ? currentLibraryRecord() : null;
+  bridge.trackTitle.value = record?.title ?? null;
+  bridge.trackArtist.value = record?.artist ?? null;
+};
+player.on("track:play", syncNowPlaying);
+player.on("track:loadedmetadata", syncNowPlaying);
+onSourceChange(() => syncNowPlaying());
 
 // Islands mount before the feature inits: those still query the shared
 // elements the sidebar island renders (search, buttons) at boot.
@@ -74,6 +91,9 @@ render(
   document.querySelector<HTMLDivElement>("#transport-root")!,
 );
 render(<VolumeControl player={player} />, document.querySelector<HTMLDivElement>("#volume-root")!);
+render(<AreaTabs />, document.querySelector<HTMLDivElement>("#area-tabs-root")!);
+render(<VinylDeck player={player} />, document.querySelector<HTMLDivElement>("#vinyl-root")!);
+render(<NowPlaying player={player} />, document.querySelector<HTMLDivElement>("#nowplaying-root")!);
 
 // Equalizer settings
 equalizerBtn.addEventListener("click", (event) => {
@@ -166,12 +186,10 @@ initRecommendations({
   records: libraryRecords,
   onSaved: refreshPlaylistsView,
 });
-
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
 initLyrics(player, {
   currentRecord: currentLibraryRecord,
-  lyricsToggle: document.querySelector<HTMLButtonElement>(".visualizer-controls__lyrics")!,
 });
 initVisualizer({
   player,
@@ -192,8 +210,12 @@ initWaveformStrip({
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;
 
-/** Visualization draws only for the library source: radio and lyrics replace it. */
+/** Visualization draws only while the VISUALIZER tab owns the area (no radio). */
 function getModeBridgeSafe(): boolean {
   // imported lazily to keep the import list honest: modes are bridged as signals
-  return !isLyricsVisible() && bridge.mode.value !== "radio" && bridge.source.value !== "radio";
+  return (
+    areaMode.value === "visualizer" &&
+    bridge.mode.value !== "radio" &&
+    bridge.source.value !== "radio"
+  );
 }
