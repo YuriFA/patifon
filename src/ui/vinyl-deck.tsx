@@ -18,8 +18,8 @@ function formatPitch(pitch: number): string {
   return pitch > 0 ? `+${pitch}` : String(pitch);
 }
 
-const ARM_OUTER = 13;
-const ARM_INNER = 23;
+const ARM_OUTER = 18;
+const ARM_INNER = 30;
 
 /**
  * Tonearm swing (deg), like a real turntable: the stylus starts on the
