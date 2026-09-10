@@ -112,8 +112,8 @@ function PitchFader({ player }: { player: AudioPlayer }) {
 /**
  * The VINYL mode's turntable deck (draft): plinth, rotating platter, tonearm,
  * start/stop and a functional pitch fader. DOM/CSS only - no canvas, no
- * WebGL2 - and it owns the area exactly while the VINYL tab is active with a
- * library source engaged; radio and idle states clear it per spec.
+ * WebGL2 - and it owns the area whenever the VINYL tab is active, except
+ * while radio owns the transport.
  */
 export function VinylDeck({ player }: { player: AudioPlayer }) {
   const deckRef = useRef<HTMLDivElement>(null);
@@ -124,7 +124,9 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
     const sync = () => {
       const deck = deckRef.current;
       if (deck) {
-        deck.hidden = areaMode.value !== "vinyl" || bridge.source.value !== "library";
+        // Radio owns the area and clears the deck; an idle deck stays put
+        // (platter still, arm at rest) so the VINYL tab never looks empty.
+        deck.hidden = areaMode.value !== "vinyl" || bridge.source.value === "radio";
         deck.classList.toggle("vinyl-deck_playing", bridge.playing.value);
       }
     };
@@ -136,7 +138,6 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
     <div ref={deckRef} class="vinyl-deck">
       <div class="vinyl-deck__plinth" aria-label="Turntable">
         <span class="vinyl-deck__screw vinyl-deck__screw_tl" />
-        <span class="vinyl-deck__screw vinyl-deck__screw_tr" />
         <span class="vinyl-deck__screw vinyl-deck__screw_bl" />
         <span class="vinyl-deck__screw vinyl-deck__screw_br" />
         <div class="vinyl-deck__platter-wrap">

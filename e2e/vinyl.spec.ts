@@ -11,6 +11,17 @@ async function playOnVinyl(page: Page): Promise<void> {
   await areaTab(page, "Vinyl").click();
 }
 
+test("the deck waits at rest on the VINYL tab before anything plays", async ({ page }) => {
+  await page.goto("/");
+  await waitForAppReady(page);
+  await areaTab(page, "Vinyl").click();
+
+  // no source yet: the deck shows idle (platter still, arm at rest)
+  const deck = page.locator(".vinyl-deck");
+  await expect(deck).toBeVisible();
+  await expect(deck).not.toHaveClass(/vinyl-deck_playing/u);
+});
+
 test("the deck follows playback state: platter spins and tonearm drops", async ({ page }) => {
   await page.goto("/");
   await waitForAppReady(page);
