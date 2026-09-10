@@ -1,6 +1,7 @@
 # vinyl Specification
 
 ## Purpose
+
 The VINYL visualization mode: a turntable deck rendered for library
 playback, with a start/stop control and a functional pitch fader.
 
