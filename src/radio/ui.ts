@@ -1,6 +1,6 @@
+import { signal } from "@preact/signals";
 import { reportListen, type RadioStation } from "./api";
 import { cancelScheduledSearch, scheduleSearch } from "./search";
-import { renderStationRow } from "./rows";
 import { createStationSource } from "./session";
 import {
   hideNowPlaying,
@@ -32,7 +32,6 @@ declare global {
 }
 
 export interface RadioUiDeps {
-  list: HTMLUListElement;
   search: HTMLInputElement;
   emptyHint: HTMLDivElement;
   modeButton: HTMLButtonElement;
@@ -49,11 +48,66 @@ let nowPlaying: NowPlayingElements;
 let stations: RadioStation[] = [];
 let savedStations: RadioStation[] = [];
 
+export interface RadioRowItem {
+  station: RadioStation;
+  saved: boolean;
+}
+
+export interface RadioRowsView {
+  rows: RadioRowItem[];
+  playingUuid: string | null;
+  errorUuids: string[];
+  query: string;
+}
+
+/** The radio view island renders the station rows from this snapshot. */
+export const stationRowsView = signal<RadioRowsView>({
+  rows: [],
+  playingUuid: null,
+  errorUuids: [],
+  query: "",
+});
+
+const errorUuidSet = new Set<string>();
+
+/** Recomputes the row snapshot and notifies the island. Error marks survive
+ * only the cycle that reports them (as with the previous DOM patching). */
+function notifyRows(emptyText?: string, keepErrors = false): void {
+  if (!keepErrors) {
+    errorUuidSet.clear();
+  }
+  const query = deps.search.value.trim();
+  const listed = query ? stations : savedStations;
+  const rows: RadioRowItem[] = listed.map((station) => ({
+    station,
+    saved: isSaved(station.stationuuid),
+  }));
+  // the on-air station stays visible as a list item with its own star
+  const playing = playingStation;
+  if (playing && !listed.some((s) => s.stationuuid === playing.stationuuid)) {
+    rows.unshift({ station: playing, saved: isSaved(playing.stationuuid) });
+  }
+  let hint = emptyText;
+  if (rows.length === 0 && hint === undefined) {
+    hint = query ? "No stations found" : "No saved stations yet - search and press the star";
+  }
+  deps.emptyHint.hidden = rows.length > 0;
+  if (rows.length === 0 && hint !== undefined) {
+    deps.emptyHint.textContent = hint;
+  }
+  stationRowsView.value = {
+    rows,
+    playingUuid: playing?.stationuuid ?? null,
+    errorUuids: [...errorUuidSet],
+    query,
+  };
+}
+
 function isSaved(stationuuid: string): boolean {
   return savedStations.some((station) => station.stationuuid === stationuuid);
 }
 
-function toggleSaveStation(station: RadioStation): void {
+export function toggleSaveStation(station: RadioStation): void {
   if (isSaved(station.stationuuid)) {
     savedStations = savedStations.filter((s) => s.stationuuid !== station.stationuuid);
     void deleteStation(station.stationuuid);
@@ -61,7 +115,7 @@ function toggleSaveStation(station: RadioStation): void {
     savedStations = [...savedStations, station];
     void saveStation(station);
   }
-  renderStations();
+  notifyRows();
 }
 
 let playingStation: RadioStation | null = null;
@@ -79,23 +133,10 @@ function setPlayingStation(station: RadioStation | null): void {
 }
 
 function setRowError(uuid: string, failed: boolean): void {
-  deps.list.querySelectorAll("li").forEach((row) => {
-    if (row instanceof HTMLElement && row.dataset.uuid === uuid) {
-      row.classList.toggle("radio__row_error", failed);
-    }
-  });
-}
-
-function updatePlayingHighlight(): void {
-  const active = playingStation;
-  deps.list.querySelectorAll("li").forEach((row) => {
-    if (row instanceof HTMLElement) {
-      row.classList.toggle(
-        "library__row_playing",
-        active !== null && row.dataset.uuid === active.stationuuid,
-      );
-    }
-  });
+  if (failed) {
+    errorUuidSet.add(uuid);
+    notifyRows(undefined, true);
+  }
 }
 
 function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | null): void {
@@ -150,7 +191,7 @@ export async function playStation(station: RadioStation): Promise<void> {
   playback.setRadioVolume(deps.getVolume());
   playback.setRadioMuted(deps.isMuted());
   setPlayingStation(station);
-  updatePlayingHighlight();
+  notifyRows();
   await playback.playStation(station);
   reportListen(station.stationuuid);
 }
@@ -160,7 +201,7 @@ export function stopPlayback(): void {
   releaseSource("radio");
   hideNowPlaying(nowPlaying);
   if (getMode() === "radio") {
-    renderStations();
+    notifyRows();
   }
 }
 
@@ -180,40 +221,12 @@ export function toggleStationPlayback(): void {
 }
 
 function renderStations(): void {
-  const query = deps.search.value.trim();
-  const listed = query ? stations : savedStations;
-  const rows = listed.map((station) =>
-    renderStationRow(
-      station,
-      isSaved(station.stationuuid),
-      (s) => void playStation(s),
-      toggleSaveStation,
-    ),
-  );
-  // the on-air station stays visible as a list item with its own star
-  const playing = playingStation;
-  if (playing && !listed.some((s) => s.stationuuid === playing.stationuuid)) {
-    rows.unshift(
-      renderStationRow(
-        playing,
-        isSaved(playing.stationuuid),
-        (s) => void playStation(s),
-        toggleSaveStation,
-      ),
-    );
-  }
-  deps.emptyHint.hidden = rows.length > 0;
-  if (rows.length === 0) {
-    deps.emptyHint.textContent = query
-      ? "No stations found"
-      : "No saved stations yet - search and press the star";
-  }
-  deps.list.replaceChildren(...rows);
-  updatePlayingHighlight();
+  notifyRows();
 }
 
 function renderCatalogError(): void {
   // Keep the previous list visible; surface the failure as a hint line
+  deps.emptyHint.hidden = stationRowsView.value.rows.length > 0;
   deps.emptyHint.textContent = "Radio catalog unavailable - check your connection";
 }
 

@@ -119,19 +119,24 @@ test("seek through the progress bar keeps playback running", async ({ page }) =>
   expect(width).toBeGreaterThan(60);
 });
 
-test("volume slider reflects state and mute toggles", async ({ page }) => {
+test("volume knob reflects state and adjusts by drag", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".library__empty")).toBeVisible();
 
-  const volumeFill = page.locator(".volume__slider .slider-horiz__filled");
-  const initial = await volumeFill.evaluate((el) => Number(el.style.width.replace("%", "")));
+  const knob = page.locator(".volume__knob");
   // player starts at volume 0.1
-  expect(initial).toBeCloseTo(10, 0);
+  await expect(knob).toHaveAttribute("aria-valuenow", "10");
 
-  const box = await page.locator(".volume__slider").boundingBox();
-  await page.mouse.click(box!.x + box!.width * 0.9, box!.y + box!.height / 2);
-  const raised = await volumeFill.evaluate((el) => Number(el.style.width.replace("%", "")));
-  expect(raised).toBeGreaterThan(initial);
+  // a pointerdown jumps the value to the pointer's angle on the 270-degree
+  // arc: 108 degrees = (0.9 * 270) - 135, i.e. the 90% position
+  const box = (await knob.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const radius = box.width * 0.4;
+  const deg = ((0.9 * 270 - 135) * Math.PI) / 180;
+  await page.mouse.click(cx + radius * Math.sin(deg), cy - radius * Math.cos(deg));
+  await expect.poll(() => page.evaluate(() => window.player.volume)).toBeCloseTo(0.9, 1);
+  await expect(knob).toHaveAttribute("aria-valuenow", "90");
 
   const volumeIcon = page.locator(".volume__icon");
   // mute

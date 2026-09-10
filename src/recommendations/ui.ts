@@ -8,12 +8,12 @@ import { makePlaylist, savePlaylist } from "../playlists/store";
 import { getCatalog, setCatalog } from "../playlists/catalog";
 import { validateToken } from "../scrobbling/api";
 import { getToken, getUsername, setUsername } from "../scrobbling/settings";
-import { openScrobblingPopup } from "../scrobbling/ui";
+import { scrobblingOpenRequest } from "../ui/scrobbling-popup";
+import { signal } from "@preact/signals";
 
 export interface RecommendationsDeps {
   container: HTMLDivElement;
   list: HTMLUListElement;
-  state: HTMLDivElement;
   player: AudioPlayer;
   records(): readonly LibraryRecord[];
   /** Rerenders the playlists view after a recommendation is saved locally. */
@@ -22,6 +22,23 @@ export interface RecommendationsDeps {
 
 let deps: RecommendationsDeps;
 let playlists: RecommendationPlaylist[] = [];
+
+export interface RecommendationsStateView {
+  text: string;
+  actionLabel: string | null;
+}
+
+/** The state line the RecommendationsState island renders. */
+export const recommendationsState = signal<RecommendationsStateView>({
+  text: "",
+  actionLabel: null,
+});
+let stateAction: (() => void) | null = null;
+
+/** Runs the current state line's action (the island button calls this). */
+export function runStateAction(): void {
+  stateAction?.();
+}
 const expanded = new Map<string, ExpandedPlaylist>();
 /** MBID whose track list is currently being fetched. */
 let loadingMbid: string | null = null;
@@ -68,7 +85,7 @@ async function refresh(): Promise<void> {
       "Connect ListenBrainz to see playlists made for you. ",
       "Open scrobbling settings",
       () => {
-        openScrobblingPopup();
+        scrobblingOpenRequest.value += 1;
       },
     );
     return;
@@ -102,19 +119,8 @@ async function refresh(): Promise<void> {
  * previous content.
  */
 function renderMessage(message: string, actionLabel?: string, action?: () => void): void {
-  deps.state.replaceChildren();
-  const line = document.createElement("span");
-  line.textContent = message;
-  deps.state.append(line);
-  if (actionLabel !== undefined && action !== undefined) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "recommendations__connect";
-    button.textContent = actionLabel;
-    button.addEventListener("click", action);
-    deps.state.append(button);
-  }
-  deps.state.hidden = false;
+  stateAction = actionLabel !== undefined && action !== undefined ? action : null;
+  recommendationsState.value = { text: message, actionLabel: actionLabel ?? null };
 }
 
 function renderList(): void {
@@ -124,7 +130,7 @@ function renderList(): void {
     );
     return;
   }
-  deps.state.hidden = true;
+  recommendationsState.value = { text: "", actionLabel: null };
   const handlers: RowHandlers = {
     toggle: toggleExpand,
     play: playMatched,

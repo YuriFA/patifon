@@ -18,7 +18,7 @@
   bottom: 72px;
   max-height: 0;
   border: none;
-  background-color: var(--bg-color);
+  background-color: var(--surface-raised);
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;
@@ -26,7 +26,7 @@
   &.scrobbling-popup__open {
     max-height: 300px;
     overflow: visible;
-    border: 1px solid var(--red);
+    border: 1px solid var(--accent);
     transition: max-height 0.3s;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
   }
@@ -40,7 +40,7 @@
     width: 0;
     height: 0;
     border-width: 10px 9px 0 9px;
-    border-color: var(--red) transparent transparent transparent;
+    border-color: var(--accent) transparent transparent transparent;
     border-style: solid;
   }
 }
@@ -58,9 +58,9 @@
   padding: 4px 20px;
 
   button {
-    background-color: var(--bg-color);
-    color: var(--font-color);
-    border: 1px solid var(--medium-grey);
+    background-color: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--text-dim);
     border-radius: 3px;
     padding: 3px 10px;
     font-size: 12px;
@@ -75,9 +75,9 @@
 
 .scrobbling-popup__token {
   width: 200px;
-  background-color: var(--bg-color);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
+  background-color: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--text-dim);
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 12px;
@@ -94,11 +94,11 @@
 .scrobbling-popup__status {
   padding: 6px 20px 2px 20px;
   font-size: 12px;
-  color: var(--grey);
+  color: var(--text-faint);
 }
 
 .scrobbling-popup__queue {
   padding: 2px 20px 12px 20px;
   font-size: 12px;
-  color: var(--medium-grey);
+  color: var(--text-dim);
 }

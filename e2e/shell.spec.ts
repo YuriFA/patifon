@@ -116,7 +116,7 @@ test.describe("keyboard operability: volume", () => {
     await page.goto("/");
     await waitForAppReady(page);
 
-    const volume = page.locator("#volume-root .slider-input");
+    const volume = page.locator("#volume-root .volume__knob");
     await volume.focus();
     const before = await playerVolume(page);
 

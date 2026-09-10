@@ -3,8 +3,6 @@ import "./styles/scrobbling.css";
 import "./styles/recommendations.css";
 import { render } from "preact";
 import AudioPlayer from "./audio-player";
-import { PRESETS } from "./equalizer";
-import RangeSlider from "./utils/range-slider";
 import { initMediaSession } from "./media-session";
 import {
   initLibrary,
@@ -30,6 +28,11 @@ import { VolumeControl } from "./ui/volume-control";
 import { AreaTabs } from "./ui/area-tabs";
 import { VinylDeck } from "./ui/vinyl-deck";
 import { NowPlaying } from "./ui/now-playing";
+import { ScrobblingPopup } from "./ui/scrobbling-popup";
+import { EqualizerPopup } from "./ui/equalizer-popup";
+import { RadioRows } from "./ui/radio-view";
+import { PlaylistsRows } from "./ui/playlists-view";
+import { RecommendationsState } from "./ui/recommendations-state";
 import { areaMode } from "./visualizer/area-mode";
 
 declare global {
@@ -48,10 +51,8 @@ const visualizerArea = document.querySelector<HTMLElement>(".audio_visualize")!;
 const visualizerCanvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
 visualizerCanvas.width = visualizerArea.clientWidth;
 visualizerCanvas.height = visualizerArea.clientHeight;
-const equalizerBtn = document.querySelector<HTMLDivElement>(".player-controls__btn_equalizer")!;
-const equalizerPopup = document.querySelector<HTMLDivElement>(".equalizer-popup")!;
-const equalizerBands = document.querySelectorAll<HTMLDivElement>(".equalizer-band__slider");
-const presetSelect = document.querySelector<HTMLSelectElement>(".equalizer-popup__presets")!;
+const scrobblingRoot = document.querySelector<HTMLDivElement>("#scrobbling-root")!;
+const equalizerRoot = document.querySelector<HTMLDivElement>("#equalizer-root")!;
 
 const webglCanvas = document.querySelector<HTMLCanvasElement>(".visualizer__webgl")!;
 webglCanvas.width = visualizerCanvas.width;
@@ -94,49 +95,12 @@ render(<VolumeControl player={player} />, document.querySelector<HTMLDivElement>
 render(<AreaTabs />, document.querySelector<HTMLDivElement>("#area-tabs-root")!);
 render(<VinylDeck player={player} />, document.querySelector<HTMLDivElement>("#vinyl-root")!);
 render(<NowPlaying player={player} />, document.querySelector<HTMLDivElement>("#nowplaying-root")!);
-
-// Equalizer settings
-equalizerBtn.addEventListener("click", (event) => {
-  event.preventDefault();
-  equalizerPopup.classList.toggle("equalizer-popup__open");
-});
-
-const bandSliders: RangeSlider[] = [];
-equalizerBands.forEach((band, i) => {
-  const filterValue = player.getBandGain(i);
-  const bandSlider = new RangeSlider(band, {
-    vertical: true,
-    min: -12,
-    max: 12,
-    value: filterValue,
-    onchange: (value) => {
-      player.changeBandGain(i, value);
-    },
-    onmove: (value) => {
-      player.changeBandGain(i, value);
-    },
-  });
-  bandSliders.push(bandSlider);
-});
-
-// Preset selector: applies gains to every band and moves the band sliders
-for (const preset of PRESETS) {
-  const option = document.createElement("option");
-  option.value = preset.name;
-  option.textContent = preset.name;
-  presetSelect.append(option);
-}
-
-presetSelect.addEventListener("change", () => {
-  const preset = PRESETS.find((p) => p.name === presetSelect.value);
-  if (!preset) {
-    return;
-  }
-  player.applyPreset(preset);
-  preset.data.forEach((gain, i) => {
-    bandSliders[i]?.setValue(gain);
-  });
-});
+render(
+  <RecommendationsState />,
+  document.querySelector<HTMLDivElement>(".recommendations__state")!,
+);
+render(<ScrobblingPopup />, scrobblingRoot);
+render(<EqualizerPopup player={player} />, equalizerRoot);
 
 // Protect the IndexedDB library (audio blobs, metadata, artwork) from eviction.
 // The call is fire-and-forget: the browser's grant decision is its own.
@@ -151,8 +115,11 @@ registerSourceStop("radio", stopPlayback);
 await initLibrary(player);
 
 // Radio mode: catalog search and live streams on the shared transport
+render(
+  <RadioRows list={document.querySelector<HTMLUListElement>(".library__list")!} />,
+  document.querySelector<HTMLDivElement>("#radio-rows-root")!,
+);
 await initRadio({
-  list: document.querySelector<HTMLUListElement>(".library__list")!,
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
   modeButton: document.querySelector<HTMLButtonElement>(".library__mode")!,
@@ -165,8 +132,14 @@ await initRadio({
 
 // Playlists view: third mode alongside library and radio; the modes are
 // exclusive, so entering one exits the other.
+render(
+  <PlaylistsRows
+    list={document.querySelector<HTMLUListElement>(".library__list")!}
+    records={libraryRecords}
+  />,
+  document.querySelector<HTMLDivElement>("#playlists-rows-root")!,
+);
 await initPlaylists({
-  list: document.querySelector<HTMLUListElement>(".library__list")!,
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
   newButton: document.querySelector<HTMLButtonElement>(".playlists__new")!,
@@ -181,7 +154,6 @@ await initPlaylists({
 initRecommendations({
   container: document.querySelector<HTMLDivElement>(".recommendations")!,
   list: document.querySelector<HTMLUListElement>(".recommendations__list")!,
-  state: document.querySelector<HTMLDivElement>(".recommendations__state")!,
   player,
   records: libraryRecords,
   onSaved: refreshPlaylistsView,
