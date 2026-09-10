@@ -821,37 +821,37 @@ body.drop-hover::after {
 
 .vinyl-deck__plinth {
   position: relative;
-  width: min(62vh, 82%);
-  aspect-ratio: 1.15;
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 18px 40px rgba(33, 32, 27, 0.14);
+  width: min(66vh, 86%);
+  aspect-ratio: 1.08;
+  background: #fdfcf7;
+  border: 1px solid #eceade;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(72, 66, 50, 0.16);
 }
 
 .vinyl-deck__screw {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: var(--surface-sunken);
-  box-shadow: inset 0 1px 2px rgba(33, 32, 27, 0.35);
+  background: #e6e2d3;
+  box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.35);
 
   &_tl {
-    top: 10px;
-    left: 10px;
+    top: 22px;
+    left: 26px;
   }
   &_tr {
-    top: 10px;
-    right: 10px;
+    top: 22px;
+    right: 26px;
   }
   &_bl {
-    bottom: 10px;
-    left: 10px;
+    bottom: 22px;
+    left: 26px;
   }
   &_br {
-    bottom: 10px;
-    right: 10px;
+    bottom: 22px;
+    right: 26px;
   }
 }
 
@@ -860,16 +860,39 @@ body.drop-hover::after {
   top: 50%;
   left: 44%;
   transform: translate(-50%, -50%);
-  width: 72%;
+  width: 76%;
   aspect-ratio: 1;
 }
 
-.vinyl-deck__platter {
-  width: 100%;
-  height: 100%;
+/* Platter rim with strobe notches around the edge (draft). */
+.vinyl-deck__rim {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 19%, #14130f 20% 96%, #23211c 97%);
-  box-shadow: inset 0 0 0 2px #0c0b09;
+  background:
+    repeating-conic-gradient(from 1deg, #ebe7da 0deg 3deg, #dedac9 3deg 7.5deg) padding-box,
+    #e4e0d2;
+  box-shadow:
+    inset 0 2px 6px rgba(72, 66, 50, 0.18),
+    0 1px 2px rgba(72, 66, 50, 0.12);
+}
+
+/* The vinyl: black disc with fine concentric grooves and two band gaps. */
+.vinyl-deck__platter {
+  position: absolute;
+  inset: 4.5%;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      transparent 0 57%,
+      rgba(250, 248, 242, 0.07) 57.4% 58.2%,
+      transparent 58.6% 71%,
+      rgba(250, 248, 242, 0.07) 71.4% 72.2%,
+      transparent 72.6%
+    ),
+    repeating-radial-gradient(circle, #191712 0 2px, #201d16 2px 3.5px);
+  box-shadow: inset 0 0 0 2px #0e0d0a;
   animation: vinyl-spin 1.8s linear infinite;
   animation-play-state: paused;
   will-change: transform;
@@ -879,38 +902,45 @@ body.drop-hover::after {
   animation-play-state: running;
 }
 
-/* grooves: concentric rings over the black vinyl */
-.vinyl-deck__platter::before {
-  content: "";
-  position: absolute;
-  inset: 4%;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle,
-    transparent 0 3px,
-    rgba(250, 248, 242, 0.05) 3px 4px
-  );
-}
-
+/* Mint center label with the deck engraving, rotating with the record. */
 .vinyl-deck__label {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 36%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vinyl-deck__label-text {
   width: 30%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--surface-raised);
+  background: #cfe3d9;
+  box-shadow: 0 0 0 1px rgba(72, 66, 50, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4%;
+  color: #2f6f61;
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+  user-select: none;
+}
+
+.vinyl-deck__label-stereo {
+  font-size: clamp(7px, 1.1vh, 10px);
+  font-weight: 600;
+}
+
+.vinyl-deck__label-rpm {
+  font-size: clamp(11px, 1.8vh, 17px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.vinyl-deck__hole {
+  width: 14%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #191712;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes vinyl-spin {
@@ -919,89 +949,186 @@ body.drop-hover::after {
   }
 }
 
+/* Tonearm: metal post, pivot bearing, straight arm and cartridge head.
+   The whole assembly swings around the pivot; engaged = head on the
+   record, at rest = swung out. */
 .vinyl-deck__tonearm {
   position: absolute;
-  top: 6%;
-  right: 8%;
-  width: 34%;
-  height: 60%;
-  transform-origin: 82% 12%;
-  transform: rotate(-24deg);
-  transition: transform 0.6s ease;
+  top: 7%;
+  right: 6%;
+  width: 36%;
+  height: 64%;
+  transform-origin: 86% 11%;
+  transform: rotate(-18deg);
+  transition: transform 0.7s cubic-bezier(0.32, 0.9, 0.35, 1);
   pointer-events: none;
 }
 
 .vinyl-deck_playing .vinyl-deck__tonearm {
-  transform: rotate(8deg);
+  transform: rotate(12deg);
 }
 
-.vinyl-deck__arm-base {
+/* Gray cylinder behind the pivot (the counterweight post). */
+.vinyl-deck__arm-post {
+  position: absolute;
+  top: 0;
+  right: 4%;
+  width: 17%;
+  height: 17%;
+  border-radius: 6px;
+  background: linear-gradient(118deg, #8f8b7e, #d9d6ca 52%, #847f72);
+  transform: rotate(-34deg);
+  box-shadow: 0 2px 4px rgba(72, 66, 50, 0.25);
+}
+.vinyl-deck__arm-pivot {
   position: absolute;
   top: 0;
   right: 0;
-  width: 26%;
+  width: 24%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--surface-sunken);
-  border: 1px solid var(--line);
+  background: #fbfaf5;
+  border: 1px solid #dcd8c9;
+  box-shadow: 0 2px 5px rgba(72, 66, 50, 0.2);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 32%;
+    border-radius: 50%;
+    background: #a9a598;
+    box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.4);
+  }
 }
 
 .vinyl-deck__arm {
   position: absolute;
-  top: 12%;
-  right: 10%;
-  width: 5%;
-  height: 86%;
-  background: linear-gradient(#c9c4b6, #a8a294);
+  top: 9%;
+  right: 9.5%;
+  width: 4.2%;
+  height: 84%;
   border-radius: 3px;
+  background: linear-gradient(180deg, #dedbcd, #b6b2a4);
+  box-shadow: 1px 0 2px rgba(72, 66, 50, 0.18);
 }
 
+/* Cartridge head with a stylus nub. */
 .vinyl-deck__head {
   position: absolute;
-  bottom: -2%;
-  right: 4%;
-  width: 12%;
-  height: 9%;
+  bottom: -1%;
+  right: 5%;
+  width: 15%;
+  height: 8.5%;
+  border-radius: 4px;
   background: var(--accent);
-  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(72, 66, 50, 0.28);
+  transform: rotate(-8deg);
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    bottom: -22%;
+    width: 22%;
+    height: 26%;
+    border-radius: 1px;
+    background: #191712;
+  }
 }
 
 .vinyl-deck__controls {
   position: absolute;
-  left: 6%;
-  bottom: 8%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
+  left: 7%;
+  bottom: 14%;
 }
 
+/* Round deck button (draft): beige circle, teal glyph. */
 .vinyl-deck__start {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--surface-sunken);
+  border: 1px solid #ddd8c9;
+  background: #f1eee2;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    transform 0.1s ease;
 
   &:hover {
     border-color: var(--accent);
   }
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
-/* Pitch fader: native vertical range styled as a deck fader. */
+/* Pitch fader (draft): right edge, +8/-8 limits, mono readout. */
+.vinyl-deck__pitch-group {
+  position: absolute;
+  right: 5.5%;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.vinyl-deck__pitch-limit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
 .vinyl-deck__pitch {
   writing-mode: vertical-lr;
   direction: rtl;
-  width: 22px;
-  height: 110px;
-  accent-color: var(--accent);
+  appearance: none;
+  width: 26px;
+  height: clamp(120px, 24vh, 190px);
+  background: transparent;
   cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    width: 12px;
+    border-radius: 7px;
+    background: #f1eee2;
+    border: 1px solid #ddd8c9;
+    box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 10px;
+    margin-left: -6px;
+    border-radius: 3px;
+    background: var(--accent);
+    border: 1px solid #11655b;
+    box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
+  }
+
+  &::-moz-range-track {
+    width: 12px;
+    border-radius: 7px;
+    background: #f1eee2;
+    border: 1px solid #ddd8c9;
+  }
+
+  &::-moz-range-thumb {
+    width: 22px;
+    height: 10px;
+    border-radius: 3px;
+    background: var(--accent);
+    border: 1px solid #11655b;
+  }
 }
 
 .vinyl-deck__pitch-value {
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-dim);
 }

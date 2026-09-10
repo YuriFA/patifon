@@ -18,13 +18,11 @@ function formatPitch(pitch: number): string {
 }
 
 /**
- * Start/stop plus the functional pitch fader (draft): the deck's control
- * surface. The fader writes the player rate; the value readout mirrors the
- * bridge so external rate changes stay visible.
+ * Start/stop button styled as the draft's round deck button. Toggles
+ * playback exactly like the transport play/pause control.
  */
 function DeckControls({ player }: { player: AudioPlayer }) {
   const playing = bridge.playing.value;
-  const pitch = rateToPitch(bridge.playbackRate.value);
 
   const togglePlayback = () => {
     if (player.isPlaying) {
@@ -44,6 +42,22 @@ function DeckControls({ player }: { player: AudioPlayer }) {
       >
         {playing ? "■" : "▶"}
       </button>
+    </div>
+  );
+}
+
+/**
+ * The functional pitch fader (draft): a right-edge vertical fader with
+ * +8/-8 limits. Writes the player rate; the readout mirrors the bridge so
+ * external rate changes stay visible.
+ */
+function PitchFader({ player }: { player: AudioPlayer }) {
+  const pitch = rateToPitch(bridge.playbackRate.value);
+  return (
+    <div class="vinyl-deck__pitch-group">
+      <span class="vinyl-deck__pitch-limit" aria-hidden="true">
+        +8
+      </span>
       <input
         type="range"
         class="vinyl-deck__pitch"
@@ -56,6 +70,9 @@ function DeckControls({ player }: { player: AudioPlayer }) {
           player.playbackRate = pitchToRate(Number(event.currentTarget.value));
         }}
       />
+      <span class="vinyl-deck__pitch-limit" aria-hidden="true">
+        -8
+      </span>
       <output class="vinyl-deck__pitch-value">{formatPitch(pitch)}</output>
     </div>
   );
@@ -90,18 +107,23 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
         <span class="vinyl-deck__screw vinyl-deck__screw_bl" />
         <span class="vinyl-deck__screw vinyl-deck__screw_br" />
         <div class="vinyl-deck__platter-wrap">
+          <div class="vinyl-deck__rim" />
           <div class="vinyl-deck__platter">
             <div class="vinyl-deck__label">
-              <div class="vinyl-deck__label-text" />
+              <span class="vinyl-deck__label-stereo">STEREO</span>
+              <span class="vinyl-deck__label-rpm">33⅓ RPM</span>
+              <span class="vinyl-deck__hole" />
             </div>
           </div>
         </div>
         <div class="vinyl-deck__tonearm">
-          <div class="vinyl-deck__arm-base" />
+          <div class="vinyl-deck__arm-post" />
+          <div class="vinyl-deck__arm-pivot" />
           <div class="vinyl-deck__arm" />
           <div class="vinyl-deck__head" />
         </div>
         <DeckControls player={player} />
+        <PitchFader player={player} />
       </div>
     </div>
   );
