@@ -22,3 +22,5 @@
       Verify: all commands exit 0; no regressions in desktop layout assertions.
 - [x] 6.2 Sync the main spec: merge the ui-shell delta into `openspec/specs/ui-shell/spec.md` and run `openspec validate --specs`.
       Verify: validation passes with no complaints.
+- [x] 7.1 Visual-pass follow-ups from the first mobile run: place the vinyl stage under the area tabs (missing `#vinyl-root` order), make the EQ and SCROB toggles adjacent at the deck row's right edge, and engage the library source on transport-only playback so the now-playing panel appears (playback spec scenario added).
+      Verify: mobile spec asserts vinyl below the header, `scrob.left - eq.right <= 13`, and the deck-stacks scenario now starts playback via the transport play button.

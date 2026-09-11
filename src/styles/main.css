@@ -1658,6 +1658,10 @@ body.drop-hover::after {
      scales the fixed-px parts (tonearm, deck buttons, screws) as one
      unit, and the width divide compensates so the rendered box still
      fills the column. */
+  #vinyl-root {
+    order: 3;
+  }
+
   .vinyl-deck {
     position: static;
     padding: 16px 16px 24px;
@@ -1716,7 +1720,7 @@ body.drop-hover::after {
     flex-wrap: wrap;
     column-gap: 12px;
     row-gap: 10px;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 10px 16px 12px;
   }
 
@@ -1746,6 +1750,8 @@ body.drop-hover::after {
 
   #equalizer-root {
     order: 4;
+    /* the panels ride at the row's right edge, side by side (draft) */
+    margin-left: auto;
   }
 
   #scrobbling-root {

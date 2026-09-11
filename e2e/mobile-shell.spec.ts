@@ -51,9 +51,9 @@ test("pins the header and the deck while the column scrolls", async ({ page }) =
 
 test("stacks the deck rows instead of the desktop single row", async ({ page }) => {
   await dropFile(page, "Artist - Track.wav");
-  // start playback the way a user does - from the row (transport-play with
-  // no engaged source is a known pre-existing gap, out of scope here)
-  await page.click(".library__row");
+  // transport-only playback: the deck must engage the library source, so
+  // the now-playing panel appears (it did not before the engagement fix)
+  await page.click(".player-controls__btn_play");
   await expect(page.locator(".now-playing")).toBeVisible();
 
   const rows = await page.evaluate(() => {
@@ -65,27 +65,34 @@ test("stacks the deck rows instead of the desktop single row", async ({ page }) 
       .querySelector<HTMLElement>("#transport-root")!
       .getBoundingClientRect();
     const panels = document.querySelector<HTMLElement>("#equalizer-root")!.getBoundingClientRect();
+    const scrob = document.querySelector<HTMLElement>("#scrobbling-root")!.getBoundingClientRect();
     const deck = document.querySelector<HTMLElement>(".deck")!.getBoundingClientRect();
-    return { readout, volume, transport, panels, deck };
+    return { readout, volume, transport, panels, scrob, deck };
   });
   // readout + volume share the first row, transport + panels the second
   expect(rows.volume.top).toBeGreaterThan(rows.readout.top);
   expect(rows.volume.top).toBeLessThan(rows.readout.bottom);
   expect(rows.transport.top).toBeGreaterThan(rows.readout.bottom);
   expect(rows.panels.top).toBeCloseTo(rows.transport.top, 0);
-  expect(rows.panels.right).toBeLessThanOrEqual(rows.deck.right);
+  // the panel toggles sit adjacent at the row's right edge (draft)
+  expect(rows.scrob.left - rows.panels.right).toBeLessThanOrEqual(13);
+  expect(rows.scrob.right).toBeLessThanOrEqual(rows.deck.right);
 });
 
 test("scales the turntable to the column width", async ({ page }) => {
   await page.getByRole("button", { name: "Vinyl", exact: true }).click();
-  const width = await page.evaluate(
-    () =>
-      document.querySelector<HTMLElement>(".vinyl-deck__platter-wrap")!.getBoundingClientRect()
-        .width,
-  );
+  const probe = await page.evaluate(() => ({
+    platter: document
+      .querySelector<HTMLElement>(".vinyl-deck__platter-wrap")!
+      .getBoundingClientRect().width,
+    header: document.querySelector<HTMLElement>(".library__header")!.getBoundingClientRect().top,
+    vinyl: document.querySelector<HTMLElement>("#vinyl-root")!.getBoundingClientRect().top,
+  }));
+  // the stage renders under the pinned header, not above it
+  expect(probe.vinyl).toBeGreaterThan(probe.header);
   // the draft's mobile platter (~240px at a 390px viewport)
-  expect(width).toBeGreaterThan(190);
-  expect(width).toBeLessThan(260);
+  expect(probe.platter).toBeGreaterThan(190);
+  expect(probe.platter).toBeLessThan(260);
 });
 
 test("docks the equalizer popup as a bottom sheet", async ({ page }) => {

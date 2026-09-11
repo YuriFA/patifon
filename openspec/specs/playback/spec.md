@@ -26,6 +26,13 @@ playback is expected to be heard.
 - **WHEN** the underlying audio context is in a suspended state when the user clicks Play
 - **THEN** the system resumes the context and playback becomes audible without requiring a page reload
 
+#### Scenario: Idle transport plays the library
+
+- **WHEN** no source is engaged and the user activates Play while the
+  library holds tracks
+- **THEN** the library source engages (now-playing panel, MediaSession and
+  scrobbling follow it) and the first library track starts
+
 ### Requirement: Transport controls
 
 The system SHALL provide play, pause, stop, next-track and previous-track
