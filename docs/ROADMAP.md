@@ -60,8 +60,15 @@ a11y, Zag.js for hard patterns. Waves, one OpenSpec change each:
    tokens + dark transport, vinyl turntable with functional pitch fader and
    progress-tracking tonearm, now-playing panel; karaoke badge replaced by
    the lyrics tab.
-3. **redesign-phase-3** - radio, playlists, recommendations, EQ popup,
-   scrobbling popup; volume knob (custom a11y rotary).
+3. **redesign-phase-3** (implemented 2026-09-11, commit `387c263`) -
+   radio, playlists, and recommendations views as token-styled Preact
+   islands; EQ and scrobbling popups on the shared popup pattern
+   (aria-expanded, Escape, outside close); rotary volume knob (slider
+   role) replacing the linear slider; legacy theme aliases removed.
+
+The UI redesign (HI-FI SYSTEM direction) is complete: every visible
+surface renders on the Warm Earth tokens and the Preact/signals island
+pattern.
 
 The 2026-09-09 mockup is the direction reference, not a pixel contract.
 
