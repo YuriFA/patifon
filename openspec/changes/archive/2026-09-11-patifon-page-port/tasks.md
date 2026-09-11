@@ -6,7 +6,7 @@
       seek root + LIVE badge, `.deck__controls` with the five island
       roots) in `index.html`; retarget the grid in `main.css` (columns
       `380px 1fr`, rows `1fr 140px`), center the shell at `max-width:
-    1440px` with side hairlines + plinth shadow; delete the dark-strip
+1440px` with side hairlines + plinth shadow; delete the dark-strip
       styles, the `.bar` rescope, and `--transport-*`; update e2e
       selectors. Verify: full suite green; new e2e scenario asserts no
       page scroll at 1280x800 and 1440x900.

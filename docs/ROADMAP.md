@@ -90,14 +90,14 @@ Waves, one OpenSpec change each:
    with in-strip times + continuous gapless waveform in the canonical
    colors, 2px playhead with glow) over the controls row (mech transport
    with lucide glyphs, latched play, glass now-playing screen, round mute
-   + horizontal volume fader replacing the knob, EQ/SCROB mech toggles,
-   re-skinned popups); the 380px sidebar with the Patifon brand row,
-   three-button mech mode switcher, recessed search, context eyebrow row,
-   and TrackRow-anatomy rows; latched text-chip mode tabs; the vinyl deck
-   synced to the canon (strobe rim, mint label, power LED, fader-language
-   pitch rail); title + manifest renamed to Patifon; legacy token aliases
-   and the dark-strip machinery deleted. Verified with a per-region
-   side-by-side pass against the draft preview.
+   - horizontal volume fader replacing the knob, EQ/SCROB mech toggles,
+     re-skinned popups); the 380px sidebar with the Patifon brand row,
+     three-button mech mode switcher, recessed search, context eyebrow row,
+     and TrackRow-anatomy rows; latched text-chip mode tabs; the vinyl deck
+     synced to the canon (strobe rim, mint label, power LED, fader-language
+     pitch rail); title + manifest renamed to Patifon; legacy token aliases
+     and the dark-strip machinery deleted. Verified with a per-region
+     side-by-side pass against the draft preview.
 
 ## Backlog (deferred, revisit when stated)
 
