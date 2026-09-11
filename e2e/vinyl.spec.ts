@@ -51,6 +51,31 @@ test("the deck start/stop toggles playback like the transport", async ({ page })
   await expect(deck).toHaveClass(/vinyl-deck_playing/u);
 });
 
+test("with a station engaged the deck start/stop acts on the station, not the library", async ({
+  page,
+}) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  // a library track exists but stays silent: the deck must never start it
+  await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
+  await expectRowCount(page, 1);
+  await searchAndPlayFirst(page);
+  await expect(page.locator(".progress__live")).toBeVisible();
+  await areaTab(page, "Vinyl").click();
+
+  // the deck is hidden while radio owns the transport; the control still
+  // routes through the engaged source if it ever fires
+  const start = page.locator(".vinyl-deck__start");
+  await start.dispatchEvent("click");
+  await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("paused");
+  await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(false);
+
+  await start.dispatchEvent("click");
+  await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
+  await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(false);
+});
+
 test("the pitch fader changes the playback rate and survives a track change", async ({ page }) => {
   await page.goto("/");
   await waitForAppReady(page);

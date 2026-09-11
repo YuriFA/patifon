@@ -76,9 +76,7 @@ const viewListeners = new Set<LibraryViewListener>();
 
 /** The view change fan-out; also owns the vanilla empty hint. */
 function notifyView(): void {
-  if (libraryEmpty) {
-    libraryEmpty.hidden = records.length > 0;
-  }
+  libraryEmpty.hidden = records.length > 0;
   for (const listener of viewListeners) {
     listener();
   }
@@ -92,13 +90,12 @@ export function subscribeLibraryView(listener: LibraryViewListener): () => void 
 
 /** A consistent snapshot of the visible rows plus playback/queue state. */
 export function libraryViewSnapshot(): LibraryViewSnapshot {
-  if (!player || !librarySearch) {
-    // The island mounts before initLibrary wires the element references.
-    return { rows: [], playingId: null, playing: false, queuedIds: [] };
-  }
-  const query = librarySearch.value.trim();
-  const visible = query ? fuse.search(query).map((result) => result.item) : [...records];
-  const playing = recordAt(player.currentTrackIndex);
+  // The rows island mounts before initLibrary resolves: with no element
+  // refs there is no query and no playback, and records is still empty -
+  // the snapshot is empty by construction until notifyView re-renders.
+  const query = librarySearch?.value.trim() ?? "";
+  const visible = query && player ? fuse.search(query).map((result) => result.item) : [...records];
+  const playing = player ? recordAt(player.currentTrackIndex) : null;
   const rows = visible.map((record) => {
     const label = record.artist ? `${record.artist} - ${record.title}` : record.title;
     return {
@@ -112,7 +109,7 @@ export function libraryViewSnapshot(): LibraryViewSnapshot {
   return {
     rows,
     playingId: playing?.id ?? null,
-    playing: player.isPlaying,
+    playing: player?.isPlaying ?? false,
     queuedIds: [...pendingQueueIds()],
   };
 }
@@ -283,12 +280,4 @@ export function libraryMetadata(): MediaSessionMetadata | null {
 
 export function libraryArtworkUrl(record: LibraryRecord): string | null {
   return artworkUrlFor(record);
-}
-
-/**
- * Full record of the player's current index (the lyrics cache keys on
- * artist/title and matches LRCLIB by duration). Null outside the library.
- */
-export function currentLibraryRecord(): LibraryRecord | null {
-  return recordAt(player.currentTrackIndex);
 }

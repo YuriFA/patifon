@@ -35,6 +35,16 @@ export function recordAt(index: number): LibraryRecord | null {
   return order[index] ?? null;
 }
 
+/**
+ * Full record at the player's current index in the effective order (the
+ * lyrics cache keys on artist/title and match LRCLIB by duration). Null
+ * before the library init resolves and when the index has no record;
+ * callers gate on the engaged source.
+ */
+export function currentRecord(): LibraryRecord | null {
+  return deps ? recordAt(deps.player.currentTrackIndex) : null;
+}
+
 export function playbackOrder(): LibraryRecord[] {
   return order;
 }

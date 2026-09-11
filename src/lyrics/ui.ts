@@ -2,15 +2,11 @@ import { effect } from "@preact/signals";
 import type AudioPlayer from "../audio-player";
 import { onSourceChange } from "../modes";
 import type { LibraryRecord } from "../library/store";
+import { currentRecord } from "../library/source";
 import { fetchLyrics, type LyricsResult } from "./api";
 import { activeLineIndex, parseLrc, type LrcLine } from "./lrc";
 import { lyricsKey, loadCachedLyrics, saveLyrics } from "./store";
 import { areaMode } from "../visualizer/area-mode";
-
-export interface LyricsUiDeps {
-  /** Record behind the player's current index; null when none. */
-  currentRecord: () => LibraryRecord | null;
-}
 
 let player: AudioPlayer;
 let panel: HTMLDivElement;
@@ -137,7 +133,7 @@ function showEmpty(): void {
  * here - it plays on its own audio element - and its takeover calls
  * clearLyrics explicitly.
  */
-export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
+export function initLyrics(audioPlayer: AudioPlayer): void {
   player = audioPlayer;
   // a station taking the transport stops the library element: clear the panel
   onSourceChange(({ source }) => {
@@ -156,7 +152,7 @@ export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
       return;
     }
     // entering the LYRICS tab (including mid-track): resolve what is playing
-    const record = deps.currentRecord();
+    const record = currentRecord();
     if (record) {
       void show(record);
     } else {
@@ -169,7 +165,7 @@ export function initLyrics(audioPlayer: AudioPlayer, deps: LyricsUiDeps): void {
     if (areaMode.value !== "lyrics") {
       return;
     }
-    const record = deps.currentRecord();
+    const record = currentRecord();
     if (record) {
       void show(record);
     } else {

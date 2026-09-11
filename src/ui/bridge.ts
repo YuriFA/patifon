@@ -1,6 +1,7 @@
 import { signal } from "@preact/signals";
 import type AudioPlayer from "../audio-player";
 import {
+  engageSource,
   getActiveSource,
   getMode,
   onModeChange,
@@ -8,12 +9,20 @@ import {
   type Mode,
   type SourceKind,
 } from "../modes";
-import { onRadioStateChange, radioState, type RadioPlaybackState } from "../radio/playback";
+import {
+  onRadioStateChange,
+  pauseStation,
+  radioState,
+  resumeStation,
+  type RadioPlaybackState,
+} from "../radio/playback";
+import { currentRecord, isPlayingLibrary, switchToLibrarySource } from "../library/source";
 
 /**
  * The one-way bridge from the vanilla playback core to Preact views: core
- * events write signals, components read them and call player/radio methods
- * for commands. No playback logic ever moves into the reactive tree.
+ * events write signals, components read them and issue commands through
+ * `toggle` for engaged-source playback. No playback logic ever moves into
+ * the reactive tree.
  */
 export const bridge = {
   /** Seconds of the engaged source; 0 for live streams. */
@@ -35,6 +44,32 @@ export const bridge = {
   /** Active library track metadata for the transport panel; null clears it. */
   trackTitle: signal<string | null>(null),
   trackArtist: signal<string | null>(null),
+
+  /**
+   * Play/pause for the engaged source: an engaged station toggles through
+   * its playback state machine, a library track through the player. While
+   * idle it first engages the library the way a row activation does, so
+   * the now-playing panel, MediaSession and scrobbling follow
+   * transport-only playback too.
+   */
+  toggle(player: AudioPlayer): void {
+    const source = getActiveSource();
+    if (source === "radio") {
+      const state = radioState();
+      if (state === "playing") pauseStation();
+      else if (state === "paused") void resumeStation();
+      return;
+    }
+    if (player.isPlaying) {
+      player.pause();
+      return;
+    }
+    if (!source) {
+      engageSource("library");
+      if (!isPlayingLibrary()) switchToLibrarySource();
+    }
+    void player.play();
+  },
 };
 
 /** Finite duration for the UI: live streams and unknown lengths report 0. */
@@ -55,6 +90,16 @@ function syncPlayback(player: AudioPlayer): void {
   bridge.playing.value =
     source === "radio" ? bridge.radioState.value === "playing" : player.isPlaying;
   syncPosition(player);
+  syncNowPlaying(source);
+}
+
+// Transport panel: library metadata only - radio keeps its station card and
+// the panel clears (spec). Pause keeps the last track visible; stop/radio
+// clear it through the source change.
+function syncNowPlaying(source: SourceKind | null): void {
+  const record = source === "library" ? currentRecord() : null;
+  bridge.trackTitle.value = record?.title ?? null;
+  bridge.trackArtist.value = record?.artist ?? null;
 }
 
 /**

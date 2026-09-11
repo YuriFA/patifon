@@ -1,5 +1,5 @@
 import type AudioPlayer from "../audio-player";
-import { initScrobblingTracker, type ScrobblingDeps } from "./listens";
+import { initScrobblingTracker } from "./listens";
 import { loadScrobblingSettings } from "./settings";
 
 /**
@@ -7,7 +7,7 @@ import { loadScrobblingSettings } from "./settings";
  * completed-listen submissions with the retry queue). The popup UI lives in
  * the ScrobblingPopup island.
  */
-export function initScrobbling(player: AudioPlayer, deps: ScrobblingDeps): void {
+export function initScrobbling(player: AudioPlayer): void {
   loadScrobblingSettings();
-  initScrobblingTracker(player, deps);
+  initScrobblingTracker(player);
 }

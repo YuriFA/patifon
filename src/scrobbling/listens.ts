@@ -1,5 +1,6 @@
 import type AudioPlayer from "../audio-player";
 import type { LibraryRecord } from "../library/store";
+import { currentRecord } from "../library/source";
 import { enqueueListen, retryQueuedListens, spacedSubmit, toSubmittedListen } from "./queue";
 import { isEnabled } from "./settings";
 
@@ -10,12 +11,7 @@ const PLAYING_NOW_THROTTLE_MS = 1000;
 /** A replay of the same record counts as a restart only from (near) its end. */
 const RESTART_POSITION_S = 3;
 
-export interface ScrobblingDeps {
-  /** The library/playlist record the player's current index points at. */
-  currentRecord: () => LibraryRecord | null;
-}
-
-interface TrackerDeps extends ScrobblingDeps {
+interface TrackerDeps {
   player: AudioPlayer;
 }
 
@@ -49,11 +45,11 @@ async function maybePlayingNow(record: LibraryRecord): Promise<void> {
   await spacedSubmit(toSubmittedListen(record), "playing_now");
 }
 
-export function initScrobblingTracker(player: AudioPlayer, deps_: ScrobblingDeps): void {
-  deps = { player, ...deps_ };
+export function initScrobblingTracker(player: AudioPlayer): void {
+  deps = { player };
 
   player.on("track:play", () => {
-    const record = deps.currentRecord();
+    const record = currentRecord();
     if (!record) {
       playingRecord = null;
       lastPosition = 0;

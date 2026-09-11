@@ -30,6 +30,12 @@ The shared play/pause/next/previous controls and their glyph. Reflects the
 engaged source's state, whichever source that is.
 _Avoid_: player buttons
 
+**Engaged transport**:
+The single play/pause command acting on whichever source is engaged. While
+idle it engages the library first, exactly like activating a row. The
+transport buttons and the deck start/stop control are two faces of it.
+_Avoid_: deck toggle, play routing
+
 **Station card**:
 The now-playing indicator for an engaged station shown in the library view.
 _Avoid_: radio badge, now playing (unqualified)

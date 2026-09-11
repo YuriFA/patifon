@@ -1,9 +1,6 @@
 import type { ComponentChildren } from "preact";
 import type AudioPlayer from "../audio-player";
 import { bridge } from "./bridge";
-import { isStationEngaged, toggleStationPlayback } from "../radio/ui";
-import { engageSource, getActiveSource } from "../modes";
-import { isPlayingLibrary, switchToLibrarySource } from "../library/source";
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "./icons";
 
 interface TransportButtonProps {
@@ -30,18 +27,6 @@ function TransportButton({ className, title, onClick, disabled, children }: Tran
 }
 
 /**
- * Idle transport: engage the library source the same way a row activation
- * does - otherwise the now-playing panel, MediaSession and scrobbling
- * never follow transport-only playback.
- */
-function engageLibraryFromTransport(): void {
-  engageSource("library");
-  if (!isPlayingLibrary()) {
-    switchToLibrarySource();
-  }
-}
-
-/**
  * The transport island: prev/play/next mech buttons with the canonical
  * lucide glyphs. The play button carries the latched look while playing.
  * The glyph and the routing follow the engaged source - radio and library
@@ -51,20 +36,7 @@ export function TransportControls({ player }: { player: AudioPlayer }) {
   const playing = bridge.playing.value;
   const radioEngaged = bridge.source.value === "radio";
 
-  const togglePlay = () => {
-    if (isStationEngaged()) {
-      toggleStationPlayback();
-      return;
-    }
-    if (player.isPlaying) {
-      player.pause();
-      return;
-    }
-    if (!getActiveSource()) {
-      engageLibraryFromTransport();
-    }
-    void player.play();
-  };
+  const togglePlay = () => bridge.toggle(player);
   const step = (method: "playPrev" | "playNext") => () => {
     if (!radioEngaged) void player[method]();
   };

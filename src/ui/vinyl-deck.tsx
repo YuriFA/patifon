@@ -58,13 +58,7 @@ function useTonearm(player: AudioPlayer, armRef: RefObject<HTMLDivElement | null
 function DeckControls({ player }: { player: AudioPlayer }) {
   const playing = bridge.playing.value;
 
-  const togglePlayback = () => {
-    if (player.isPlaying) {
-      player.pause();
-    } else {
-      void player.play();
-    }
-  };
+  const togglePlayback = () => bridge.toggle(player);
 
   return (
     <div class="vinyl-deck__controls">

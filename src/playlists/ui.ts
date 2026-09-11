@@ -10,24 +10,16 @@ import {
 } from "./store";
 import { getCatalog, setCatalog, findInCatalog } from "./catalog";
 import { getMode, onModeChange, registerModeSearch } from "../modes";
-import type { LibraryRecord } from "../library/store";
 import { recordAt } from "../library/source";
 import { signal } from "@preact/signals";
 import { hideRecommendations, showRecommendations } from "../recommendations/ui";
+import { libraryRecords, libraryArtworkUrl } from "../library/ui";
 
-export interface PlaylistsUiDeps {
-  search: HTMLInputElement;
-  emptyHint: HTMLDivElement;
-  newButton: HTMLButtonElement;
-  backButton: HTMLButtonElement;
-  player: AudioPlayer;
-  /** Current library records, to resolve playlist track references. */
-  records(): readonly LibraryRecord[];
-  /** Artwork object URL for a record, or null. */
-  artworkUrl(record: LibraryRecord): string | null;
-}
-
-let deps: PlaylistsUiDeps;
+let player: AudioPlayer;
+let search: HTMLInputElement;
+let emptyHint: HTMLDivElement;
+let newButton: HTMLButtonElement;
+let backButton: HTMLButtonElement;
 let openId: string | null = null;
 
 export interface PlaylistsIndexRow {
@@ -54,21 +46,25 @@ export type PlaylistsRowsView =
 /** The playlists island renders the index/track rows from this snapshot. */
 export const playlistsRowsView = signal<PlaylistsRowsView>({ kind: "index", rows: [] });
 
-export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
-  deps = deps_;
+export async function initPlaylists(audioPlayer: AudioPlayer): Promise<void> {
+  player = audioPlayer;
+  search = document.querySelector<HTMLInputElement>(".library__search")!;
+  emptyHint = document.querySelector<HTMLDivElement>(".library__empty")!;
+  newButton = document.querySelector<HTMLButtonElement>(".playlists__new")!;
+  backButton = document.querySelector<HTMLButtonElement>(".playlists__back")!;
   const stored = await loadPlaylists();
-  const trackIds = new Set(deps.records().map((record) => record.id));
+  const trackIds = new Set(libraryRecords().map((record) => record.id));
   setCatalog(hydratePlaylists(stored, trackIds));
 
-  deps.newButton.addEventListener("click", () => {
+  newButton.addEventListener("click", () => {
     const playlist = makePlaylist();
     setCatalog([...getCatalog(), playlist]);
     void savePlaylist(playlist);
     render();
   });
-  deps.backButton.addEventListener("click", () => {
+  backButton.addEventListener("click", () => {
     openId = null;
-    deps.backButton.hidden = true;
+    backButton.hidden = true;
     render();
   });
   registerModeSearch("playlists", () => {
@@ -87,28 +83,28 @@ export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
       render();
     }
   };
-  deps.player.on("track:play", onPlayState);
-  deps.player.on("track:pause", onPlayState);
+  player.on("track:play", onPlayState);
+  player.on("track:pause", onPlayState);
 }
 
 function enterPlaylistsView(): void {
-  deps.search.placeholder = "Search playlists";
-  deps.newButton.hidden = false;
-  deps.backButton.hidden = true;
+  search.placeholder = "Search playlists";
+  newButton.hidden = false;
+  backButton.hidden = true;
   render();
   showRecommendations();
 }
 
 function exitPlaylistsView(): void {
   openId = null;
-  deps.newButton.hidden = true;
-  deps.backButton.hidden = true;
+  newButton.hidden = true;
+  backButton.hidden = true;
   hideRecommendations();
 }
 
 function renderIndex(): void {
   showRecommendations();
-  const query = deps.search.value.trim().toLowerCase();
+  const query = search.value.trim().toLowerCase();
   const catalog = getCatalog();
   const visible = query
     ? catalog.filter((playlist) => playlist.name.toLowerCase().includes(query))
@@ -118,8 +114,8 @@ function renderIndex(): void {
     name: playlist.name,
     trackCount: playlist.trackIds.length,
   }));
-  deps.emptyHint.hidden = rows.length > 0;
-  deps.emptyHint.textContent = query ? "Nothing found" : "No playlists yet - create one";
+  emptyHint.hidden = rows.length > 0;
+  emptyHint.textContent = query ? "Nothing found" : "No playlists yet - create one";
   playlistsRowsView.value = { kind: "index", rows };
 }
 
@@ -130,10 +126,10 @@ function renderTracks(): void {
     renderIndex();
     return;
   }
-  const query = deps.search.value.trim().toLowerCase();
-  const playing = recordAt(deps.player.currentTrackIndex);
-  const playingId = deps.player.isPlaying && playing !== null ? playing.id : null;
-  const resolved = resolvePlaylistRecords(playlist, deps.records());
+  const query = search.value.trim().toLowerCase();
+  const playing = recordAt(player.currentTrackIndex);
+  const playingId = player.isPlaying && playing !== null ? playing.id : null;
+  const resolved = resolvePlaylistRecords(playlist, libraryRecords());
   const rows: PlaylistsTrackRow[] = resolved
     .map((record, position) => ({ record, position }))
     .filter(
@@ -149,11 +145,11 @@ function renderTracks(): void {
       position,
       length: resolved.length,
       duration: record.duration,
-      artwork: deps.artworkUrl(record),
+      artwork: libraryArtworkUrl(record),
       playing: playingId === record.id,
     }));
-  deps.emptyHint.hidden = rows.length > 0;
-  deps.emptyHint.textContent = query
+  emptyHint.hidden = rows.length > 0;
+  emptyHint.textContent = query
     ? "Nothing found"
     : "Playlist is empty - add tracks from the library";
   playlistsRowsView.value = { kind: "tracks", rows };
@@ -177,8 +173,8 @@ export function refreshPlaylistsView(): void {
 /** Actions the island calls back: open a playlist's tracks. */
 export function openPlaylist(id: string): void {
   openId = id;
-  deps.backButton.hidden = false;
-  deps.search.value = "";
+  backButton.hidden = false;
+  search.value = "";
   render();
 }
 

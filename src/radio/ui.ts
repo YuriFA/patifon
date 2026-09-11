@@ -20,6 +20,8 @@ import {
   releaseSource,
   type Mode,
 } from "../modes";
+import type AudioPlayer from "../audio-player";
+import { getOutputVolume, isOutputMuted } from "../volume";
 
 declare global {
   interface Window {
@@ -31,18 +33,11 @@ declare global {
   }
 }
 
-export interface RadioUiDeps {
-  search: HTMLInputElement;
-  emptyHint: HTMLDivElement;
-  progress: HTMLElement;
-  liveBadge: HTMLElement;
-  /** Root of the now-playing station card inside the visualization area. */
-  nowPlaying: HTMLElement;
-  getVolume: () => number;
-  isMuted: () => boolean;
-}
-
-let deps: RadioUiDeps;
+let player: AudioPlayer;
+let search: HTMLInputElement;
+let emptyHint: HTMLDivElement;
+let progress: HTMLElement;
+let liveBadge: HTMLElement;
 let nowPlaying: NowPlayingElements;
 let stations: RadioStation[] = [];
 let savedStations: RadioStation[] = [];
@@ -75,7 +70,7 @@ function notifyRows(emptyText?: string, keepErrors = false): void {
   if (!keepErrors) {
     errorUuidSet.clear();
   }
-  const query = deps.search.value.trim();
+  const query = search.value.trim();
   const listed = query ? stations : savedStations;
   const rows: RadioRowItem[] = listed.map((station) => ({
     station,
@@ -90,9 +85,9 @@ function notifyRows(emptyText?: string, keepErrors = false): void {
   if (rows.length === 0 && hint === undefined) {
     hint = query ? "No stations found" : "No saved stations yet - search and press the star";
   }
-  deps.emptyHint.hidden = rows.length > 0;
+  emptyHint.hidden = rows.length > 0;
   if (rows.length === 0 && hint !== undefined) {
-    deps.emptyHint.textContent = hint;
+    emptyHint.textContent = hint;
   }
   stationRowsView.value = {
     rows,
@@ -178,8 +173,8 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
 }
 
 function setLiveIndicator(active: boolean): void {
-  deps.liveBadge.hidden = !active;
-  deps.progress.classList.toggle("progress_live", active);
+  liveBadge.hidden = !active;
+  progress.classList.toggle("progress_live", active);
 }
 
 export async function playStation(station: RadioStation): Promise<void> {
@@ -187,8 +182,8 @@ export async function playStation(station: RadioStation): Promise<void> {
   stations = stations.some((s) => s.stationuuid === station.stationuuid)
     ? stations
     : [...stations, station];
-  playback.setRadioVolume(deps.getVolume());
-  playback.setRadioMuted(deps.isMuted());
+  playback.setRadioVolume(getOutputVolume(player));
+  playback.setRadioMuted(isOutputMuted(player));
   setPlayingStation(station);
   notifyRows();
   await playback.playStation(station);
@@ -225,13 +220,13 @@ function renderStations(): void {
 
 function renderCatalogError(): void {
   // Keep the previous list visible; surface the failure as a hint line
-  deps.emptyHint.hidden = stationRowsView.value.rows.length > 0;
-  deps.emptyHint.textContent = "Radio catalog unavailable - check your connection";
+  emptyHint.hidden = stationRowsView.value.rows.length > 0;
+  emptyHint.textContent = "Radio catalog unavailable - check your connection";
 }
 
 function scheduleCatalogSearch(): void {
   scheduleSearch({
-    search: deps.search,
+    search,
     onResults: (results) => {
       stations = results;
       renderStations();
@@ -241,18 +236,18 @@ function scheduleCatalogSearch(): void {
 }
 
 function enterRadioView(): void {
-  deps.search.placeholder = "Search radio stations";
+  search.placeholder = "Search radio stations";
   // in radio mode the pinned list item represents the station
   hideNowPlaying(nowPlaying);
   stations = [];
   // entering with query text renders the catalog for that text: the search
   // field serves whichever mode is active
-  if (deps.search.value.trim()) {
+  if (search.value.trim()) {
     scheduleCatalogSearch();
   } else {
     renderStations();
   }
-  deps.search.focus();
+  search.focus();
 }
 
 function exitRadioView(next: Mode): void {
@@ -263,9 +258,13 @@ function exitRadioView(next: Mode): void {
   }
 }
 
-export async function initRadio(deps_: RadioUiDeps): Promise<void> {
-  deps = deps_;
-  nowPlaying = queryNowPlaying(deps.nowPlaying);
+export async function initRadio(audioPlayer: AudioPlayer): Promise<void> {
+  player = audioPlayer;
+  search = document.querySelector<HTMLInputElement>(".library__search")!;
+  emptyHint = document.querySelector<HTMLDivElement>(".library__empty")!;
+  progress = document.querySelector<HTMLElement>(".progress")!;
+  liveBadge = document.querySelector<HTMLElement>(".progress__live")!;
+  nowPlaying = queryNowPlaying(document.querySelector<HTMLElement>(".station-now")!);
   playback.onRadioStateChange(handlePlaybackState);
   onModeChange(({ mode: next, previous }) => {
     if (next === "radio") {
@@ -280,6 +279,6 @@ export async function initRadio(deps_: RadioUiDeps): Promise<void> {
   window.radio = {
     isActive: () => playback.isRadioActive(),
     state: () => playback.radioState(),
-    volume: () => (playback.isRadioActive() ? deps.getVolume() : -1),
+    volume: () => (playback.isRadioActive() ? getOutputVolume(player) : -1),
   };
 }

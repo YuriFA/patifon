@@ -12,6 +12,16 @@ export function setOutputVolume(player: AudioPlayer, value: number): void {
   setRadioVolume(clamped);
 }
 
+/** Current output volume (0..1), the value the setters last applied. */
+export function getOutputVolume(player: AudioPlayer): number {
+  return player.volume;
+}
+
+/** Current output mute state, the value the setters last applied. */
+export function isOutputMuted(player: AudioPlayer): boolean {
+  return player.muted;
+}
+
 export function setOutputMuted(player: AudioPlayer, muted: boolean): void {
   if (muted) {
     player.mute();

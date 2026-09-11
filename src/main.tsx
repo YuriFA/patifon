@@ -5,14 +5,8 @@ import "./styles/recommendations.css";
 import { render } from "preact";
 import AudioPlayer from "./audio-player";
 import { initMediaSession } from "./media-session";
-import {
-  initLibrary,
-  currentLibraryRecord,
-  libraryMetadata,
-  libraryArtworkUrl,
-  libraryRecords,
-} from "./library/ui";
-import { initRadio, isStationEngaged, stopPlayback } from "./radio/ui";
+import { initLibrary, libraryMetadata, libraryRecords } from "./library/ui";
+import { initRadio, stopPlayback } from "./radio/ui";
 import { initVisualizer } from "./visualizer/controller";
 import { initLyrics } from "./lyrics/ui";
 import { initBridge, bridge } from "./ui/bridge";
@@ -20,7 +14,7 @@ import { initWaveformStrip } from "./waveform/strip";
 import { initPlaylists, refreshPlaylistsView } from "./playlists/ui";
 import { initScrobbling } from "./scrobbling/ui";
 import { initRecommendations } from "./recommendations/ui";
-import { registerSourceStop, onSourceChange } from "./modes";
+import { registerSourceStop } from "./modes";
 import { SidebarHeader } from "./ui/sidebar-header";
 import { LibraryRows } from "./ui/library-view";
 import { TransportControls } from "./ui/transport-controls";
@@ -70,18 +64,6 @@ player.volume = 0.1;
 
 initBridge(player);
 
-// Transport panel: library metadata only - radio keeps its station card and
-// the panel clears (spec). Pause keeps the last track visible; stop/radio
-// clear it through the source change.
-const syncNowPlaying = () => {
-  const record = bridge.source.value === "library" ? currentLibraryRecord() : null;
-  bridge.trackTitle.value = record?.title ?? null;
-  bridge.trackArtist.value = record?.artist ?? null;
-};
-player.on("track:play", syncNowPlaying);
-player.on("track:loadedmetadata", syncNowPlaying);
-onSourceChange(() => syncNowPlaying());
-
 // Islands mount before the feature inits: those still query the shared
 // elements the sidebar island renders (search, buttons) at boot.
 render(<SidebarHeader />, document.querySelector<HTMLDivElement>(".library__header")!);
@@ -122,15 +104,7 @@ render(
   <RadioRows list={document.querySelector<HTMLUListElement>(".library__list")!} />,
   document.querySelector<HTMLDivElement>("#radio-rows-root")!,
 );
-await initRadio({
-  search: document.querySelector<HTMLInputElement>(".library__search")!,
-  emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
-  progress: document.querySelector<HTMLElement>(".progress")!,
-  liveBadge: document.querySelector<HTMLElement>(".progress__live")!,
-  nowPlaying: document.querySelector<HTMLElement>(".station-now")!,
-  getVolume: () => player.volume,
-  isMuted: () => player.muted,
-});
+await initRadio(player);
 
 // Playlists view: third mode alongside library and radio; the modes are
 // exclusive, so entering one exits the other.
@@ -141,15 +115,7 @@ render(
   />,
   document.querySelector<HTMLDivElement>("#playlists-rows-root")!,
 );
-await initPlaylists({
-  search: document.querySelector<HTMLInputElement>(".library__search")!,
-  emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
-  newButton: document.querySelector<HTMLButtonElement>(".playlists__new")!,
-  backButton: document.querySelector<HTMLButtonElement>(".playlists__back")!,
-  player,
-  records: libraryRecords,
-  artworkUrl: libraryArtworkUrl,
-});
+await initPlaylists(player);
 
 // "Created for you": ListenBrainz recommendation playlists, matched to the library
 initRecommendations({
@@ -161,9 +127,7 @@ initRecommendations({
 });
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
-initLyrics(player, {
-  currentRecord: currentLibraryRecord,
-});
+initLyrics(player);
 initVisualizer({
   player,
   barsCanvas: visualizerCanvas,
@@ -172,14 +136,12 @@ initVisualizer({
   shouldDraw: () => getModeBridgeSafe(),
 });
 // ListenBrainz scrobbling: popup + token, listen tracking, retry queue
-initScrobbling(player, { currentRecord: currentLibraryRecord });
+initScrobbling(player);
 initWaveformStrip({
   player,
   strip: document.querySelector<HTMLElement>(".progress")!,
   lane: document.querySelector<HTMLElement>(".progress__bar")!,
   getBufferRatio: () => bridge.buffered.value,
-  isRadioActive: () => isStationEngaged() || bridge.mode.value === "radio",
-  currentRecord: currentLibraryRecord,
 });
 // Mobile flow layout: a hidden canvas (a stored vinyl/lyrics tab) cannot be
 // measured at boot - match the drawing buffer to the CSS box the first time

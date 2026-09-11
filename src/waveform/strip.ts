@@ -2,6 +2,8 @@ import type AudioPlayer from "../audio-player";
 import type { LibraryRecord } from "../library/store";
 import { enqueuePeakJob, onWaveformReady } from "./peaks";
 import { loadWaveform } from "./store";
+import { currentRecord } from "../library/source";
+import { getActiveSource, getMode } from "../modes";
 
 export interface WaveformStripDeps {
   player: AudioPlayer;
@@ -11,10 +13,6 @@ export interface WaveformStripDeps {
   lane: HTMLElement;
   /** Buffer ratio (0..1) of the current source, kept up to date by the owner. */
   getBufferRatio(): number;
-  /** True while a radio station owns the transport (live streams have no wave). */
-  isRadioActive(): boolean;
-  /** The library record at the player's current index, or null. */
-  currentRecord(): LibraryRecord | null;
 }
 
 /** Canvas fills cannot read CSS vars: resolve the theme tokens once. */
@@ -61,15 +59,15 @@ export function initWaveformStrip(deps_: WaveformStripDeps): void {
   onWaveformReady((trackId) => {
     // a lazy backfill finished for the track on air: swap the strip in
     if (trackId === drawnTrackId) {
-      void showWaveformFor(deps.currentRecord());
+      void showWaveformFor(currentRecord());
     }
   });
   scheduleUpdate();
 }
 
 function scheduleUpdate(): void {
-  const record = deps.currentRecord();
-  if (deps.isRadioActive() || !record) {
+  const record = currentRecord();
+  if (getActiveSource() === "radio" || getMode() === "radio" || !record) {
     hide();
     return;
   }
@@ -82,7 +80,7 @@ async function showWaveformFor(record: LibraryRecord | null): Promise<void> {
     return;
   }
   const waveform = await loadWaveform(record.id);
-  if (record.id !== (deps.currentRecord()?.id ?? null)) {
+  if (record.id !== (currentRecord()?.id ?? null)) {
     // the player moved on while the record was loading
     return;
   }
