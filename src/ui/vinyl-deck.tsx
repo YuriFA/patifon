@@ -18,13 +18,14 @@ function formatPitch(pitch: number): string {
   return pitch > 0 ? `+${pitch}` : String(pitch);
 }
 
-const ARM_OUTER = 28;
-const ARM_INNER = 31.5;
+const ARM_OUTER = -3;
+const ARM_INNER = 27;
 
 /**
- * Tonearm swing (deg), like a real turntable: the stylus starts on the
- * outer groove and drifts toward the label as the track progresses. Driven
- * by the player's real position, so seeks and track changes move it too.
+ * Tonearm swing (deg), like a real turntable: at the track's start the
+ * stylus sits at the record's outer edge; as the track progresses it
+ * drifts toward the label, ending where the grooves stop. Driven by the
+ * player's real position, so seeks and track changes move it too.
  */
 function armAngle(player: AudioPlayer): number {
   const { duration } = player;
