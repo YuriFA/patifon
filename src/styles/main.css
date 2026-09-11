@@ -1191,8 +1191,9 @@ body.drop-hover::after {
   box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
 }
 
-/* Bent headshell: white shell, the fat teal cartridge sitting at the arm
-   joint end, and the stylus nub at the far corner. */
+/* Bent headshell: the joint faces up-right toward the pivot, the teal
+   cartridge rides along the shell axis near the joint, and the gray
+   stylus tab sits at the far down-left tip. */
 .vinyl-deck__head {
   position: absolute;
   top: 182px;
@@ -1201,29 +1202,30 @@ body.drop-hover::after {
   height: 36px;
   border-radius: 9px;
   background: var(--card);
-  border: 1px solid var(--fader-cap-border);
+  border: 1px solid var(--metal-base);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
-  transform: rotate(40deg);
+  transform: rotate(-45deg);
 
   &::after {
     content: "";
     position: absolute;
-    left: 7px;
-    bottom: -3px;
-    width: 6px;
-    height: 10px;
+    left: 4px;
+    bottom: 6px;
+    width: 9px;
+    height: 8px;
     border-radius: 2px;
-    background: var(--fg);
+    background: var(--metal-base);
   }
 }
 
 .vinyl-deck__cartridge {
   position: absolute;
-  right: 5px;
-  top: 5px;
+  right: 4px;
+  top: 50%;
+  margin-top: -9px;
   width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  height: 18px;
+  border-radius: 5px;
   background: var(--primary);
 }
 

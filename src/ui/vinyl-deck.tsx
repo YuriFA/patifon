@@ -19,7 +19,9 @@ function formatPitch(pitch: number): string {
 }
 
 const ARM_OUTER = -3;
-const ARM_INNER = 27;
+/* The inner limit keeps the whole headshell on the black vinyl: pushing
+   it further swings the shell onto the label. */
+const ARM_INNER = 18;
 
 /**
  * Tonearm swing (deg), like a real turntable: at the track's start the
