@@ -5,11 +5,11 @@
       "targetKind": "existing-ui",
       "projectId": "4f6b46c2-df9f-4c18-a165-46fade857014",
       "baselineDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
-      "activeDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+      "activeDraftId": "84d2eec3-95a7-4181-a23f-9416a6ad6a5f",
       "designSystemPath": ".superdesign/design-system.md",
       "contextFiles": [".superdesign/design-system.md"],
       "fingerprints": {
-        ".superdesign/design-system.md": "cf19d12d887723df9863fd3726b9e8d0054e99782b12c7c4d5a707730d69343e"
+        ".superdesign/design-system.md": "8878869097162401078a1ffa384b4b868ce622e840bebb2136384fe629c2d28b"
       },
       "components": [
         {
@@ -78,9 +78,20 @@
           "title": "patifon - Warm Earth Audio Player",
           "visualDirection": "Warm Earth v7: cream chassis, teal accent, light mech deck, system mono; continuous gapless SVG waveform, Patifon brand (capitalized), unified fader-cap sliders, h-screen shell; sd-components inlined statically",
           "currentVersion": 7
+        },
+        "0075d21e-1bed-46d5-a360-2e3fae66f4bc": {
+          "title": "Patifon Mobile - Warm Earth Hi-Fi Player",
+          "visualDirection": "Warm Earth mobile: same cream/teal canon at ~390px; single column (brand+search header, compact vinyl stage + track list, pinned transport deck with continuous waveform, EQ bottom sheet); parented on desktop v7; superseded on canvas by standalone re-import 84d2eec3 (identical HTML)",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 2
+        },
+        "84d2eec3-95a7-4181-a23f-9416a6ad6a5f": {
+          "title": "Patifon Mobile - Warm Earth Hi-Fi Player",
+          "visualDirection": "Warm Earth mobile: same cream/teal canon at ~390px; single column (brand+search header, compact vinyl stage + track list, pinned transport deck with continuous waveform, EQ bottom sheet). Standalone root node re-imported from the approved branch HTML (the depth-2 branch 0075d21e renders invisibly on canvas)",
+          "currentVersion": 1
         }
       },
-      "updatedAt": "2026-09-11T10:04:12.584315+00:00"
+      "updatedAt": "2026-09-11T14:11:33.965Z"
     }
   }
 }
