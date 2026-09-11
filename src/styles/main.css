@@ -1016,8 +1016,8 @@ body.drop-hover::after {
 
 .vinyl-deck__platter-wrap {
   position: absolute;
-  top: 50%;
-  left: 39%;
+  top: 49%;
+  left: 45%;
   transform: translate(-50%, -50%);
   width: 63.5%;
   aspect-ratio: 1;
@@ -1174,7 +1174,7 @@ body.drop-hover::after {
   top: -4px;
   left: -3.5px;
   width: 7px;
-  height: 176px;
+  height: 196px;
   border-radius: 3px;
   background: linear-gradient(90deg, var(--metal-base), var(--metal-light) 45%, var(--metal-base));
   box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
@@ -1183,7 +1183,7 @@ body.drop-hover::after {
 /* Bent headshell (white shell + teal cartridge + stylus nub). */
 .vinyl-deck__head {
   position: absolute;
-  top: 162px;
+  top: 182px;
   left: -23px;
   width: 46px;
   height: 34px;
@@ -1217,8 +1217,8 @@ body.drop-hover::after {
 
 .vinyl-deck__controls {
   position: absolute;
-  left: 6.5%;
-  bottom: 7%;
+  left: 4%;
+  bottom: 12%;
   display: flex;
   flex-direction: column;
   align-items: center;
