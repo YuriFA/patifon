@@ -1198,15 +1198,16 @@ body.drop-hover::after {
    joint, and the small gray stylus tab centered at the far tip. */
 .vinyl-deck__head {
   position: absolute;
-  top: 182px;
-  left: -27px;
+  top: 180px;
+  left: -50px;
   width: 54px;
   height: 28px;
   border-radius: 8px;
   background: var(--metal-light);
   border: 1.5px solid var(--metal-dark);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
-  transform: rotate(-40deg);
+  /* 30° bend: the short (width) side meets the tube tip flush */
+  transform: rotate(-30deg);
 
   &::after {
     content: "";
