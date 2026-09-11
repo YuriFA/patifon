@@ -1185,7 +1185,9 @@ body.drop-hover::after {
   top: -4px;
   left: -3.5px;
   width: 7px;
-  height: 196px;
+  /* ends flush with the headshell's short side: the shell reads as a
+     bent continuation of the tube, not a mount in its middle */
+  height: 184px;
   border-radius: 3px;
   background: linear-gradient(90deg, var(--metal-base), var(--metal-light) 45%, var(--metal-base));
   box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
@@ -1204,7 +1206,7 @@ body.drop-hover::after {
   background: var(--metal-light);
   border: 1.5px solid var(--metal-dark);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
-  transform: rotate(-45deg);
+  transform: rotate(-40deg);
 
   &::after {
     content: "";
