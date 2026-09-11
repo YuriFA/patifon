@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "player-shell": {
+      "targetKind": "existing-ui",
+      "projectId": "4f6b46c2-df9f-4c18-a165-46fade857014",
+      "baselineDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+      "activeDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [".superdesign/design-system.md"],
+      "fingerprints": {
+        ".superdesign/design-system.md": "cf19d12d887723df9863fd3726b9e8d0054e99782b12c7c4d5a707730d69343e"
+      },
+      "components": [
+        {
+          "name": "TrackRow",
+          "id": "dd524bca-4634-4798-a139-4362f1499247",
+          "sourcePath": "src/ui/library-view.tsx"
+        },
+        {
+          "name": "WaveformProgressStrip",
+          "id": "6b5ee239-1dd6-4537-887b-3e46f68290b1",
+          "sourcePath": "src/ui/seek-bar.tsx"
+        },
+        {
+          "name": "VolumeSlider",
+          "id": "b576a2b8-4a44-4f53-a743-ca5c0094c1fa",
+          "sourcePath": "src/ui/volume-control.tsx"
+        },
+        {
+          "name": "GlassScreen",
+          "id": "42c94bce-42fb-4b5f-98ba-c667213d0958",
+          "sourcePath": "src/ui/now-playing.tsx"
+        },
+        {
+          "name": "ModeTabs",
+          "id": "aa45772d-9d23-4d8a-afc0-3cc0d65be342",
+          "sourcePath": "src/ui/area-tabs.tsx"
+        },
+        {
+          "name": "TransportDeck",
+          "id": "40b69e8b-a059-4bcc-848f-eea44df4f199",
+          "sourcePath": "src/ui/transport-controls.tsx"
+        },
+        {
+          "name": "SidebarPanel",
+          "id": "1d7f7b2c-b039-40f2-833e-68cc0c069063",
+          "sourcePath": "src/ui/sidebar-header.tsx"
+        },
+        {
+          "name": "VinylDeckCard",
+          "id": "a463054a-2fb6-4d64-a1ce-5f970e092e84",
+          "sourcePath": "src/ui/vinyl-deck.tsx"
+        },
+        {
+          "name": "EqualizerPanel",
+          "id": "6de41141-a953-4795-8c72-ab0ac1afe513",
+          "sourcePath": "src/ui/equalizer-popup.tsx"
+        },
+        {
+          "name": "ScrobblingPanel",
+          "id": "c9cfbde6-93e4-47bc-a5f9-09e680cc2708",
+          "sourcePath": "src/ui/scrobbling-popup.tsx"
+        },
+        {
+          "name": "StationRow",
+          "id": "df90eff9-1373-4a18-a635-77603a56f49f",
+          "sourcePath": "src/ui/radio-view.tsx"
+        },
+        {
+          "name": "LyricsView",
+          "id": "0adf5c40-3d22-4d2a-8dae-13703d478997",
+          "sourcePath": "src/ui/lyrics/ui.ts"
+        }
+      ],
+      "drafts": {
+        "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc": {
+          "title": "patifon - Warm Earth Audio Player",
+          "visualDirection": "Warm Earth v7: cream chassis, teal accent, light mech deck, system mono; continuous gapless SVG waveform, Patifon brand (capitalized), unified fader-cap sliders, h-screen shell; sd-components inlined statically",
+          "currentVersion": 7
+        }
+      },
+      "updatedAt": "2026-09-11T10:04:12.584315+00:00"
+    }
+  }
+}
