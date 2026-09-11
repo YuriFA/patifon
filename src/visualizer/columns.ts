@@ -21,7 +21,7 @@ export function renderColumns(analyser: Analyser, canvas: HTMLCanvasElement): vo
   const ctx = canvas.getContext("2d")!;
   // canvas fills cannot read CSS vars: resolve the accent token once
   const accent =
-    getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#178f80";
+    getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#0f766e";
   ctx.strokeStyle = accent;
   ctx.fillStyle = accent;
   ctx.lineJoin = "round";

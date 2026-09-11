@@ -1,4 +1,5 @@
 import "./styles/main.css";
+import "./styles/ui.css";
 import "./styles/scrobbling.css";
 import "./styles/recommendations.css";
 import { render } from "preact";

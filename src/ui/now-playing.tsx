@@ -21,8 +21,8 @@ function NowPlayingMeter({ player }: { player: AudioPlayer }) {
       return;
     }
 
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-    ctx2d.fillStyle = accent || "#178f80";
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+    ctx2d.fillStyle = accent || "#0f766e";
 
     let raf = 0;
     const draw = () => {

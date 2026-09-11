@@ -1,0 +1,184 @@
+/* Patifon shared UI primitives - the design system's cross-feature
+   languages: the mechanical push button, the glass readout screen, the one
+   fader slider language, eyebrow/badge type, and the 6px inner-list
+   scrollbars. Values are verbatim from .superdesign/design-system.md (the
+   canonical design system). Regions adopt these primitives per-region in
+   the patifon-page-port change; nothing here alters layout or behavior. */
+
+/* MechButton - the universal push control. Secondary fill, hairline border,
+   6px radius, resting mech shadow; press swaps to the pressed shadow and
+   drops 1px; the latched (.is-on) state keeps the pressed look with the
+   accent-tint fill and primary ink. */
+.mech-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-mech);
+  transition: all 75ms;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  color: var(--fg);
+}
+
+.mech-button:active,
+.mech-button.is-on {
+  box-shadow: var(--shadow-mech-pressed);
+  transform: translateY(1px);
+}
+
+.mech-button.is-on {
+  background: var(--accent-tint);
+  border-color: rgba(15, 118, 110, 0.4);
+  color: var(--primary);
+}
+
+/* GlassScreen - the inset readout window (card fill, screen shadow, primary
+   ink) with the scanline material overlay. */
+.glass-screen {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-screen);
+  color: var(--primary);
+}
+
+.glass-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--texture-scanlines);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Fader - the one slider language: a recessed rail capsule with a hairline
+   along its center, an optional primary fill, and a raised fader-cap thumb
+   whose teal indicator line crosses the cap perpendicular to travel.
+   Horizontal by default (cap 14x26, vertical indicator);
+   .fader_vertical rotates the anatomy (cap 34x16, horizontal indicator).
+   The fill width (or height, vertical) and the cap position are set inline
+   per value. */
+.fader {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--fader-rail);
+  border: 1px solid var(--fader-rail-border);
+  box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
+}
+
+.fader::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--fader-rail-line);
+  border-radius: 1px;
+}
+
+.fader_vertical {
+  width: 12px;
+  height: 100%;
+}
+
+.fader_vertical::before {
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  right: auto;
+  width: 2px;
+  height: auto;
+  margin: 0 0 0 -1px;
+}
+
+.fader__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.fader__cap {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 26px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+  border: 1px solid var(--fader-cap-border);
+  box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
+}
+
+.fader__cap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--primary);
+  border-radius: 1px;
+}
+
+.fader_vertical .fader__cap {
+  width: 34px;
+  height: 16px;
+}
+
+.fader_vertical .fader__cap::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: 2px;
+  margin: -1px 0 0;
+}
+
+/* Type utilities - the mono hierarchy comes from size, case, and tracking
+   (design system: typography). */
+.type-eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* 6px rounded scrollbars for the inner lists - the only surfaces that
+   scroll in the shell (design system: layout). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

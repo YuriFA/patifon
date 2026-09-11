@@ -3,24 +3,70 @@
 }
 
 :root {
-  /* Warm Earth tokens (redesign-phase-2; the Warm Earth canvas draft is the
-     direction, docs/design/superdesign-canvas-phase2.md). Warm beige
-     surfaces, mono type, one teal accent, dark transport strip. */
-  --surface: #ece7db;
-  --surface-raised: #faf8f2;
-  --surface-sunken: #e2dccb;
-  --surface-hover: #ddd6c5;
-  --text: #21201b;
-  --text-dim: #6f6a5e;
-  --text-faint: #948d7d;
-  --accent: #178f80;
-  --line: #d5cdba;
+  /* Patifon Warm Earth tokens - a 1:1 mirror of the canonical design
+     system (.superdesign/design-system.md): update that file first, then
+     reflect it here. Names and roles mirror the system verbatim. */
+  --bg: #f6f2ec;
+  --card: #fffdf9;
+  --secondary: #f0e9dd;
+  --border: #e8e0d4;
+  --accent-tint: #d9efec;
+  --fg: #221d16;
+  --muted: #8a8072;
+  --primary: #0f766e;
+  --destructive: #b91c1c;
+  --metal-light: #f0eeec;
+  --metal-base: #d1d5db;
+  --metal-dark: #9ca3af;
+  --vinyl: #1a1a1a;
+  --wave-dim: #c9c1b0;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* The transport strip is the one dark region of the shell (draft). */
+  /* The mechanical shadow language (design system: shadows & materials). */
+  --shadow-mech: 0 2px 4px rgba(34, 29, 22, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  --shadow-mech-pressed: inset 0 2px 4px rgba(34, 29, 22, 0.12), 0 1px 1px rgba(255, 255, 255, 0.7);
+  --shadow-deck: 0 -4px 15px rgba(34, 29, 22, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+  --shadow-panel: inset 0 0 20px rgba(34, 29, 22, 0.02), 0 4px 12px rgba(34, 29, 22, 0.04);
+  --shadow-screen: inset 0 0 15px rgba(34, 29, 22, 0.15), 0 0 5px rgba(15, 118, 110, 0.15);
+  --shadow-plinth: inset 0 0 30px rgba(34, 29, 22, 0.02), 0 12px 25px rgba(34, 29, 22, 0.06);
+
+  /* Material textures - the only gradients the design system allows. */
+  --texture-metal: linear-gradient(90deg, #f0e9dd, #fffdf9 50%, #f0e9dd);
+  --texture-scanlines: repeating-linear-gradient(
+    0deg,
+    rgba(15, 118, 110, 0.04) 0 1px,
+    transparent 1px 2px
+  );
+  --texture-vinyl-grooves: repeating-radial-gradient(circle, #1a1a1a 0 2px, #111 3px 4px);
+  --texture-strobe: repeating-conic-gradient(from 1deg, #ebe7da 0 3deg, #dedac9 3deg 7.5deg);
+
+  /* Fader materials (design system: sliders - one fader language for
+     volume, pitch, and the EQ bands). */
+  --fader-rail: #f1eee2;
+  --fader-rail-border: #ddd8c9;
+  --fader-rail-line: #e0dac9;
+  --fader-cap-from: #fbfaf5;
+  --fader-cap-to: #e8e3d3;
+  --fader-cap-border: #cfc9b8;
+
+  /* The transport strip stays dark until the patifon-page-port change
+     replaces it with the light deck (see that change's design). */
   --transport-bg: #262420;
   --transport-line: #3a372f;
   --transport-text: #e8e3d5;
+
+  /* Legacy phase-2 names alias the canonical tokens so every not-yet-ported
+     view keeps rendering; each alias is deleted when its region adopts the
+     canonical name in the patifon-page-port change. */
+  --surface: var(--bg);
+  --surface-raised: var(--card);
+  --surface-sunken: var(--secondary);
+  --surface-hover: var(--secondary);
+  --text: var(--fg);
+  --text-dim: var(--muted);
+  --text-faint: var(--muted);
+  --accent: var(--primary);
+  --line: var(--border);
 }
 
 * {

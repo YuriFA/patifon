@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dropFile, expectRowCount, progressWidth, seedLibrary } from "./helpers";
+import { dropFile, expectRowCount, progressWidth, seedLibrary, waitForAppReady } from "./helpers";
 
 const playBtn = ".player-controls__btn_play";
 const nextBtn = ".player-controls__btn_next";
@@ -11,6 +11,26 @@ test("page loads with the player shell and empty library", async ({ page }) => {
   await expect(page.locator(".player-controls")).toBeVisible();
   await expect(page.locator("#visualizer")).toBeVisible();
   await expect(page.locator(".library__empty")).toBeVisible();
+});
+
+test("shell renders on the canonical design tokens", async ({ page }) => {
+  await page.goto("/");
+  await waitForAppReady(page);
+
+  const tokens = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    return {
+      bg: getComputedStyle(document.body).backgroundColor,
+      primary: root.getPropertyValue("--primary").trim(),
+      card: root.getPropertyValue("--card").trim(),
+      waveDim: root.getPropertyValue("--wave-dim").trim(),
+    };
+  });
+  // the token set mirrors .superdesign/design-system.md 1:1
+  expect(tokens.bg).toBe("rgb(246, 242, 236)");
+  expect(tokens.primary).toBe("#0f766e");
+  expect(tokens.card).toBe("#fffdf9");
+  expect(tokens.waveDim).toBe("#c9c1b0");
 });
 
 test("play after page load starts playback (autoplay policy satisfied)", async ({ page }) => {
