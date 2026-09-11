@@ -68,9 +68,29 @@ a11y, Zag.js for hard patterns. Waves, one OpenSpec change each:
 
 The UI redesign (HI-FI SYSTEM direction) is complete: every visible
 surface renders on the Warm Earth tokens and the Preact/signals island
-pattern.
+pattern. That direction was then iterated on the Superdesign canvas into
+the owner-approved Patifon design system (`.superdesign/design-system.md`,
+canvas draft 6dbe3073 v7), which supersedes the 2026-09-09 mockup: the
+canvas draft is now the pixel contract, and the design system file is the
+single source of truth for every visual decision.
 
-The 2026-09-09 mockup is the direction reference, not a pixel contract.
+## Current phase: Patifon canvas port (Warm Earth v7, 1:1)
+
+Waves, one OpenSpec change each:
+
+1. **design-system-in-code** (implemented 2026-09-11, commit `e95fab9`) -
+   the canonical token set in `:root` (color roles, mech shadows, material
+   textures, fader materials), legacy phase-2 names as temporary aliases,
+   the shared primitives stylesheet (`src/styles/ui.css`: mech button,
+   glass screen, fader language, type utilities, 6px scrollbars), the
+   inline lucide icon set (`src/ui/icons.tsx`), and `theme-color` to
+   `#f6f2ec`; e2e pins the canonical token values.
+2. **patifon-page-port** (planned) - the page restructured 1:1 against
+   canvas draft v7: 380px sidebar with the Patifon brand row and mech mode
+   switcher, the light 140px transport deck with the full-width continuous
+   waveform strip (times inside the strip), the horizontal volume fader
+   replacing the knob, EQ/SCROB mech toggles, light vinyl deck values, and
+   per-region adoption of the canonical token names (aliases deleted).
 
 ## Backlog (deferred, revisit when stated)
 
