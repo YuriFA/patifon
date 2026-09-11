@@ -222,8 +222,11 @@ Stage centerpiece, 600x480 card (radius 2xl, plinth shadow, card fill): four
 12px inset screw dots in corners; platter 380px (strobe rim + 350px grooved
 vinyl spinning 4s while playing; mint label #d9efec (accent-tint) ringed dark, "STEREO" 9px +
 "33 1/3 RPM" 14px + 14px center hole); tonearm assembly top-right (metal pivot,
-counterweight, wand, primary headshell) swinging 18deg->30deg with progress;
-bottom-left: strobe power dot (pulse LED in 32px secondary ring + toggle) and
+counterweight, wand, metal-light headshell) swinging -4deg->25deg with progress;
+headshell anatomy: 54x28 shell (4px radius, 1.5px metal-dark outline) rotated
+100deg so its long axis nearly continues the wand, 26x16 primary cartridge near
+the joint, 12x4 metal-dark stylus tab at the far tip; bottom-left: strobe power
+dot (pulse LED in 32px secondary ring + toggle) and
 round start/stop button (48px); right edge: vertical pitch fader per the slider
 language above (recessed 14px rail capsule + center hairline, wide 34x16 fader
 cap with teal line, +8/0/-8 mono scale, mono readout).
