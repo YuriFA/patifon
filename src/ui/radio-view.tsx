@@ -1,29 +1,6 @@
-import { createPortal } from "preact/compat";
-import { useLayoutEffect, useRef } from "preact/hooks";
 import { stationTags } from "../radio/rows";
 import type { RadioStation } from "../radio/api";
 import { playStation, stationRowsView, toggleSaveStation, type RadioRowItem } from "../radio/ui";
-import type { Mode } from "../modes";
-import { bridge } from "./bridge";
-
-/** Shared list-ownership pattern: on gaining ownership, wipe the previous
- * writer's rows before our portal reconciles. */
-function useOwnership(list: HTMLUListElement, mine: Mode): void {
-  const owned = useRef(false);
-  // Subscribe once for the component's lifetime: on gaining ownership the
-  // previous writer's rows are wiped synchronously, BEFORE this island's
-  // portal reconciles its rows into the same list element.
-  useLayoutEffect(() => {
-    return bridge.mode.subscribe(() => {
-      if (bridge.mode.value === mine && !owned.current) {
-        owned.current = true;
-        list.replaceChildren();
-      } else if (bridge.mode.value !== mine) {
-        owned.current = false;
-      }
-    });
-  }, [list, mine]);
-}
 
 function StationThumb({ station }: { station: RadioStation }) {
   if (!station.favicon) {
@@ -86,33 +63,27 @@ function StationRow({
 }
 
 /**
- * The radio view's station rows (Warm Earth): a portal into the shared
- * persistent list, owning it exactly while radio mode is active. Rows come
- * from the radio module's snapshot signal; the empty hint is rendered into
- * the sidebar's hint line.
+ * The radio view's rows island: renders the shared list plus its empty hint
+ * from the stationRowsView snapshot signal. The host unmounts it whenever
+ * another mode owns the list region.
  */
-export function RadioRows({ list }: { list: HTMLUListElement }) {
+export function RadioRows() {
   const view = stationRowsView.value;
-  const active = bridge.mode.value === "radio";
-  useOwnership(list, "radio");
-
-  if (!active) {
-    return null;
-  }
-
   return (
     <>
-      {createPortal(
-        view.rows.map((item) => (
+      <div class="library__empty" hidden={!view.empty}>
+        {view.emptyText}
+      </div>
+      <ul class="library__list">
+        {view.rows.map((item) => (
           <StationRow
             key={item.station.stationuuid}
             item={item}
             playing={view.playingUuid === item.station.stationuuid}
             error={view.errorUuids.includes(item.station.stationuuid)}
           />
-        )),
-        list,
-      )}
+        ))}
+      </ul>
     </>
   );
 }

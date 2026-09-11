@@ -18,6 +18,7 @@ import {
   onModeChange,
   registerModeSearch,
   releaseSource,
+  searchQuery,
   type Mode,
 } from "../modes";
 import type AudioPlayer from "../audio-player";
@@ -34,8 +35,6 @@ declare global {
 }
 
 let player: AudioPlayer;
-let search: HTMLInputElement;
-let emptyHint: HTMLDivElement;
 let progress: HTMLElement;
 let liveBadge: HTMLElement;
 let nowPlaying: NowPlayingElements;
@@ -52,6 +51,10 @@ export interface RadioRowsView {
   playingUuid: string | null;
   errorUuids: string[];
   query: string;
+  /** True when the list has no rows and the hint line shows. */
+  empty: boolean;
+  /** Hint line text (also carries catalog errors while rows stay). */
+  emptyText: string;
 }
 
 /** The radio view island renders the station rows from this snapshot. */
@@ -60,6 +63,8 @@ export const stationRowsView = signal<RadioRowsView>({
   playingUuid: null,
   errorUuids: [],
   query: "",
+  empty: true,
+  emptyText: "",
 });
 
 const errorUuidSet = new Set<string>();
@@ -70,7 +75,7 @@ function notifyRows(emptyText?: string, keepErrors = false): void {
   if (!keepErrors) {
     errorUuidSet.clear();
   }
-  const query = search.value.trim();
+  const query = searchQuery.value.trim();
   const listed = query ? stations : savedStations;
   const rows: RadioRowItem[] = listed.map((station) => ({
     station,
@@ -81,19 +86,15 @@ function notifyRows(emptyText?: string, keepErrors = false): void {
   if (playing && !listed.some((s) => s.stationuuid === playing.stationuuid)) {
     rows.unshift({ station: playing, saved: isSaved(playing.stationuuid) });
   }
-  let hint = emptyText;
-  if (rows.length === 0 && hint === undefined) {
-    hint = query ? "No stations found" : "No saved stations yet - search and press the star";
-  }
-  emptyHint.hidden = rows.length > 0;
-  if (rows.length === 0 && hint !== undefined) {
-    emptyHint.textContent = hint;
-  }
   stationRowsView.value = {
     rows,
     playingUuid: playing?.stationuuid ?? null,
     errorUuids: [...errorUuidSet],
     query,
+    empty: rows.length === 0,
+    emptyText:
+      emptyText ??
+      (query ? "No stations found" : "No saved stations yet - search and press the star"),
   };
 }
 
@@ -220,13 +221,12 @@ function renderStations(): void {
 
 function renderCatalogError(): void {
   // Keep the previous list visible; surface the failure as a hint line
-  emptyHint.hidden = stationRowsView.value.rows.length > 0;
-  emptyHint.textContent = "Radio catalog unavailable - check your connection";
+  notifyRows("Radio catalog unavailable - check your connection", true);
 }
 
 function scheduleCatalogSearch(): void {
   scheduleSearch({
-    search,
+    search: () => searchQuery.value,
     onResults: (results) => {
       stations = results;
       renderStations();
@@ -236,18 +236,16 @@ function scheduleCatalogSearch(): void {
 }
 
 function enterRadioView(): void {
-  search.placeholder = "Search radio stations";
   // in radio mode the pinned list item represents the station
   hideNowPlaying(nowPlaying);
   stations = [];
   // entering with query text renders the catalog for that text: the search
   // field serves whichever mode is active
-  if (search.value.trim()) {
+  if (searchQuery.value.trim()) {
     scheduleCatalogSearch();
   } else {
     renderStations();
   }
-  search.focus();
 }
 
 function exitRadioView(next: Mode): void {
@@ -260,8 +258,6 @@ function exitRadioView(next: Mode): void {
 
 export async function initRadio(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
-  search = document.querySelector<HTMLInputElement>(".library__search")!;
-  emptyHint = document.querySelector<HTMLDivElement>(".library__empty")!;
   progress = document.querySelector<HTMLElement>(".progress")!;
   liveBadge = document.querySelector<HTMLElement>(".progress__live")!;
   nowPlaying = queryNowPlaying(document.querySelector<HTMLElement>(".station-now")!);

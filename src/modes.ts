@@ -1,3 +1,4 @@
+import { signal } from "@preact/signals";
 import EventEmitter from "./utils/event-emitter";
 
 /** The three exclusive view modes; library is the boot default. */
@@ -98,7 +99,11 @@ export function registerModeSearch(forMode: Mode, handler: (query: string) => vo
   searchHandlers.set(forMode, handler);
 }
 
+/** The shared search field's current text; the sidebar island writes it. */
+export const searchQuery = signal("");
+
 /** Routes the shared search field's value to the active mode's handler. */
 export function routeSearch(query: string): void {
+  searchQuery.value = query;
   searchHandlers.get(mode)?.(query);
 }

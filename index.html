@@ -11,18 +11,14 @@
     <div class="audio_player">
       <div class="playlist">
         <div class="library__header" id="sidebar-root"></div>
-        <div class="library__empty">Drop audio files anywhere, or use "Add files"</div>
-        <ul class="library__list"></ul>
+        <div id="rows-host-root"></div>
         <div class="recommendations" hidden>
           <div class="recommendations__head">
             Created for you <span class="recommendations__brand">ListenBrainz</span>
           </div>
           <div class="recommendations__state"></div>
-          <ul class="recommendations__list"></ul>
+          <div id="recommendations-rows-root"></div>
         </div>
-        <div id="library-rows-root" hidden></div>
-        <div id="radio-rows-root" hidden></div>
-        <div id="playlists-rows-root" hidden></div>
       </div>
       <div class="audio_visualize">
         <canvas id="visualizer" height="500"></canvas>

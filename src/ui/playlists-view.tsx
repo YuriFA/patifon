@@ -1,8 +1,7 @@
-import { createPortal } from "preact/compat";
-import { useLayoutEffect, useRef } from "preact/hooks";
-import type { LibraryRecord } from "../library/store";
+import { useRef } from "preact/hooks";
 import { formatDuration } from "../utils";
 import { playRecords } from "../library/source";
+import { libraryRecords } from "../library/ui";
 import { resolvePlaylistRecords, type PlaylistRecord } from "../playlists/store";
 import { startInlineRename } from "../playlists/rename";
 import {
@@ -12,28 +11,9 @@ import {
   moveTrackAt,
   openPlaylist,
   playlistsRowsView,
+  refreshPlaylistsRows,
   removeTrack,
-  rerenderPlaylists,
 } from "../playlists/ui";
-import type { Mode } from "../modes";
-import { bridge } from "./bridge";
-
-function useOwnership(list: HTMLUListElement, mine: Mode): void {
-  const owned = useRef(false);
-  // Subscribe once for the component's lifetime: on gaining ownership the
-  // previous writer's rows are wiped synchronously, BEFORE this island's
-  // portal reconciles its rows into the same list element.
-  useLayoutEffect(() => {
-    return bridge.mode.subscribe(() => {
-      if (bridge.mode.value === mine && !owned.current) {
-        owned.current = true;
-        list.replaceChildren();
-      } else if (bridge.mode.value !== mine) {
-        owned.current = false;
-      }
-    });
-  }, [list, mine]);
-}
 
 function Thumb({ artwork }: { artwork: string | null }) {
   if (artwork) {
@@ -149,7 +129,6 @@ function TrackActions({
 function TrackRow({
   row,
   playlist,
-  records,
 }: {
   row: {
     id: string;
@@ -162,11 +141,10 @@ function TrackRow({
     playing: boolean;
   };
   playlist: PlaylistRecord;
-  records: () => readonly LibraryRecord[];
 }) {
   const name = row.artist ? `${row.artist} - ${row.title}` : row.title;
   const play = () => {
-    playRecords(resolvePlaylistRecords(playlist, records()), row.position);
+    playRecords(resolvePlaylistRecords(playlist, libraryRecords()), row.position);
   };
   return (
     <li
@@ -184,36 +162,36 @@ function TrackRow({
 }
 
 /**
- * The playlists view's rows (Warm Earth): a portal into the shared
- * persistent list, owning it exactly while playlists mode is active. The
- * index shows every playlist; an open playlist shows its tracks with
- * reorder and remove actions.
+ * The playlists view's rows island: renders the shared list plus its empty
+ * hint. The index shows every playlist; an open playlist shows its tracks
+ * with reorder and remove actions. The inline rename still runs imperatively
+ * inside a row, then recomputes the snapshot through refreshPlaylistsRows.
  */
-export function PlaylistsRows({
-  list,
-  records,
-}: {
-  list: HTMLUListElement;
-  records: () => readonly LibraryRecord[];
-}) {
+export function PlaylistsRows() {
   const view = playlistsRowsView.value;
-  const active = bridge.mode.value === "playlists";
-  useOwnership(list, "playlists");
-
-  if (!active) {
-    return null;
-  }
+  const listRef = useRef<HTMLUListElement>(null);
+  const hint = (
+    <div class="library__empty" hidden={!view.empty}>
+      {view.emptyText}
+    </div>
+  );
 
   if (view.kind === "index") {
     const renameRow = (id: string) => {
       const playlist = findPlaylistById(id);
-      if (playlist) {
-        startInlineRename(playlist, list, rerenderPlaylists);
+      if (playlist && listRef.current) {
+        startInlineRename(playlist, listRef.current, refreshPlaylistsRows);
       }
     };
-    return createPortal(
-      view.rows.map((row) => <IndexRow key={row.id} row={row} onRename={renameRow} />),
-      list,
+    return (
+      <>
+        {hint}
+        <ul class="library__list" ref={listRef}>
+          {view.rows.map((row) => (
+            <IndexRow key={row.id} row={row} onRename={renameRow} />
+          ))}
+        </ul>
+      </>
     );
   }
 
@@ -221,10 +199,14 @@ export function PlaylistsRows({
   if (!playlist) {
     return null;
   }
-  return createPortal(
-    view.rows.map((row) => (
-      <TrackRow key={row.id} row={row} playlist={playlist} records={records} />
-    )),
-    list,
+  return (
+    <>
+      {hint}
+      <ul class="library__list" ref={listRef}>
+        {view.rows.map((row) => (
+          <TrackRow key={row.id} row={row} playlist={playlist} />
+        ))}
+      </ul>
+    </>
   );
 }

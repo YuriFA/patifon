@@ -9,17 +9,12 @@ import {
   type PlaylistRecord,
 } from "./store";
 import { getCatalog, setCatalog, findInCatalog } from "./catalog";
-import { getMode, onModeChange, registerModeSearch } from "../modes";
+import { onModeChange, registerModeSearch, searchQuery } from "../modes";
 import { recordAt } from "../library/source";
 import { signal } from "@preact/signals";
-import { hideRecommendations, showRecommendations } from "../recommendations/ui";
 import { libraryRecords, libraryArtworkUrl } from "../library/ui";
 
 let player: AudioPlayer;
-let search: HTMLInputElement;
-let emptyHint: HTMLDivElement;
-let newButton: HTMLButtonElement;
-let backButton: HTMLButtonElement;
 let openId: string | null = null;
 
 export interface PlaylistsIndexRow {
@@ -40,71 +35,46 @@ export interface PlaylistsTrackRow {
 }
 
 export type PlaylistsRowsView =
-  | { kind: "index"; rows: PlaylistsIndexRow[] }
-  | { kind: "tracks"; rows: PlaylistsTrackRow[] };
+  | { kind: "index"; rows: PlaylistsIndexRow[]; empty: boolean; emptyText: string }
+  | { kind: "tracks"; rows: PlaylistsTrackRow[]; empty: boolean; emptyText: string };
 
 /** The playlists island renders the index/track rows from this snapshot. */
-export const playlistsRowsView = signal<PlaylistsRowsView>({ kind: "index", rows: [] });
+export const playlistsRowsView = signal<PlaylistsRowsView>({
+  kind: "index",
+  rows: [],
+  empty: true,
+  emptyText: "",
+});
 
 export async function initPlaylists(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
-  search = document.querySelector<HTMLInputElement>(".library__search")!;
-  emptyHint = document.querySelector<HTMLDivElement>(".library__empty")!;
-  newButton = document.querySelector<HTMLButtonElement>(".playlists__new")!;
-  backButton = document.querySelector<HTMLButtonElement>(".playlists__back")!;
   const stored = await loadPlaylists();
   const trackIds = new Set(libraryRecords().map((record) => record.id));
   setCatalog(hydratePlaylists(stored, trackIds));
 
-  newButton.addEventListener("click", () => {
-    const playlist = makePlaylist();
-    setCatalog([...getCatalog(), playlist]);
-    void savePlaylist(playlist);
-    render();
-  });
-  backButton.addEventListener("click", () => {
-    openId = null;
-    backButton.hidden = true;
-    render();
-  });
   registerModeSearch("playlists", () => {
-    render();
+    syncRowsView();
   });
   onModeChange(({ mode: next, previous }) => {
     if (next === "playlists") {
-      enterPlaylistsView();
+      syncRowsView();
     } else if (previous === "playlists") {
-      exitPlaylistsView();
+      // the next entry opens at the index, not inside a playlist
+      openId = null;
     }
   });
   // the playing highlight only exists in the open playlist's track view
   const onPlayState = () => {
     if (openId !== null) {
-      render();
+      syncRowsView();
     }
   };
   player.on("track:play", onPlayState);
   player.on("track:pause", onPlayState);
 }
 
-function enterPlaylistsView(): void {
-  search.placeholder = "Search playlists";
-  newButton.hidden = false;
-  backButton.hidden = true;
-  render();
-  showRecommendations();
-}
-
-function exitPlaylistsView(): void {
-  openId = null;
-  newButton.hidden = true;
-  backButton.hidden = true;
-  hideRecommendations();
-}
-
 function renderIndex(): void {
-  showRecommendations();
-  const query = search.value.trim().toLowerCase();
+  const query = searchQuery.value.trim().toLowerCase();
   const catalog = getCatalog();
   const visible = query
     ? catalog.filter((playlist) => playlist.name.toLowerCase().includes(query))
@@ -114,9 +84,12 @@ function renderIndex(): void {
     name: playlist.name,
     trackCount: playlist.trackIds.length,
   }));
-  emptyHint.hidden = rows.length > 0;
-  emptyHint.textContent = query ? "Nothing found" : "No playlists yet - create one";
-  playlistsRowsView.value = { kind: "index", rows };
+  playlistsRowsView.value = {
+    kind: "index",
+    rows,
+    empty: rows.length === 0,
+    emptyText: query ? "Nothing found" : "No playlists yet - create one",
+  };
 }
 
 function renderTracks(): void {
@@ -126,7 +99,7 @@ function renderTracks(): void {
     renderIndex();
     return;
   }
-  const query = search.value.trim().toLowerCase();
+  const query = searchQuery.value.trim().toLowerCase();
   const playing = recordAt(player.currentTrackIndex);
   const playingId = player.isPlaying && playing !== null ? playing.id : null;
   const resolved = resolvePlaylistRecords(playlist, libraryRecords());
@@ -148,14 +121,15 @@ function renderTracks(): void {
       artwork: libraryArtworkUrl(record),
       playing: playingId === record.id,
     }));
-  emptyHint.hidden = rows.length > 0;
-  emptyHint.textContent = query
-    ? "Nothing found"
-    : "Playlist is empty - add tracks from the library";
-  playlistsRowsView.value = { kind: "tracks", rows };
+  playlistsRowsView.value = {
+    kind: "tracks",
+    rows,
+    empty: rows.length === 0,
+    emptyText: query ? "Nothing found" : "Playlist is empty - add tracks from the library",
+  };
 }
 
-function render(): void {
+function syncRowsView(): void {
   if (openId === null) {
     renderIndex();
   } else {
@@ -163,36 +137,41 @@ function render(): void {
   }
 }
 
-/** Re-renders the playlists view after outside mutations (saved recommendations). */
-export function refreshPlaylistsView(): void {
-  if (getMode() === "playlists") {
-    render();
-  }
+/** Recomputes the rows after outside mutations (saved recommendation, rename). */
+export function refreshPlaylistsRows(): void {
+  syncRowsView();
 }
 
 /** Actions the island calls back: open a playlist's tracks. */
 export function openPlaylist(id: string): void {
   openId = id;
-  backButton.hidden = false;
-  search.value = "";
-  render();
+  syncRowsView();
+}
+
+/** The sidebar's New playlist button. */
+export function createPlaylist(): void {
+  const playlist = makePlaylist();
+  setCatalog([...getCatalog(), playlist]);
+  void savePlaylist(playlist);
+  syncRowsView();
+}
+
+/** The sidebar's All playlists button: back to the index. */
+export function closePlaylist(): void {
+  openId = null;
+  syncRowsView();
 }
 
 export function removeTrack(playlist: PlaylistRecord, position: number): void {
   playlist.trackIds.splice(position, 1);
   void savePlaylist(playlist);
-  render();
+  syncRowsView();
 }
 
 export function deletePlaylistById(id: string): void {
   setCatalog(getCatalog().filter((entry) => entry.id !== id));
   void deletePlaylist(id);
-  render();
-}
-
-/** Re-render entry point for the island's inline rename flow. */
-export function rerenderPlaylists(): void {
-  render();
+  syncRowsView();
 }
 
 export function getOpenPlaylist(): PlaylistRecord | undefined {
@@ -207,5 +186,5 @@ export function moveTrackAt(playlist: PlaylistRecord, from: number, to: number):
   const [trackId] = playlist.trackIds.splice(from, 1);
   playlist.trackIds.splice(to, 0, trackId);
   void savePlaylist(playlist);
-  render();
+  syncRowsView();
 }

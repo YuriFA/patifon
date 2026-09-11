@@ -3,7 +3,8 @@ import { searchStations, type RadioStation } from "./api";
 const SEARCH_DEBOUNCE_MS = 300;
 
 export interface SearchDeps {
-  search: HTMLInputElement;
+  /** The current search text (the sidebar island owns the field). */
+  search(): string;
   onResults: (stations: RadioStation[]) => void;
   onError: () => void;
 }
@@ -32,7 +33,7 @@ export function cancelScheduledSearch(): void {
 
 async function runSearch(deps: SearchDeps): Promise<void> {
   const seq = ++searchSeq;
-  const query = deps.search.value.trim();
+  const query = deps.search().trim();
   if (!query) {
     deps.onResults([]);
     return;

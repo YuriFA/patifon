@@ -651,6 +651,13 @@ body {
   }
 }
 
+/* Island mount points: the hosts render the real list elements, so the
+   wrappers stay layout-invisible. */
+#rows-host-root,
+#recommendations-rows-root {
+  display: contents;
+}
+
 .library__empty {
   padding: 30px 15px;
   color: var(--muted);
@@ -1676,10 +1683,7 @@ body.drop-hover::after {
      scrolls, the list no longer runs its own scrollbar. */
   .library__empty,
   .library__list,
-  .recommendations,
-  #library-rows-root,
-  #radio-rows-root,
-  #playlists-rows-root {
+  .recommendations {
     order: 4;
   }
 

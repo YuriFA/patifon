@@ -5,18 +5,18 @@ import "./styles/recommendations.css";
 import { render } from "preact";
 import AudioPlayer from "./audio-player";
 import { initMediaSession } from "./media-session";
-import { initLibrary, libraryMetadata, libraryRecords } from "./library/ui";
+import { initLibrary, libraryMetadata } from "./library/ui";
 import { initRadio, stopPlayback } from "./radio/ui";
 import { initVisualizer } from "./visualizer/controller";
 import { initLyrics } from "./lyrics/ui";
 import { initBridge, bridge } from "./ui/bridge";
 import { initWaveformStrip } from "./waveform/strip";
-import { initPlaylists, refreshPlaylistsView } from "./playlists/ui";
+import { initPlaylists } from "./playlists/ui";
 import { initScrobbling } from "./scrobbling/ui";
 import { initRecommendations } from "./recommendations/ui";
 import { registerSourceStop } from "./modes";
 import { SidebarHeader } from "./ui/sidebar-header";
-import { LibraryRows } from "./ui/library-view";
+import { RowsHost } from "./ui/rows-host";
 import { TransportControls } from "./ui/transport-controls";
 import { SeekBar } from "./ui/seek-bar";
 import { VolumeControl } from "./ui/volume-control";
@@ -25,8 +25,7 @@ import { VinylDeck } from "./ui/vinyl-deck";
 import { NowPlaying } from "./ui/now-playing";
 import { ScrobblingPopup } from "./ui/scrobbling-popup";
 import { EqualizerPopup } from "./ui/equalizer-popup";
-import { RadioRows } from "./ui/radio-view";
-import { PlaylistsRows } from "./ui/playlists-view";
+import { RecommendationsRows } from "./ui/recommendations-rows";
 import { RecommendationsState } from "./ui/recommendations-state";
 import { areaMode } from "./visualizer/area-mode";
 
@@ -64,13 +63,10 @@ player.volume = 0.1;
 
 initBridge(player);
 
-// Islands mount before the feature inits: those still query the shared
-// elements the sidebar island renders (search, buttons) at boot.
+// Islands mount before the feature inits: radio and playlists still query
+// the search field the sidebar island renders when they boot.
 render(<SidebarHeader />, document.querySelector<HTMLDivElement>(".library__header")!);
-render(
-  <LibraryRows list={document.querySelector<HTMLUListElement>(".library__list")!} />,
-  document.querySelector<HTMLDivElement>("#library-rows-root")!,
-);
+render(<RowsHost />, document.querySelector<HTMLDivElement>("#rows-host-root")!);
 render(<SeekBar player={player} />, document.querySelector<HTMLDivElement>("#seek-root")!);
 render(
   <TransportControls player={player} />,
@@ -80,6 +76,10 @@ render(<VolumeControl player={player} />, document.querySelector<HTMLDivElement>
 render(<AreaTabs />, document.querySelector<HTMLDivElement>("#area-tabs-root")!);
 render(<VinylDeck player={player} />, document.querySelector<HTMLDivElement>("#vinyl-root")!);
 render(<NowPlaying player={player} />, document.querySelector<HTMLDivElement>("#nowplaying-root")!);
+render(
+  <RecommendationsRows />,
+  document.querySelector<HTMLDivElement>("#recommendations-rows-root")!,
+);
 render(
   <RecommendationsState />,
   document.querySelector<HTMLDivElement>(".recommendations__state")!,
@@ -100,31 +100,14 @@ registerSourceStop("radio", stopPlayback);
 await initLibrary(player);
 
 // Radio mode: catalog search and live streams on the shared transport
-render(
-  <RadioRows list={document.querySelector<HTMLUListElement>(".library__list")!} />,
-  document.querySelector<HTMLDivElement>("#radio-rows-root")!,
-);
 await initRadio(player);
 
 // Playlists view: third mode alongside library and radio; the modes are
 // exclusive, so entering one exits the other.
-render(
-  <PlaylistsRows
-    list={document.querySelector<HTMLUListElement>(".library__list")!}
-    records={libraryRecords}
-  />,
-  document.querySelector<HTMLDivElement>("#playlists-rows-root")!,
-);
 await initPlaylists(player);
 
 // "Created for you": ListenBrainz recommendation playlists, matched to the library
-initRecommendations({
-  container: document.querySelector<HTMLDivElement>(".recommendations")!,
-  list: document.querySelector<HTMLUListElement>(".recommendations__list")!,
-  player,
-  records: libraryRecords,
-  onSaved: refreshPlaylistsView,
-});
+initRecommendations(player);
 // OS media surfaces (media keys, lock screen): metadata + transport controls
 initMediaSession(player, libraryMetadata);
 initLyrics(player);
