@@ -490,7 +490,10 @@ body {
   overflow: hidden;
   background: var(--card);
   border-right: 1px solid var(--border);
-  box-shadow: var(--shadow-panel);
+  /* drop shadow cast onto the stage across the right border; the
+     grid item must paint above the stage background */
+  z-index: 1;
+  box-shadow: var(--shadow-panel), 10px 0 20px -6px rgba(34, 29, 22, 0.09);
   min-height: 0;
 }
 
