@@ -1191,40 +1191,41 @@ body.drop-hover::after {
   box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
 }
 
-/* Bent headshell: the joint faces up-right toward the pivot, the teal
-   cartridge rides along the shell axis near the joint, and the gray
-   stylus tab sits at the far down-left tip. */
+/* Bent headshell: gray shell with a visible outline, the joint facing
+   up-right toward the pivot, the teal cartridge along the axis near the
+   joint, and the small gray stylus tab centered at the far tip. */
 .vinyl-deck__head {
   position: absolute;
   top: 182px;
-  left: -26px;
-  width: 52px;
-  height: 36px;
-  border-radius: 9px;
-  background: var(--card);
-  border: 1px solid var(--metal-base);
+  left: -27px;
+  width: 54px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--metal-light);
+  border: 1.5px solid var(--metal-dark);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
   transform: rotate(-45deg);
 
   &::after {
     content: "";
     position: absolute;
-    left: 4px;
-    bottom: 6px;
-    width: 9px;
-    height: 8px;
+    left: 5px;
+    top: 50%;
+    margin-top: -3.5px;
+    width: 10px;
+    height: 7px;
     border-radius: 2px;
-    background: var(--metal-base);
+    background: var(--metal-dark);
   }
 }
 
 .vinyl-deck__cartridge {
   position: absolute;
-  right: 4px;
+  right: 5px;
   top: 50%;
-  margin-top: -9px;
-  width: 24px;
-  height: 18px;
+  margin-top: -7px;
+  width: 26px;
+  height: 14px;
   border-radius: 5px;
   background: var(--primary);
 }
