@@ -709,15 +709,15 @@ body {
   border: 1px solid var(--border);
   object-fit: cover;
   flex-shrink: 0;
+}
 
-  &_empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--secondary);
-    color: var(--muted);
-    font-size: 20px;
-  }
+.library__thumb_empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--secondary);
+  color: var(--muted);
+  font-size: 20px;
 }
 
 .library__meta {
@@ -778,20 +778,18 @@ body.drop-hover::after {
 }
 
 /* Radio rows share the TrackRow anatomy; broken stations dim with a tag. */
-.radio__row {
-  &_error {
-    opacity: 0.55;
+.radio__row_error {
+  opacity: 0.55;
 
-    &::after {
-      content: "unavailable";
-      color: var(--primary);
-      font-size: 11px;
-      margin-left: 8px;
-    }
+  &::after {
+    content: "unavailable";
+    color: var(--primary);
+    font-size: 11px;
+    margin-left: 8px;
+  }
 
-    .library__duration {
-      display: none;
-    }
+  .library__duration {
+    display: none;
   }
 }
 
@@ -984,28 +982,36 @@ body.drop-hover::after {
 
 .vinyl-deck__screw {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  background: var(--metal-base);
-  box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.35);
+  background:
+    linear-gradient(var(--metal-base), var(--metal-base)) center / 60% 1.5px no-repeat,
+    var(--secondary);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 2px rgba(34, 29, 22, 0.3),
+    0 1px 1px rgba(255, 255, 255, 0.8);
+}
 
-  &_tl {
-    top: 24px;
-    left: 28px;
-  }
-  &_tr {
-    top: 24px;
-    right: 28px;
-  }
-  &_bl {
-    bottom: 24px;
-    left: 28px;
-  }
-  &_br {
-    bottom: 24px;
-    right: 28px;
-  }
+.vinyl-deck__screw_tl {
+  top: 22px;
+  left: 24px;
+}
+
+.vinyl-deck__screw_tr {
+  top: 22px;
+  right: 24px;
+}
+
+.vinyl-deck__screw_bl {
+  bottom: 22px;
+  left: 24px;
+}
+
+.vinyl-deck__screw_br {
+  bottom: 22px;
+  right: 24px;
 }
 
 .vinyl-deck__platter-wrap {
@@ -1106,47 +1112,57 @@ body.drop-hover::after {
   }
 }
 
-/* Tonearm: metal post, pivot bearing, straight arm and cartridge head.
-   The assembly swings around the pivot; the angle is bound inline from the
-   player's position (outer groove -> label), like a real turntable. */
+/* Tonearm, anchored at the bearing point (71% across, 18.5% down the
+   plinth - the draft's geometry). The zero-size anchor IS the swing
+   origin: the arm hangs straight down from it and the inline angle
+   (outer groove -> label) rotates the whole assembly around the pivot,
+   like a real turntable. */
 .vinyl-deck__tonearm {
   position: absolute;
-  top: 7%;
-  right: 6%;
-  width: 36%;
-  height: 64%;
-  transform-origin: 86% 11%;
+  top: 18.5%;
+  left: 71%;
+  width: 0;
+  height: 0;
+  z-index: 3;
   transition: transform 0.25s ease-out;
   pointer-events: none;
 }
 
-/* Metal cylinder behind the pivot (the counterweight post). */
-.vinyl-deck__arm-post {
+/* Counterweight cylinder behind the bearing, pointing away from the arm
+   (up-right once the assembly's swing is applied). */
+.vinyl-deck__arm-weight {
   position: absolute;
-  top: 0;
-  right: 4%;
-  width: 17%;
-  height: 17%;
-  border-radius: 6px;
-  background: linear-gradient(118deg, var(--metal-dark), var(--metal-light) 52%, var(--metal-base));
-  transform: rotate(-34deg);
-  box-shadow: 0 2px 4px rgba(34, 29, 22, 0.25);
+  bottom: 0;
+  left: -14px;
+  width: 28px;
+  height: 62px;
+  border-radius: 8px;
+  background: linear-gradient(105deg, var(--metal-dark), var(--metal-light) 50%, var(--metal-base));
+  box-shadow: 0 2px 5px rgba(34, 29, 22, 0.3);
+  transform-origin: 50% 100%;
+  transform: rotate(10deg);
 }
+
 .vinyl-deck__arm-pivot {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 24%;
+  top: 18.5%;
+  left: 71%;
+  transform: translate(-50%, -50%);
+  width: 52px;
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--fader-cap-from);
   border: 1px solid var(--fader-cap-border);
-  box-shadow: 0 2px 5px rgba(34, 29, 22, 0.2);
+  box-shadow:
+    inset 0 -2px 4px rgba(34, 29, 22, 0.12),
+    0 2px 5px rgba(34, 29, 22, 0.2);
+  z-index: 4;
+  pointer-events: none;
 
   &::after {
     content: "";
     position: absolute;
-    inset: 32%;
+    inset: 34%;
     border-radius: 50%;
     background: var(--metal-base);
     box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.4);
@@ -1155,59 +1171,85 @@ body.drop-hover::after {
 
 .vinyl-deck__arm {
   position: absolute;
-  top: 9%;
-  right: 9.5%;
-  width: 4.2%;
-  height: 84%;
+  top: -4px;
+  left: -3.5px;
+  width: 7px;
+  height: 176px;
   border-radius: 3px;
-  background: linear-gradient(180deg, var(--metal-light), var(--metal-base));
+  background: linear-gradient(90deg, var(--metal-base), var(--metal-light) 45%, var(--metal-base));
   box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
 }
 
-/* Cartridge head with a stylus nub. */
+/* Bent headshell (white shell + teal cartridge + stylus nub). */
 .vinyl-deck__head {
   position: absolute;
-  bottom: -1%;
-  right: 5%;
-  width: 15%;
-  height: 8.5%;
-  border-radius: 4px;
-  background: var(--primary);
+  top: 162px;
+  left: -23px;
+  width: 46px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--fader-cap-border);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
-  transform: rotate(-8deg);
+  transform: rotate(38deg);
 
   &::after {
     content: "";
     position: absolute;
-    left: 18%;
-    bottom: -22%;
-    width: 22%;
-    height: 26%;
+    left: 8px;
+    bottom: -5px;
+    width: 7px;
+    height: 7px;
     border-radius: 1px;
-    background: var(--vinyl);
+    background: var(--fg);
   }
+}
+
+.vinyl-deck__cartridge {
+  position: absolute;
+  left: 7px;
+  top: 5px;
+  width: 20px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--primary);
 }
 
 .vinyl-deck__controls {
   position: absolute;
-  left: 7%;
-  bottom: 12%;
+  left: 6.5%;
+  bottom: 7%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 22px;
 }
 
 /* Round start/stop mech button (canon deck button). */
 .vinyl-deck__start {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  color: var(--primary);
-  font-size: 14px;
 
   &:active {
     transform: translateY(1px);
   }
+}
+
+/* Filled square (stop) / triangle (play) glyph, canon accent. */
+.vinyl-deck__glyph {
+  display: block;
+  width: 13px;
+  height: 13px;
+  background: var(--primary);
+}
+
+.vinyl-deck__glyph_stop {
+  border-radius: 2px;
+}
+
+.vinyl-deck__glyph_play {
+  clip-path: polygon(12% 0, 100% 50%, 12% 100%);
 }
 
 /* Strobe power dot: a pulsing LED in a secondary ring while playing. */

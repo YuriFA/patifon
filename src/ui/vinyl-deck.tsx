@@ -65,17 +65,21 @@ function DeckControls({ player }: { player: AudioPlayer }) {
 
   return (
     <div class="vinyl-deck__controls">
-      <span class="vinyl-deck__power" aria-hidden="true">
-        <span class="vinyl-deck__power-led" />
-      </span>
       <button
         type="button"
         class="mech-button vinyl-deck__start"
         aria-label={playing ? "Stop" : "Start"}
         onClick={togglePlayback}
       >
-        {playing ? "■" : "▶"}
+        {playing ? (
+          <span class="vinyl-deck__glyph vinyl-deck__glyph_stop" />
+        ) : (
+          <span class="vinyl-deck__glyph vinyl-deck__glyph_play" />
+        )}
       </button>
+      <span class="vinyl-deck__power" aria-hidden="true">
+        <span class="vinyl-deck__power-led" />
+      </span>
     </div>
   );
 }
@@ -113,6 +117,24 @@ function PitchFader({ player }: { player: AudioPlayer }) {
   );
 }
 
+/** The swing assembly plus its static bearing circle (draft geometry). */
+function Tonearm({ armRef }: { armRef: RefObject<HTMLDivElement> }) {
+  return (
+    <>
+      {/* The whole assembly swings around the pivot point (outer groove
+          -> label); the bearing circle sits statically on top. */}
+      <div ref={armRef} class="vinyl-deck__tonearm">
+        <div class="vinyl-deck__arm-weight" />
+        <div class="vinyl-deck__arm" />
+        <div class="vinyl-deck__head">
+          <span class="vinyl-deck__cartridge" />
+        </div>
+      </div>
+      <div class="vinyl-deck__arm-pivot" />
+    </>
+  );
+}
+
 /**
  * The VINYL mode's turntable deck (draft): plinth, rotating platter, tonearm,
  * start/stop and a functional pitch fader. DOM/CSS only - no canvas, no
@@ -142,6 +164,7 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
     <div ref={deckRef} class="vinyl-deck">
       <div class="vinyl-deck__plinth" aria-label="Turntable">
         <span class="vinyl-deck__screw vinyl-deck__screw_tl" />
+        <span class="vinyl-deck__screw vinyl-deck__screw_tr" />
         <span class="vinyl-deck__screw vinyl-deck__screw_bl" />
         <span class="vinyl-deck__screw vinyl-deck__screw_br" />
         <div class="vinyl-deck__platter-wrap">
@@ -154,12 +177,7 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
             </div>
           </div>
         </div>
-        <div ref={armRef} class="vinyl-deck__tonearm">
-          <div class="vinyl-deck__arm-post" />
-          <div class="vinyl-deck__arm-pivot" />
-          <div class="vinyl-deck__arm" />
-          <div class="vinyl-deck__head" />
-        </div>
+        <Tonearm armRef={armRef} />
         <DeckControls player={player} />
         <PitchFader player={player} />
       </div>
