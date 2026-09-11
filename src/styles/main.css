@@ -3,54 +3,148 @@
 }
 
 :root {
-  --red: #ce3d60;
-  --grey: #bdc8d0;
-  --medium-grey: #8297a5;
-  --dark-grey-hover: #363942;
-  --font-color: #c6cbd1;
-  --bg-color: #262f35;
+  /* Patifon Warm Earth tokens - a 1:1 mirror of the canonical design
+     system (.superdesign/design-system.md): update that file first, then
+     reflect it here. Names and roles mirror the system verbatim. */
+  --bg: #f6f2ec;
+  --card: #fffdf9;
+  --secondary: #f0e9dd;
+  --border: #e8e0d4;
+  --accent-tint: #d9efec;
+  --fg: #221d16;
+  --muted: #8a8072;
+  --primary: #0f766e;
+  --destructive: #b91c1c;
+  --metal-light: #f0eeec;
+  --metal-base: #d1d5db;
+  --metal-dark: #9ca3af;
+  --vinyl: #1a1a1a;
+  --wave-dim: #c9c1b0;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* The mechanical shadow language (design system: shadows & materials). */
+  --shadow-mech: 0 2px 4px rgba(34, 29, 22, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  --shadow-mech-pressed: inset 0 2px 4px rgba(34, 29, 22, 0.12), 0 1px 1px rgba(255, 255, 255, 0.7);
+  --shadow-deck: 0 -4px 15px rgba(34, 29, 22, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+  --shadow-panel: inset 0 0 20px rgba(34, 29, 22, 0.02), 0 4px 12px rgba(34, 29, 22, 0.04);
+  --shadow-screen: inset 0 0 15px rgba(34, 29, 22, 0.15), 0 0 5px rgba(15, 118, 110, 0.15);
+  --shadow-plinth: inset 0 0 30px rgba(34, 29, 22, 0.02), 0 12px 25px rgba(34, 29, 22, 0.06);
+
+  /* Material textures - the only gradients the design system allows. */
+  --texture-metal: linear-gradient(90deg, #f0e9dd, #fffdf9 50%, #f0e9dd);
+  --texture-scanlines: repeating-linear-gradient(
+    0deg,
+    rgba(15, 118, 110, 0.04) 0 1px,
+    transparent 1px 2px
+  );
+  --texture-vinyl-grooves: repeating-radial-gradient(circle, #1a1a1a 0 2px, #111 3px 4px);
+  --texture-strobe: repeating-conic-gradient(from 1deg, #ebe7da 0 3deg, #dedac9 3deg 7.5deg);
+
+  /* Fader materials (design system: sliders - one fader language for
+     volume, pitch, and the EQ bands). */
+  --fader-rail: #f1eee2;
+  --fader-rail-border: #ddd8c9;
+  --fader-rail-line: #e0dac9;
+  --fader-cap-from: #fbfaf5;
+  --fader-cap-to: #e8e3d3;
+  --fader-cap-border: #cfc9b8;
 }
 
 * {
   padding: 0;
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  color: var(--font-color);
+  font-family: var(--font-mono);
+  color: var(--fg);
 }
 
 body {
   overflow: hidden;
-  background-color: var(--bg-color);
+  background-color: var(--bg);
 }
 
 .audio_player {
-  width: 100vw;
+  width: 100%;
+  max-width: 1440px;
   height: 100vh;
   margin-left: auto;
   margin-right: auto;
   overflow: hidden;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 1fr 140px;
+  grid-template-areas:
+    "sidebar main"
+    "deck deck";
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-plinth);
 }
 
-.bar {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 60px;
+/* Focus visibility: one ring for every control the redesign renders. */
+:where(button, input, [tabindex], [role="slider"]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.deck {
+  grid-area: deck;
+  position: relative;
   user-select: none;
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-deck);
 }
 
-.progress {
+/* Brushed-metal wash over the footer (the deck's only texture). */
+.deck::before {
+  content: "";
   position: absolute;
-  bottom: 60px;
-  width: 100%;
-  height: 15px;
+  inset: 0;
+  background: var(--texture-metal);
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* The waveform strip row: current time - wave lane - total time. */
+.deck__strip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.deck__controls {
+  position: relative;
+  z-index: 1;
+  height: calc(100% - 40px);
+}
+
+#seek-root {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.deck__time {
+  flex: 0 0 48px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.deck__time_now {
+  color: var(--primary);
+}
+
+.deck__time_total {
+  color: var(--muted);
+  text-align: right;
 }
 
 .progress__wave {
@@ -59,7 +153,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  /* clicks pass through to the RangeSlider, which keeps owning seek */
+  /* clicks pass through to the seek slider, which keeps owning seek */
   pointer-events: none;
 }
 
@@ -67,135 +161,169 @@ body {
   display: block;
 }
 
-.progress_wave .slider-horiz {
-  /* invisible but hit-testable: the canvas paints the visuals */
+/* While the wave renders, the plain slider visuals hide (opacity keeps the
+   measurable fill geometry for e2e); the canvas paints the wave instead. */
+.progress_wave .slider-horiz__track,
+.progress_wave .slider-horiz__filled,
+.progress_wave .slider-horiz__buffer,
+.progress_wave .slider-horiz__handle {
   opacity: 0;
 }
 
+/* The seek control's wave lane: the seek surface spanning the deck. */
 .progress__bar {
+  position: relative;
+  flex: 1 1 auto;
   height: 100%;
-  background-color: #eeeeee;
+  margin: 0 16px;
   cursor: pointer;
+  touch-action: none;
+}
 
-  & > .slider-horiz__track {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    margin: 0;
-    border-radius: 0;
+.progress__bar .slider-horiz__track {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
 
-    & > .slider-horiz__filled {
-      height: 100%;
-      border-radius: 0;
-    }
-  }
+.progress__bar .slider-horiz__filled {
+  height: 100%;
+  border-radius: 0;
+}
+
+.progress__bar .slider-horiz__buffer {
+  position: absolute;
+  inset: 0;
+  height: 100%;
 }
 
 .player-controls {
-  user-select: none;
-  padding-left: 15px;
+  height: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* anchor for the absolute popup panels */
+  position: relative;
 }
 
-.player-controls__btn {
-  width: 40px;
-  height: 40px;
-  padding: 10px;
-  opacity: 0.8;
+/* the islands render inline controls: their roots join the flex row */
+#transport-root {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#nowplaying-root {
+  flex: 1 1 auto;
+  max-width: 420px;
+  margin: 0 auto;
+  min-width: 0;
+  padding: 0 24px;
+}
+
+#volume-root {
+  display: flex;
+  align-items: center;
+}
+
+#equalizer-root {
+  margin-left: 32px;
+}
+
+#scrobbling-root {
+  margin-left: 12px;
+}
+
+/* The invisible native range input owns interaction for both sliders. */
+.slider-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
   cursor: pointer;
+}
 
-  &:hover {
-    opacity: 1;
-    background-color: var(--dark-grey-hover);
-  }
+.slider-input:disabled {
+  cursor: default;
+}
 
-  .icon {
-    width: 28px;
-    height: 28px;
-    margin: 6px;
-    background: center center no-repeat;
-    background-size: 100% 100%;
-  }
+/* Transport buttons render their glyphs as inline SVG (currentColor). */
+/* Transport mech buttons: prev/next 56x56, play 80x64 with the latched
+   look while playing; panel toggles 56x56 with icon + sublabel. The base
+   mech language comes from .mech-button (ui.css). */
+.player-controls__btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  color: var(--fg);
 
-  &.player-controls__btn_prev > .icon {
-    background-image: url("/assets/images/prev.svg");
-  }
+  &[aria-disabled="true"] {
+    opacity: 0.35;
+    cursor: default;
 
-  &.player-controls__btn_play > .icon {
-    background-image: url("/assets/images/play.svg");
-  }
-
-  &.player-controls__btn_next > .icon {
-    background-image: url("/assets/images/next.svg");
-  }
-
-  &.player-controls__btn_pause > .icon {
-    background-image: url("/assets/images/pause.svg");
-  }
-
-  &.player-controls__btn_equalizer {
-    position: absolute;
-    right: 15px;
-
-    & > .icon {
-      background-image: url("/assets/images/equalizer.svg");
+    &:hover {
+      background-color: var(--secondary);
+      border-color: var(--border);
     }
   }
 }
 
+.player-controls__btn_play {
+  width: 80px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+/* Panel toggles (EQ/SCROB): icon over a 9px uppercase sublabel. */
+.player-controls__btn_panel {
+  flex-direction: column;
+  gap: 2px;
+
+  .player-controls__btn-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+
+  &.is-on .player-controls__btn-label {
+    color: var(--primary);
+  }
+}
+
+/* The volume group: round mute mech + the horizontal fader (ui.css fader
+   language; 150px rail like the canvas draft). */
 .player-controls__volume-container {
-  vertical-align: top;
-  display: inline-block;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .volume__btn {
-  display: inline-block;
-  vertical-align: top;
-  cursor: pointer;
-  opacity: 0.8;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  & > .volume__icon {
-    width: 24px;
-    height: 24px;
-    margin: 8px;
-    background: url("/assets/images/volume.svg") center center no-repeat;
-    background-position: 0 0;
-
-    &.volume__icon_half {
-      background-position: 0 -24px;
-    }
-
-    &.volume__icon_mute {
-      background-position: 0 -48px;
-    }
-  }
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
 }
 
-.volume__control {
-  display: inline-block;
-  vertical-align: middle;
-  padding: 4px 0;
-
-  & > .volume__slider {
-    width: 136px;
-    height: 32px;
-  }
+.volume__fader {
+  width: 150px;
+  flex: 0 0 150px;
 }
 
+/* Popup chrome (canon): card panel with a primary border, 8px radius,
+   drop shadow, and a caret pointing down at its trigger. */
 .equalizer-popup {
   position: absolute;
-  right: 15px;
-  bottom: 60px;
+  right: 96px;
+  bottom: calc(100% + 12px);
   max-height: 0;
   border: none;
-  background-color: var(--bg-color);
-  color: #ffffff;
+  background-color: var(--card);
+  border-radius: 8px;
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;
@@ -203,21 +331,21 @@ body {
   &.equalizer-popup__open {
     max-height: 500px;
     overflow: visible;
-    border: 1px solid var(--red);
+    border: 1px solid var(--primary);
     transition: max-height 0.3s;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(28, 27, 23, 0.18);
   }
 
   &::after {
     content: "";
     position: absolute;
-    right: 20px;
+    right: 24px;
     bottom: -10px;
     display: block;
     width: 0;
     height: 0;
     border-width: 10px 9px 0 9px;
-    border-color: var(--red) transparent transparent transparent;
+    border-color: var(--primary) transparent transparent transparent;
     border-style: solid;
   }
 }
@@ -226,9 +354,9 @@ body {
   padding: 10px 20px 0 20px;
 
   select {
-    background-color: var(--bg-color);
-    color: var(--font-color);
-    border: 1px solid var(--medium-grey);
+    background-color: var(--card);
+    color: var(--fg);
+    border: 1px solid var(--muted);
     border-radius: 3px;
     padding: 2px 6px;
     font-size: 12px;
@@ -286,52 +414,6 @@ body {
   }
 }
 
-.slider-horiz {
-  position: relative;
-  cursor: pointer;
-
-  .slider-horiz__track {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    margin-top: -3px;
-    border-radius: 3px;
-    background-color: var(--grey);
-  }
-
-  .slider-horiz__filled {
-    position: absolute;
-    width: 0%;
-    height: 6px;
-    border-radius: 3px;
-    background-color: var(--red);
-  }
-
-  .slider-horiz__handle {
-    position: absolute;
-    top: -5px;
-    right: -8px;
-    z-index: 2;
-    display: block;
-    width: 16px;
-    height: 16px;
-    box-sizing: border-box;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
-    outline: none;
-  }
-
-  .slider-horiz__buffer {
-    z-index: 2;
-    height: 100%;
-    background-color: var(--medium-grey);
-  }
-}
-
 .slider-vert {
   position: relative;
   cursor: pointer;
@@ -344,7 +426,7 @@ body {
     height: 100%;
     margin-left: -3px;
     border-radius: 3px;
-    background-color: var(--grey);
+    background-color: var(--muted);
   }
 
   .slider-vert__filled {
@@ -353,7 +435,7 @@ body {
     width: 6px;
     height: 0%;
     border-radius: 3px;
-    background-color: var(--red);
+    background-color: var(--primary);
   }
 
   .slider-vert__handle {
@@ -375,7 +457,7 @@ body {
   .slider-vert__buffer {
     z-index: 2;
     width: 100%;
-    background-color: var(--medium-grey);
+    background-color: var(--muted);
   }
 }
 
@@ -390,171 +472,329 @@ body {
   display: block;
 }
 
-/* Library */
+/* Visualization area */
+.audio_visualize {
+  grid-area: main;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+/* Library sidebar: the Patifon panel (card fill, inset panel shadow, right
+   hairline). Header = brand row + mode switcher, recessed search, context
+   eyebrow row; the list sits on the bg surface. */
 .playlist {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 90px;
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  /* drop shadow cast onto the stage across the right border; the
+     grid item must paint above the stage background */
+  z-index: 1;
+  box-shadow:
+    var(--shadow-panel),
+    10px 0 20px -6px rgba(34, 29, 22, 0.09);
+  min-height: 0;
 }
 
 .library__header {
   display: flex;
-  gap: 8px;
-  padding: 12px 15px;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.library__search {
-  flex: 1;
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
-  border-radius: 3px;
-  padding: 4px 8px;
-  font-size: 13px;
-  outline: none;
+.sidebar__brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-  &:focus {
-    border-color: var(--red);
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+}
+
+.sidebar__brand svg {
+  color: var(--primary);
+}
+
+.sidebar__modes {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar__mode {
+  width: 48px;
+  height: 40px;
+  color: var(--muted);
+}
+
+.sidebar__mode.is-on {
+  color: var(--primary);
+}
+
+/* Recessed search field (canon): secondary fill, inner shadow, glyph left. */
+.sidebar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 3px rgba(34, 29, 22, 0.08);
+
+  svg {
+    position: absolute;
+    left: 12px;
+    color: var(--muted);
+    pointer-events: none;
   }
 }
 
-.library__add,
+.library__search {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px 6px 36px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+
+  &:focus {
+    box-shadow: 0 0 0 2px var(--accent-tint);
+  }
+}
+
+.sidebar__context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.sidebar__context-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar__context-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.library__add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 .library__add-dir,
 .playlists__new,
 .playlists__back {
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
-  border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 13px;
+  background-color: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--red);
+    border-color: var(--primary);
+  }
+}
+
+/* Add folder shares the Add Files link language in the context row. */
+.library__add-dir {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+
+  svg {
+    flex-shrink: 0;
   }
 }
 
 .library__empty {
   padding: 30px 15px;
-  color: var(--medium-grey);
-  font-size: 14px;
+  color: var(--muted);
+  font-size: 13px;
   text-align: center;
 }
 
 .library__list {
   margin: 0;
-  padding: 0 15px;
+  padding: 16px;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
 }
 
+/* TrackRow anatomy (canon): 48px artwork tile, title/artist column, right
+   meta; playing = 3px primary left bar + tint fill; hover on idle rows =
+   card fill + hairline appears. */
 .library__row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: 3px;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   cursor: pointer;
-  border-left: 2px solid transparent;
 
   &:hover {
-    background-color: var(--dark-grey-hover);
+    background-color: var(--card);
+    border-color: var(--border);
   }
 
   &.library__row_playing {
-    background-color: #2e3540;
-    border-left-color: var(--red);
+    background-color: var(--accent-tint);
+    border-color: rgba(15, 118, 110, 0.4);
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(15, 118, 110, 0.5);
+    }
   }
 }
 
 .library__thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 3px;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
   object-fit: cover;
   flex-shrink: 0;
+}
 
-  &_empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--dark-grey-hover);
-    color: var(--medium-grey);
-    font-size: 16px;
-  }
+.library__thumb_empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--secondary);
+  color: var(--muted);
+  font-size: 20px;
 }
 
 .library__meta {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.library__title {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  .library__row_playing & {
+    font-weight: 700;
+  }
+}
+
+.library__artist {
+  font-size: 12px;
+  color: var(--muted);
   white-space: nowrap;
-  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .library__duration {
-  color: var(--medium-grey);
+  color: var(--muted);
   font-size: 12px;
+
+  .library__row_playing & {
+    font-weight: 700;
+    color: var(--primary);
+  }
+}
+
+.library__playing-glyph {
+  display: none;
+  color: var(--primary);
+
+  .library__row_playing & {
+    display: inline-flex;
+  }
 }
 
 body.drop-hover::after {
   content: "";
   position: fixed;
   inset: 8px;
-  border: 2px dashed var(--red);
+  border: 2px dashed var(--primary);
   border-radius: 6px;
   pointer-events: none;
   z-index: 10;
 }
 
-/* Radio mode */
+/* Radio rows share the TrackRow anatomy; broken stations dim with a tag. */
+.radio__row_error {
+  opacity: 0.55;
 
-.library__mode,
-.library__mode-playlists {
-  flex-shrink: 0;
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--medium-grey);
-  border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--red);
+  &::after {
+    content: "unavailable";
+    color: var(--primary);
+    font-size: 11px;
+    margin-left: 8px;
   }
 
-  &_active {
-    background-color: var(--red);
-    border-color: var(--red);
-    color: #fff;
-  }
-}
-
-.radio__row {
-  .library__meta {
-    font-size: 13px;
-  }
-
-  &_error {
-    opacity: 0.55;
-
-    &::after {
-      content: "unavailable";
-      color: var(--red);
-      font-size: 11px;
-      margin-left: 8px;
-    }
-
-    .library__duration {
-      display: none;
-    }
+  .library__duration {
+    display: none;
   }
 }
 
@@ -568,7 +808,7 @@ body.drop-hover::after {
   width: 22px;
   height: 22px;
   background: transparent;
-  color: var(--medium-grey);
+  color: var(--muted);
   border: none;
   border-radius: 3px;
   font-size: 14px;
@@ -576,8 +816,8 @@ body.drop-hover::after {
   padding: 0;
 
   &:hover {
-    color: var(--font-color);
-    background-color: var(--dark-grey-hover);
+    color: var(--fg);
+    background-color: var(--secondary);
   }
 }
 
@@ -587,7 +827,7 @@ body.drop-hover::after {
 
 .library__row_queued::after {
   content: "queued";
-  color: var(--red);
+  color: var(--primary);
   font-size: 10px;
   margin-left: 4px;
   flex-shrink: 0;
@@ -605,8 +845,8 @@ body.drop-hover::after {
   top: 100%;
   z-index: 5;
   min-width: 150px;
-  background-color: var(--dark-grey-hover);
-  border: 1px solid var(--medium-grey);
+  background-color: var(--secondary);
+  border: 1px solid var(--muted);
   border-radius: 3px;
   padding: 4px;
   display: flex;
@@ -616,7 +856,7 @@ body.drop-hover::after {
 
 .playlists__popover-item {
   background: transparent;
-  color: var(--font-color);
+  color: var(--fg);
   border: none;
   border-radius: 3px;
   font-size: 13px;
@@ -625,17 +865,17 @@ body.drop-hover::after {
   cursor: pointer;
 
   &:hover {
-    background-color: var(--dark-grey-hover);
-    color: var(--red);
+    background-color: var(--secondary);
+    color: var(--primary);
   }
 }
 
 .playlists__rename-input {
   flex: 1;
   min-width: 0;
-  background-color: var(--dark-grey-hover);
-  color: var(--font-color);
-  border: 1px solid var(--red);
+  background-color: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--primary);
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 13px;
@@ -656,55 +896,569 @@ body.drop-hover::after {
 .progress__live {
   display: none;
   position: absolute;
-  right: 12px;
-  top: -5px;
+  top: 3px;
+  right: 10px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--red);
-  border: 1px solid var(--red);
+  color: var(--primary);
+  border: 1px solid var(--primary);
   border-radius: 3px;
   padding: 0 4px;
+  background: var(--card);
+  z-index: 2;
 }
 
 .visualizer-controls {
   position: absolute;
   /* the visualization area's free corner: below the library header, above
-     the progress strip - both top corners are owned by the header buttons */
-  bottom: 84px;
-  right: 12px;
+     the deck - the top-right corner is owned by the mode tabs */
+  bottom: 16px;
+  right: 24px;
   z-index: 2;
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .visualizer-controls__mode,
-.visualizer-controls__skip,
-.visualizer-controls__lyrics {
+.visualizer-controls__skip {
+  background: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-mech);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--red);
-  border: 1px solid var(--red);
-  border-radius: 3px;
-  padding: 0 4px;
-  /* scenes render behind the row: a dim backing keeps the badges legible */
-  background: rgba(38, 47, 53, 0.55);
+  text-transform: uppercase;
+  padding: 4px 10px;
   cursor: pointer;
+  transition: all 75ms;
 
-  &:hover {
-    background-color: var(--dark-grey-hover);
+  &:active {
+    box-shadow: var(--shadow-mech-pressed);
+    transform: translateY(1px);
   }
 }
 
-/* karaoke on: filled badge reads as an enabled state toggle */
-.visualizer-controls__lyrics_active {
-  background-color: var(--red);
-  color: var(--bg-color);
+/* Mode tabs: latching text mech chips pinned top-right of the stage. */
+.area-tabs {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.area-tabs__tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
 
   &:hover {
-    background-color: var(--red);
+    color: var(--fg);
   }
+}
+
+/* Vinyl deck: the VINYL mode's turntable (draft). DOM/CSS only - the
+   platter rotates via animation-play-state, the tonearm is a transform. */
+.vinyl-deck {
+  position: absolute;
+  inset: 24px 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-deck__plinth {
+  position: relative;
+  width: min(600px, 92%);
+  aspect-ratio: 5 / 4;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-plinth);
+}
+
+.vinyl-deck__screw {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--metal-base), var(--metal-base)) center / 60% 1.5px no-repeat,
+    var(--secondary);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 2px rgba(34, 29, 22, 0.3),
+    0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.vinyl-deck__screw_tl {
+  top: 22px;
+  left: 24px;
+}
+
+.vinyl-deck__screw_tr {
+  top: 22px;
+  right: 24px;
+}
+
+.vinyl-deck__screw_bl {
+  bottom: 22px;
+  left: 24px;
+}
+
+.vinyl-deck__screw_br {
+  bottom: 22px;
+  right: 24px;
+}
+
+.vinyl-deck__platter-wrap {
+  position: absolute;
+  top: 49%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  width: 63.5%;
+  aspect-ratio: 1;
+}
+
+/* Strobe rim around the platter edge (the strobe texture, canon). */
+.vinyl-deck__rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    var(--texture-strobe) padding-box,
+    #e5e5e4;
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.7),
+    0 12px 25px rgba(34, 29, 22, 0.15);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 8px dashed #d4d4d1;
+  }
+}
+
+/* The vinyl: grooves texture with a diagonal sheen, spinning while playing. */
+.vinyl-deck__platter {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background:
+    linear-gradient(to top right, rgba(255, 255, 255, 0.1), transparent, rgba(255, 255, 255, 0.1)),
+    var(--texture-vinyl-grooves);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  animation: vinyl-spin 4s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.vinyl-deck_playing .vinyl-deck__platter {
+  animation-play-state: running;
+}
+
+/* Mint center label (accent-tint) ringed dark, rotating with the record. */
+.vinyl-deck__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36.5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  border: 3px solid var(--fg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-mono);
+  user-select: none;
+}
+
+.vinyl-deck__label-stereo {
+  position: absolute;
+  bottom: calc(50% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: clamp(8px, 1.2vh, 10px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.vinyl-deck__label-rpm {
+  position: absolute;
+  top: calc(50% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: clamp(12px, 1.9vh, 14px);
+  font-weight: 700;
+  color: var(--fg);
+}
+
+/* The spindle hole: exactly at the record's center - the axis the platter
+   spins around. */
+.vinyl-deck__hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--metal-dark);
+  box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.5);
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tonearm, anchored at the bearing point (71% across, 18.5% down the
+   plinth - the draft's geometry). The zero-size anchor IS the swing
+   origin: the arm hangs straight down from it and the inline angle
+   (outer groove -> label) rotates the whole assembly around the pivot,
+   like a real turntable. */
+.vinyl-deck__tonearm {
+  position: absolute;
+  top: 18.5%;
+  left: 71%;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  transition: transform 0.25s ease-out;
+  pointer-events: none;
+}
+
+/* Counterweight cylinder behind the bearing, pointing away from the arm
+   (up-right once the assembly's swing is applied). */
+.vinyl-deck__arm-weight {
+  position: absolute;
+  bottom: 0;
+  left: -14px;
+  width: 28px;
+  height: 62px;
+  border-radius: 8px;
+  background: linear-gradient(105deg, var(--metal-dark), var(--metal-light) 50%, var(--metal-base));
+  box-shadow: 0 2px 5px rgba(34, 29, 22, 0.3);
+  transform-origin: 50% 100%;
+  transform: rotate(10deg);
+}
+
+.vinyl-deck__arm-pivot {
+  position: absolute;
+  top: 18.5%;
+  left: 71%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--fader-cap-from);
+  border: 1px solid var(--fader-cap-border);
+  box-shadow:
+    inset 0 -2px 4px rgba(34, 29, 22, 0.12),
+    0 2px 5px rgba(34, 29, 22, 0.2);
+  z-index: 4;
+  pointer-events: none;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 34%;
+    border-radius: 50%;
+    background: var(--metal-base);
+    box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.4);
+  }
+}
+
+.vinyl-deck__arm {
+  position: absolute;
+  top: -4px;
+  left: -3.5px;
+  width: 7px;
+  /* ends flush with the headshell's short side: the shell reads as a
+     bent continuation of the tube, not a mount in its middle */
+  height: 184px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--metal-base), var(--metal-light) 45%, var(--metal-base));
+  box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
+}
+
+/* Bent headshell: gray shell with a visible outline, the joint facing
+   up-right toward the pivot, the teal cartridge along the axis near the
+   joint, and the small gray stylus tab centered at the far tip. */
+.vinyl-deck__head {
+  position: absolute;
+  top: 170px;
+  left: -36px;
+  width: 54px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--metal-light);
+  border: 1.5px solid var(--metal-dark);
+  box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
+  /* long axis continues the tube downward, bent ~10° toward the
+     spindle */
+  transform: rotate(100deg);
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    margin-top: 0;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 4px;
+    border-radius: 1px;
+    background: var(--metal-dark);
+  }
+}
+
+.vinyl-deck__cartridge {
+  position: absolute;
+  left: 5px;
+  top: 45%;
+  margin-top: -7px;
+  width: 26px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--primary);
+}
+
+.vinyl-deck__controls {
+  position: absolute;
+  left: 4%;
+  bottom: 12%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+/* Round start/stop mech button (canon deck button). */
+.vinyl-deck__start {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+/* Filled square (stop) / triangle (play) glyph, canon accent. */
+.vinyl-deck__glyph {
+  display: block;
+  width: 13px;
+  height: 13px;
+  background: var(--primary);
+}
+
+.vinyl-deck__glyph_stop {
+  border-radius: 2px;
+}
+
+.vinyl-deck__glyph_play {
+  clip-path: polygon(12% 0, 100% 50%, 12% 100%);
+}
+
+/* Strobe power dot: a pulsing LED in a secondary ring while playing. */
+.vinyl-deck__power {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+
+.vinyl-deck__power-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.55;
+}
+
+.vinyl-deck_playing .vinyl-deck__power-led {
+  opacity: 1;
+  animation: vinyl-power-pulse 2s ease-in-out infinite;
+}
+
+@keyframes vinyl-power-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(15, 118, 110, 0.45);
+  }
+}
+
+/* Pitch fader: the shared fader language on a vertical rail (recessed
+   capsule + center hairline + wide cap with the teal line), +8/0/-8 scale
+   beside it, mono readout below. */
+.vinyl-deck__pitch-group {
+  position: absolute;
+  right: 24px;
+  bottom: 40px;
+  width: 64px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vinyl-deck__pitch-rail {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  /* the vertical range input's intrinsic height must not floor the flex
+     item - the group owns the 160px budget */
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.vinyl-deck__pitch-scale {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 9px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.vinyl-deck__pitch {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+  width: 34px;
+  height: 100%;
+  background: transparent;
+  cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    width: 14px;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--fader-rail-line), var(--fader-rail-line)) center / 2px calc(100% - 8px)
+        no-repeat,
+      var(--fader-rail);
+    border: 1px solid var(--fader-rail-border);
+    box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 34px;
+    height: 16px;
+    margin-left: -10px;
+    border-radius: 4px;
+    background:
+      linear-gradient(var(--primary), var(--primary)) center / 100% 2px no-repeat,
+      linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+    border: 1px solid var(--fader-cap-border);
+    box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
+  }
+
+  &::-moz-range-track {
+    width: 14px;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--fader-rail-line), var(--fader-rail-line)) center / 2px calc(100% - 8px)
+        no-repeat,
+      var(--fader-rail);
+    border: 1px solid var(--fader-rail-border);
+  }
+
+  &::-moz-range-thumb {
+    width: 34px;
+    height: 16px;
+    border-radius: 4px;
+    background:
+      linear-gradient(var(--primary), var(--primary)) center / 100% 2px no-repeat,
+      linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+    border: 1px solid var(--fader-cap-border);
+  }
+}
+
+.vinyl-deck__pitch-value {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Now playing: the deck's glass readout screen (canon). */
+.now-playing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  height: 64px;
+  border-radius: 6px;
+  padding: 0 20px;
+}
+
+.now-playing__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.now-playing__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.now-playing__track {
+  font-size: 14px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-playing__meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  opacity: 0.9;
+}
+
+.now-playing__meter canvas {
+  height: 28px;
+  width: 44px;
 }
 
 .station-now {
@@ -734,7 +1488,7 @@ body.drop-hover::after {
   width: 72px;
   height: 72px;
   border-radius: 6px;
-  background-color: var(--dark-grey-hover);
+  background-color: var(--secondary);
   font-size: 32px;
 }
 
@@ -745,7 +1499,7 @@ body.drop-hover::after {
 
 .station-now__tags {
   font-size: 12px;
-  color: var(--medium-grey);
+  color: var(--muted);
 }
 
 .lyrics {
@@ -753,7 +1507,7 @@ body.drop-hover::after {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 60px;
+  bottom: 0;
   overflow-y: auto;
   padding: 40px 20%;
   text-align: center;
@@ -772,10 +1526,10 @@ body.drop-hover::after {
   gap: 14px;
   font-size: 17px;
   line-height: 1.4;
-  color: var(--medium-grey);
+  color: var(--muted);
 }
 .lyrics__line {
-  color: var(--medium-grey);
+  color: var(--muted);
   cursor: pointer;
   transition: color 0.15s ease;
   /* inherit none from the overlay container: lines alone take clicks */
@@ -783,11 +1537,11 @@ body.drop-hover::after {
 }
 
 .lyrics__line:hover {
-  color: var(--grey);
+  color: var(--muted);
 }
 
 .lyrics__line_active {
-  color: var(--red);
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -795,20 +1549,289 @@ body.drop-hover::after {
   cursor: default;
 }
 
+.lyrics__empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .radio__star {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--medium-grey);
+  color: var(--muted);
   font-size: 15px;
   cursor: pointer;
   padding: 2px 4px;
 
   &:hover {
-    color: var(--red);
+    color: var(--primary);
   }
 }
 
 .radio__star_saved {
-  color: var(--red);
+  color: var(--primary);
+}
+
+/* ============================================================
+   Mobile shell (mobile-shell change). Below 760px the desktop grid
+   reflows into the approved mobile draft's single column: the sidebar
+   chrome pins as a header, the stage and the shared list scroll as one
+   column, the deck stays pinned with its rows stacked, and the transport
+   popups dock as bottom sheets. Desktop (761px and up) is untouched -
+   the reflow is additive CSS only, no DOM restructuring.
+   ============================================================ */
+@media (max-width: 760px) {
+  .audio_player {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  /* The two grid containers donate their children to the shell column;
+     the children are placed with order (header, tabs, stage, list, deck). */
+  .playlist,
+  .audio_visualize {
+    display: contents;
+  }
+
+  .library__header {
+    order: 1;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    gap: 12px;
+    padding: 16px 16px 12px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    background: var(--card);
+  }
+
+  #area-tabs-root {
+    order: 2;
+    padding: 16px 16px 0;
+  }
+
+  .area-tabs {
+    position: static;
+    justify-content: flex-end;
+  }
+
+  /* Stage: the canvases carry explicit flow sizing (their boot-time
+     buffer sizing follows the CSS box); the station card and the lyrics
+     join the column instead of overlaying the stage. */
+  #visualizer,
+  .visualizer__webgl {
+    order: 3;
+    width: 100%;
+    height: 55dvh;
+  }
+
+  .station-now {
+    order: 3;
+    position: static;
+    transform: none;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  .lyrics {
+    order: 3;
+    position: static;
+    overflow: visible;
+    padding: 24px;
+  }
+
+  .visualizer-controls {
+    order: 3;
+    position: static;
+    justify-content: flex-end;
+    padding: 8px 16px 0;
+  }
+
+  /* Turntable: the plinth anatomy is percentage-based already; zoom
+     scales the fixed-px parts (tonearm, deck buttons, screws) as one
+     unit, and the width divide compensates so the rendered box still
+     fills the column. */
+  #vinyl-root {
+    order: 3;
+  }
+
+  .vinyl-deck {
+    position: static;
+    padding: 16px 16px 24px;
+  }
+
+  .vinyl-deck__plinth {
+    zoom: 0.6;
+    width: calc(100% / 0.6);
+  }
+
+  /* Shared list: released into the column flow - the column itself
+     scrolls, the list no longer runs its own scrollbar. */
+  .library__empty,
+  .library__list,
+  .recommendations,
+  #library-rows-root,
+  #radio-rows-root,
+  #playlists-rows-root {
+    order: 4;
+  }
+
+  .library__empty {
+    padding: 24px 16px;
+  }
+
+  .library__list {
+    flex: none;
+    overflow-y: visible;
+    min-height: 0;
+    padding: 12px 16px 16px;
+  }
+
+  /* Deck: pinned to the viewport bottom (sticky while the column
+     scrolls; margin-top keeps it there when the content is short), with
+     the rows stacked - strip, then readout + volume, then transport +
+     panel toggles. */
+  .deck {
+    order: 10;
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    height: auto;
+    margin-top: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .deck__strip {
+    padding: 0 12px;
+  }
+
+  .deck__controls {
+    height: auto;
+  }
+
+  .player-controls {
+    flex-wrap: wrap;
+    column-gap: 12px;
+    row-gap: 10px;
+    justify-content: flex-start;
+    padding: 10px 16px 12px;
+  }
+
+  #nowplaying-root {
+    order: 1;
+    flex: 1 1 140px;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  #volume-root {
+    order: 2;
+    margin-left: auto;
+  }
+
+  #transport-root {
+    order: 3;
+    gap: 12px;
+  }
+
+  #equalizer-root,
+  #scrobbling-root {
+    margin-left: 0;
+  }
+
+  #equalizer-root {
+    order: 4;
+    /* the panels ride at the row's right edge, side by side (draft) */
+    margin-left: auto;
+  }
+
+  #scrobbling-root {
+    order: 5;
+  }
+
+  /* Touch ergonomics: every chrome/deck control reaches a 44px hit area
+     (desktop sizes stay above the breakpoint). */
+  .sidebar__mode {
+    width: 44px;
+    height: 44px;
+  }
+
+  .player-controls__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .player-controls__btn_play {
+    width: 64px;
+    height: 48px;
+  }
+
+  .player-controls__btn_panel {
+    width: 48px;
+    height: 48px;
+  }
+
+  .volume__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .volume__fader {
+    width: 110px;
+    flex-basis: 110px;
+  }
+
+  /* Transport popups dock as bottom sheets: full width, rounded top,
+     a drag-handle affordance, sliding up through the existing
+     max-height transition; the trigger caret disappears. The extra
+     .player-controls anchor outranks the popup rules that live in the
+     later-loaded per-feature stylesheets. */
+  .player-controls .equalizer-popup,
+  .player-controls .scrobbling-popup {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+
+    &::after {
+      display: none;
+    }
+
+    &::before {
+      content: "";
+      display: block;
+      width: 44px;
+      height: 4px;
+      margin: 10px auto 0;
+      border-radius: 999px;
+      background: var(--border);
+    }
+  }
+
+  .player-controls .equalizer-popup.equalizer-popup__open,
+  .player-controls .scrobbling-popup.scrobbling-popup__open {
+    max-height: min(500px, 75dvh);
+    overflow-y: auto;
+    border: 1px solid var(--primary);
+    border-bottom: none;
+  }
+
+  .equalizer__bands {
+    width: auto;
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+  }
 }

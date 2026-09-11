@@ -6,6 +6,8 @@ export const MEDIA_EVENTS_FORWARDED = [
   "progress",
   "loadeddata",
   "canplaythrough",
+  "volumechange",
+  "ratechange",
   "loadedmetadata",
   "timeupdate",
   "play",

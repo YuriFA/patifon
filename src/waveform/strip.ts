@@ -5,8 +5,10 @@ import { loadWaveform } from "./store";
 
 export interface WaveformStripDeps {
   player: AudioPlayer;
-  /** The .progress container: hosts the strip canvas. */
-  progress: HTMLElement;
+  /** The strip row (deck__strip): owns the progress_wave/live classes. */
+  strip: HTMLElement;
+  /** The wave lane (.progress__bar): hosts the strip canvas. */
+  lane: HTMLElement;
   /** Buffer ratio (0..1) of the current source, kept up to date by the owner. */
   getBufferRatio(): number;
   /** True while a radio station owns the transport (live streams have no wave). */
@@ -15,15 +17,25 @@ export interface WaveformStripDeps {
   currentRecord(): LibraryRecord | null;
 }
 
-const DIM_COLOR = "#6b7280";
-const PLAYED_COLOR = "#e33d3d";
-const BUFFER_COLOR = "rgba(255, 255, 255, 0.18)";
+/** Canvas fills cannot read CSS vars: resolve the theme tokens once. */
+function themeColor(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+let DIM_COLOR = "#c9c1b0";
+let PLAYED_COLOR = "#0f766e";
+const BUFFER_COLOR = "rgba(34, 29, 22, 0.12)";
+
+/** Wave amplitude against the lane's half-height (the draft wave is a
+ * modest silhouette inside the 40px strip row, not a full-bleed wave). */
+const AMPLITUDE = 0.55;
 
 /**
- * The interactive waveform strip: a canvas overlay on the existing seek bar.
- * The underlying RangeSlider keeps owning pointer events - the strip only
- * mirrors the same ratio (played tint, buffer overlay), so seek semantics
- * cannot drift between the two.
+ * The interactive waveform strip: a canvas overlay inside the seek lane.
+ * The underlying native range keeps owning pointer events - the strip only
+ * mirrors the same ratio (played tint, playhead, buffer overlay), so seek
+ * semantics cannot drift between the two. The wave is one continuous,
+ * gapless mirrored silhouette (canon): every column touches its neighbor.
  */
 let deps: WaveformStripDeps;
 let canvas: HTMLCanvasElement;
@@ -34,9 +46,11 @@ let frameScheduled = false;
 
 export function initWaveformStrip(deps_: WaveformStripDeps): void {
   deps = deps_;
+  PLAYED_COLOR = themeColor("--primary", PLAYED_COLOR);
+  DIM_COLOR = themeColor("--wave-dim", DIM_COLOR);
   canvas = document.createElement("canvas");
   canvas.className = "progress__wave";
-  deps.progress.append(canvas);
+  deps.lane.append(canvas);
   context2d = canvas.getContext("2d");
 
   deps.player.on("track:play", scheduleUpdate);
@@ -81,14 +95,14 @@ async function showWaveformFor(record: LibraryRecord | null): Promise<void> {
   peaks = waveform.peaks;
   drawnTrackId = record.id;
   resizeCanvas();
-  deps.progress.classList.add("progress_wave");
+  deps.strip.classList.add("progress_wave");
   scheduleDraw();
 }
 
 function hide(): void {
   peaks = null;
   drawnTrackId = null;
-  deps.progress.classList.remove("progress_wave");
+  deps.strip.classList.remove("progress_wave");
 }
 
 function scheduleDraw(): void {
@@ -103,7 +117,7 @@ function scheduleDraw(): void {
 }
 
 function resizeCanvas(): void {
-  const { width, height } = deps.progress.getBoundingClientRect();
+  const { width, height } = deps.lane.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.floor(width * dpr));
   canvas.height = Math.max(1, Math.floor(height * dpr));
@@ -122,10 +136,12 @@ function draw(): void {
   const ratio = playedRatio();
   const playedX = ratio * width;
   const mid = height / 2;
-  const amplitude = mid * 0.9;
+  const amplitude = mid * AMPLITUDE;
   const bucketCount = peaks.length / 2;
   const bufferRatio = deps.getBufferRatio();
 
+  // one continuous mirrored silhouette: per-column top/bottom edges, every
+  // column touching its neighbor - no gaps, no separated bars (canon)
   for (let x = 0; x < width; x++) {
     const bucket = Math.min(bucketCount - 1, Math.floor((x / width) * bucketCount));
     const min = peaks[bucket * 2];
@@ -135,6 +151,13 @@ function draw(): void {
     ctx.fillStyle = x <= playedX ? PLAYED_COLOR : DIM_COLOR;
     ctx.fillRect(x, top, 1, Math.max(1, bottom - top));
   }
+  // 2px playhead at the exact ratio with the teal glow (canon)
+  ctx.save();
+  ctx.shadowColor = "rgba(15, 118, 110, 0.6)";
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = PLAYED_COLOR;
+  ctx.fillRect(Math.min(width - 2, playedX), 2, 2, height - 4);
+  ctx.restore();
   if (bufferRatio > 0) {
     ctx.fillStyle = BUFFER_COLOR;
     ctx.fillRect(0, 0, bufferRatio * width, height);

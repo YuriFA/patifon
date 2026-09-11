@@ -1,0 +1,1494 @@
+# Theme Tokens (Warm Earth)
+
+## Compact token summary (canonical values, from `src/styles/main.css` `:root`)
+
+### Color palette
+
+| Token              | Value     | Usage                                                   |
+| ------------------ | --------- | ------------------------------------------------------- |
+| `--surface`        | `#ece7db` | app background, visualization area                      |
+| `--surface-raised` | `#faf8f2` | raised surfaces: inputs, playing row, popup panels      |
+| `--surface-sunken` | `#e2dccb` | sidebar background                                      |
+| `--surface-hover`  | `#ddd6c5` | hover fills                                             |
+| `--text`           | `#21201b` | primary text (warm near-black)                          |
+| `--text-dim`       | `#6f6a5e` | secondary text                                          |
+| `--text-faint`     | `#948d7d` | tertiary text, unfilled slider tracks                   |
+| `--accent`         | `#178f80` | the one teal accent: playing states, fills, focus rings |
+| `--line`           | `#d5cdba` | hairline borders                                        |
+| `--transport-bg`   | `#262420` | transport strip background (the one dark region)        |
+| `--transport-line` | `#3a372f` | transport strip hairlines                               |
+| `--transport-text` | `#e8e3d5` | transport strip text (rescopes `--text` inside `.bar`)  |
+
+Inside `.bar` the generic tokens are re-scoped: `--surface-raised: #2e2b25`, `--surface-hover: #38342c`, `--text: #e8e3d5`, `--text-dim: #a39d8d`, `--line: #3a372f`.
+
+### Typography
+
+- `--font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace` - the ONLY family; applied globally via `* { font-family: var(--font-mono) }`. The canvas draft pairs Space Mono (data/labels) with Work Sans (UI text); the implementation collapsed this to the system mono stack.
+- Scale: 9px eyebrow labels (letter-spacing 1.5px), 10px badges/pitch limits (letter-spacing 1px, uppercase, 700), 12px tab labels/buttons/durations, 13px body (rows, inputs), 17px lyrics lines, 18px station names.
+
+### Shape, spacing, effects
+
+- Border radius: 3px (inputs, rows, buttons, badges), 24px (vinyl plinth), 50% (knob, deck button, thumbs for dots).
+- Component sizes: transport buttons 40x40 (play 48x48), volume button 36x36, knob 34x34, deck start button 48x48, thumbs 32x32, transport bar 64px, progress strip 26px, sidebar column 340px.
+- Shadows: popup `0 15px 30px rgba(28,27,23,.18)`; plinth `0 24px 48px rgba(72,66,50,.16)`; knob `0 2px 4px rgba(72,66,50,.14)`.
+- Focus: single ring for every control - `:where(button, input, [tabindex], [role="slider"]):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }`.
+- `[hidden] { display: none !important }` global.
+
+### Motion
+
+- Popup open: max-height transition 0.1s closed -> 0.3s open.
+- Vinyl platter: `vinyl-spin` 1.8s linear infinite, gated by `.vinyl-deck_playing` via `animation-play-state`.
+- Tonearm swing: `transform 0.25s ease-out`.
+- Lyrics line color: `0.15s ease`.
+- Deck button press: `transform: scale(0.96)`.
+
+## Raw source: `src/styles/main.css` (full)
+
+[hidden] {
+display: none !important;
+}
+
+:root {
+/* Warm Earth tokens (redesign-phase-2; the Warm Earth canvas draft is the
+direction, docs/design/superdesign-canvas-phase2.md). Warm beige
+surfaces, mono type, one teal accent, dark transport strip. */
+--surface: #ece7db;
+--surface-raised: #faf8f2;
+--surface-sunken: #e2dccb;
+--surface-hover: #ddd6c5;
+--text: #21201b;
+--text-dim: #6f6a5e;
+--text-faint: #948d7d;
+--accent: #178f80;
+--line: #d5cdba;
+--font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+/* The transport strip is the one dark region of the shell (draft). */
+--transport-bg: #262420;
+--transport-line: #3a372f;
+--transport-text: #e8e3d5;
+}
+
+- {
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--text);
+  }
+
+body {
+overflow: hidden;
+background-color: var(--surface);
+}
+
+.audio_player {
+width: 100vw;
+height: 100vh;
+margin-left: auto;
+margin-right: auto;
+overflow: hidden;
+display: grid;
+grid-template-columns: 340px 1fr;
+grid-template-rows: 1fr auto auto;
+grid-template-areas:
+"sidebar main"
+"progress progress"
+"transport transport";
+}
+
+/* Focus visibility: one ring for every control the redesign renders. */
+:where(button, input, [tabindex], [role="slider"]):focus-visible {
+outline: 2px solid var(--accent);
+outline-offset: 1px;
+}
+
+.bar {
+grid-area: transport;
+height: 64px;
+user-select: none;
+/* the one dark region: rescope the generic tokens so every control inside
+picks up light-on-dark without per-component overrides (draft) */
+background-color: var(--transport-bg);
+--surface-raised: #2e2b25;
+--surface-hover: #38342c;
+--text: var(--transport-text);
+--text-dim: #a39d8d;
+--line: var(--transport-line);
+}
+
+.progress {
+grid-area: progress;
+position: relative;
+height: 26px;
+user-select: none;
+}
+
+#seek-root {
+height: 100%;
+}
+
+.progress__wave {
+display: none;
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+/* clicks pass through to the seek slider, which keeps owning seek */
+pointer-events: none;
+}
+
+.progress_wave .progress__wave {
+display: block;
+}
+
+.progress_wave .progress__bar {
+/* invisible but hit-testable: the canvas paints the visuals */
+opacity: 0;
+}
+
+/* The seek control: a slider whose track hosts the waveform strip canvas. */
+.progress__bar {
+position: relative;
+height: 100%;
+cursor: pointer;
+touch-action: none;
+}
+
+.progress__bar .slider-horiz__track {
+position: absolute;
+inset: 0;
+border-radius: 0;
+}
+
+.progress__bar .slider-horiz__filled {
+height: 100%;
+border-radius: 0;
+}
+
+.progress__bar .slider-horiz__buffer {
+position: absolute;
+inset: 0;
+height: 100%;
+}
+
+.player-controls {
+user-select: none;
+padding-left: 15px;
+padding-right: 15px;
+display: flex;
+align-items: center;
+gap: 4px;
+flex: 1;
+/* anchor for the absolute scrobbling/equalizer triggers and popups */
+position: relative;
+}
+
+/* the islands render inline controls: their roots join the flex row */
+#transport-root,
+#volume-root {
+display: flex;
+align-items: center;
+gap: 4px;
+}
+
+/* The invisible native range input owns interaction for both sliders. */
+.slider-input {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+margin: 0;
+opacity: 0;
+cursor: pointer;
+}
+
+.slider-input:disabled {
+cursor: default;
+}
+
+/* Transport buttons render their glyphs as inline SVG (currentColor). */
+.player-controls__btn {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 40px;
+height: 40px;
+padding: 8px;
+background: transparent;
+border: none;
+border-radius: 4px;
+color: var(--text);
+opacity: 0.85;
+cursor: pointer;
+
+&:hover {
+opacity: 1;
+background-color: var(--surface-hover);
+}
+
+&[aria-disabled="true"] {
+opacity: 0.35;
+cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+
+}
+
+svg {
+width: 100%;
+height: 100%;
+display: block;
+}
+
+/* the equalizer and scrobbling triggers keep their sprite icons for now */
+.icon {
+width: 24px;
+height: 24px;
+background: center center no-repeat;
+background-size: 100% 100%;
+}
+
+&.player-controls__btn_equalizer {
+& > .icon {
+background-image: url("/assets/images/equalizer.svg");
+}
+}
+}
+
+.player-controls__btn_play {
+width: 48px;
+height: 48px;
+color: var(--accent);
+}
+
+/* scrobbling and equalizer triggers stay absolute against .player-controls */
+
+.player-controls__volume-container {
+display: flex;
+align-items: center;
+margin-left: 12px;
+}
+
+.volume__btn {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 36px;
+height: 36px;
+padding: 7px;
+background: transparent;
+border: none;
+border-radius: 4px;
+color: var(--text);
+opacity: 0.85;
+cursor: pointer;
+
+&:hover {
+opacity: 1;
+background-color: var(--surface-hover);
+}
+
+& > .volume__icon {
+width: 100%;
+height: 100%;
+display: block;
+}
+}
+
+.volume__control {
+display: flex;
+align-items: center;
+padding: 4px 0;
+}
+
+/* Rotary volume knob (draft): beige disc, teal needle on the 270-degree arc. */
+.volume__knob {
+width: 34px;
+height: 34px;
+border-radius: 50%;
+background: #f1eee2;
+border: 1px solid #ddd8c9;
+box-shadow: 0 2px 4px rgba(72, 66, 50, 0.14);
+cursor: pointer;
+touch-action: none;
+display: grid;
+place-items: center;
+
+&:focus-visible {
+outline: 2px solid var(--accent);
+outline-offset: 2px;
+}
+}
+
+.volume__knob-body {
+position: relative;
+width: 100%;
+height: 100%;
+}
+
+.volume__knob-indicator {
+position: absolute;
+top: calc(50% - 12px);
+left: 50%;
+width: 2px;
+height: 12px;
+margin-left: -1px;
+border-radius: 1px;
+background: var(--accent);
+transform-origin: 50% 100%;
+}
+
+.equalizer-popup {
+position: absolute;
+right: 15px;
+bottom: 72px;
+max-height: 0;
+border: none;
+background-color: var(--surface-raised);
+overflow: hidden;
+user-select: none;
+transition: max-height 0.1s;
+
+&.equalizer-popup__open {
+max-height: 500px;
+overflow: visible;
+border: 1px solid var(--accent);
+transition: max-height 0.3s;
+box-shadow: 0 15px 30px rgba(28, 27, 23, 0.18);
+}
+
+&::after {
+content: "";
+position: absolute;
+right: 20px;
+bottom: -10px;
+display: block;
+width: 0;
+height: 0;
+border-width: 10px 9px 0 9px;
+border-color: var(--accent) transparent transparent transparent;
+border-style: solid;
+}
+}
+
+.equalizer-popup__header {
+padding: 10px 20px 0 20px;
+
+select {
+background-color: var(--surface-raised);
+color: var(--text);
+border: 1px solid var(--text-dim);
+border-radius: 3px;
+padding: 2px 6px;
+font-size: 12px;
+}
+}
+
+.equalizer__bands {
+width: 400px;
+margin: 0;
+padding: 20px;
+list-style: none;
+}
+
+.equalizer-band {
+position: relative;
+display: inline-block;
+width: 32px;
+height: 137px;
+padding-bottom: 15px;
+font-size: 10px;
+
+.equalizer-band__legend {
+position: relative;
+height: 100%;
+
+    & > div {
+      position: absolute;
+      width: 100%;
+      line-height: 14px;
+    }
+
+    .equalizer-band__max {
+      top: 0;
+    }
+
+    .equalizer-band__zero {
+      top: 50%;
+      margin-top: -7px;
+    }
+
+    .equalizer-band__min {
+      bottom: 0;
+    }
+
+}
+
+.equalizer-band__control .equalizer-band__slider {
+width: 32px;
+height: 136px;
+}
+
+.equalizer-band__hz {
+position: absolute;
+bottom: -10px;
+left: 10px;
+}
+}
+
+.slider-vert {
+position: relative;
+cursor: pointer;
+
+.slider-vert__track {
+position: absolute;
+top: 0;
+left: 50%;
+width: 6px;
+height: 100%;
+margin-left: -3px;
+border-radius: 3px;
+background-color: var(--text-faint);
+}
+
+.slider-vert__filled {
+position: absolute;
+bottom: 0;
+width: 6px;
+height: 0%;
+border-radius: 3px;
+background-color: var(--accent);
+}
+
+.slider-vert__handle {
+position: absolute;
+top: -8px;
+right: -5px;
+z-index: 2;
+display: block;
+width: 16px;
+height: 16px;
+box-sizing: border-box;
+border-radius: 50%;
+background: #ffffff;
+box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
+cursor: pointer;
+outline: none;
+}
+
+.slider-vert__buffer {
+z-index: 2;
+width: 100%;
+background-color: var(--text-dim);
+}
+}
+
+#visualizer {
+display: block;
+margin: 0 auto;
+}
+
+/* Same flow slot as the bars canvas: exactly one is visible at a time (the
+hidden one leaves the flow), so neither positions above the library list */
+.visualizer__webgl {
+display: block;
+}
+
+/* Visualization area _/
+.audio_visualize {
+grid-area: main;
+position: relative;
+min-height: 0;
+overflow: hidden;
+background: var(--surface);
+}
+/_ Library sidebar */
+.playlist {
+grid-area: sidebar;
+display: flex;
+flex-direction: column;
+overflow-y: auto;
+background: var(--surface-sunken);
+border-right: 1px solid var(--line);
+min-height: 0;
+}
+
+.library__header {
+display: flex;
+flex-wrap: wrap;
+gap: 6px;
+padding: 10px 12px;
+}
+
+.library__search {
+order: -1;
+flex: 1 1 100%;
+min-width: 0;
+background-color: var(--surface-raised);
+color: var(--text);
+border: 1px solid var(--line);
+border-radius: 3px;
+padding: 4px 8px;
+font-size: 13px;
+outline: none;
+
+&:focus {
+border-color: var(--accent);
+}
+}
+
+.library__add,
+.library__add-dir,
+.playlists__new,
+.playlists__back {
+background-color: var(--surface-raised);
+color: var(--text);
+border: 1px solid var(--line);
+border-radius: 3px;
+padding: 4px 8px;
+font-size: 12px;
+cursor: pointer;
+
+&:hover {
+border-color: var(--accent);
+}
+}
+
+.library__empty {
+padding: 30px 15px;
+color: var(--text-dim);
+font-size: 13px;
+text-align: center;
+}
+
+.library__list {
+margin: 0;
+padding: 0 8px 15px 15px;
+list-style: none;
+}
+
+.library__row {
+position: relative;
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 6px 8px;
+border-radius: 3px;
+cursor: pointer;
+border-left: 2px solid transparent;
+
+&:hover {
+background-color: var(--surface-hover);
+}
+
+&.library__row_playing {
+background-color: var(--surface-raised);
+border-left-color: var(--accent);
+}
+}
+
+.library__thumb {
+width: 32px;
+height: 32px;
+border-radius: 3px;
+object-fit: cover;
+flex-shrink: 0;
+
+&_empty {
+display: flex;
+align-items: center;
+justify-content: center;
+background-color: var(--surface-hover);
+color: var(--text-dim);
+font-size: 16px;
+}
+}
+
+.library__meta {
+flex: 1;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+font-size: 13px;
+}
+
+.library__duration {
+color: var(--text-dim);
+font-size: 12px;
+}
+
+body.drop-hover::after {
+content: "";
+position: fixed;
+inset: 8px;
+border: 2px dashed var(--accent);
+border-radius: 6px;
+pointer-events: none;
+z-index: 10;
+}
+
+/* Radio mode */
+
+.library__mode,
+.library__mode-playlists {
+flex-shrink: 0;
+background-color: var(--surface-hover);
+color: var(--text);
+border: 1px solid var(--text-dim);
+border-radius: 3px;
+padding: 4px 10px;
+font-size: 13px;
+cursor: pointer;
+
+&:hover {
+border-color: var(--accent);
+}
+
+&_active {
+background-color: var(--accent);
+border-color: var(--accent);
+color: #fff;
+}
+}
+
+.radio__row {
+.library__meta {
+font-size: 13px;
+}
+
+&_error {
+opacity: 0.55;
+
+    &::after {
+      content: "unavailable";
+      color: var(--accent);
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .library__duration {
+      display: none;
+    }
+
+}
+}
+
+/* Playlists view */
+
+.library__row-action {
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 22px;
+height: 22px;
+background: transparent;
+color: var(--text-dim);
+border: none;
+border-radius: 3px;
+font-size: 14px;
+cursor: pointer;
+padding: 0;
+
+&:hover {
+color: var(--text);
+background-color: var(--surface-hover);
+}
+}
+
+.hidden-button {
+visibility: hidden;
+}
+
+.library__row_queued::after {
+content: "queued";
+color: var(--accent);
+font-size: 10px;
+margin-left: 4px;
+flex-shrink: 0;
+}
+
+.playlists__track-actions {
+display: flex;
+gap: 2px;
+flex-shrink: 0;
+}
+
+.playlists__popover {
+position: absolute;
+right: 8px;
+top: 100%;
+z-index: 5;
+min-width: 150px;
+background-color: var(--surface-hover);
+border: 1px solid var(--text-dim);
+border-radius: 3px;
+padding: 4px;
+display: flex;
+flex-direction: column;
+gap: 2px;
+}
+
+.playlists__popover-item {
+background: transparent;
+color: var(--text);
+border: none;
+border-radius: 3px;
+font-size: 13px;
+text-align: left;
+padding: 5px 8px;
+cursor: pointer;
+
+&:hover {
+background-color: var(--surface-hover);
+color: var(--accent);
+}
+}
+
+.playlists__rename-input {
+flex: 1;
+min-width: 0;
+background-color: var(--surface-hover);
+color: var(--text);
+border: 1px solid var(--accent);
+border-radius: 3px;
+padding: 3px 6px;
+font-size: 13px;
+outline: none;
+}
+
+.progress_live {
+.progress__bar {
+opacity: 0.35;
+pointer-events: none;
+}
+
+.progress__live {
+display: inline-block;
+}
+}
+
+.progress__live {
+display: none;
+position: absolute;
+right: 12px;
+top: -5px;
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 1px;
+color: var(--accent);
+border: 1px solid var(--accent);
+border-radius: 3px;
+padding: 0 4px;
+}
+
+.visualizer-controls {
+position: absolute;
+/* the visualization area's free corner: below the library header, above
+the progress strip - the top-right corner is owned by the mode tabs */
+bottom: 16px;
+right: 12px;
+z-index: 2;
+display: flex;
+gap: 4px;
+}
+
+.visualizer-controls__skip {
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 1px;
+color: var(--accent);
+border: 1px solid var(--accent);
+border-radius: 3px;
+padding: 0 4px;
+/* scenes render behind the row: a dim backing keeps the badge legible */
+background: rgba(250, 248, 242, 0.72);
+cursor: pointer;
+
+&:hover {
+background-color: var(--surface-hover);
+}
+}
+
+/* Mode tabs: top-right of the visualization area (draft). */
+.area-tabs {
+position: absolute;
+top: 12px;
+right: 12px;
+z-index: 2;
+display: flex;
+gap: 2px;
+}
+
+.area-tabs__tab {
+background: transparent;
+color: var(--text-dim);
+border: none;
+border-radius: 3px;
+padding: 4px 10px;
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 1px;
+text-transform: uppercase;
+cursor: pointer;
+
+&:hover {
+color: var(--text);
+}
+
+&[aria-pressed="true"] {
+color: var(--accent);
+}
+}
+
+/* Vinyl deck: the VINYL mode's turntable (draft). DOM/CSS only - the
+platter rotates via animation-play-state, the tonearm is a transform. */
+.vinyl-deck {
+position: absolute;
+inset: 24px 12px 16px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.vinyl-deck__plinth {
+position: relative;
+width: min(66vh, 86%);
+aspect-ratio: 1.08;
+background: #fdfcf7;
+border: 1px solid #eceade;
+border-radius: 24px;
+box-shadow: 0 24px 48px rgba(72, 66, 50, 0.16);
+}
+
+.vinyl-deck__screw {
+position: absolute;
+width: 12px;
+height: 12px;
+border-radius: 50%;
+background: #e6e2d3;
+box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.35);
+
+&_tl {
+top: 22px;
+left: 26px;
+}
+&_tr {
+top: 22px;
+right: 26px;
+}
+&_bl {
+bottom: 22px;
+left: 26px;
+}
+&_br {
+bottom: 22px;
+right: 26px;
+}
+}
+
+.vinyl-deck__platter-wrap {
+position: absolute;
+top: 50%;
+left: 44%;
+transform: translate(-50%, -50%);
+width: 76%;
+aspect-ratio: 1;
+}
+
+/* Platter rim with strobe notches around the edge (draft). */
+.vinyl-deck__rim {
+position: absolute;
+inset: 0;
+border-radius: 50%;
+background:
+repeating-conic-gradient(from 1deg, #ebe7da 0deg 3deg, #dedac9 3deg 7.5deg) padding-box,
+#e4e0d2;
+box-shadow:
+inset 0 2px 6px rgba(72, 66, 50, 0.18),
+0 1px 2px rgba(72, 66, 50, 0.12);
+}
+
+/* The vinyl: black disc with fine concentric grooves and two band gaps. */
+.vinyl-deck__platter {
+position: absolute;
+inset: 4.5%;
+border-radius: 50%;
+background:
+radial-gradient(
+circle,
+transparent 0 57%,
+rgba(250, 248, 242, 0.07) 57.4% 58.2%,
+transparent 58.6% 71%,
+rgba(250, 248, 242, 0.07) 71.4% 72.2%,
+transparent 72.6%
+),
+repeating-radial-gradient(circle, #191712 0 2px, #201d16 2px 3.5px);
+box-shadow: inset 0 0 0 2px #0e0d0a;
+animation: vinyl-spin 1.8s linear infinite;
+animation-play-state: paused;
+will-change: transform;
+}
+
+.vinyl-deck_playing .vinyl-deck__platter {
+animation-play-state: running;
+}
+
+/* Mint center label with the deck engraving, rotating with the record. */
+.vinyl-deck__label {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 30%;
+aspect-ratio: 1;
+border-radius: 50%;
+background: #cfe3d9;
+box-shadow: 0 0 0 1px rgba(72, 66, 50, 0.12);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 4%;
+color: #2f6f61;
+font-family: var(--font-mono);
+letter-spacing: 0.14em;
+user-select: none;
+}
+
+.vinyl-deck__label-stereo {
+font-size: clamp(7px, 1.1vh, 10px);
+font-weight: 600;
+}
+
+.vinyl-deck__label-rpm {
+font-size: clamp(11px, 1.8vh, 17px);
+font-weight: 700;
+letter-spacing: 0.08em;
+}
+
+.vinyl-deck__hole {
+width: 14%;
+aspect-ratio: 1;
+border-radius: 50%;
+background: #191712;
+box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes vinyl-spin {
+to {
+transform: rotate(360deg);
+}
+}
+
+/* Tonearm: metal post, pivot bearing, straight arm and cartridge head.
+The assembly swings around the pivot; the angle is bound inline from the
+player's position (outer groove -> label), like a real turntable. */
+.vinyl-deck__tonearm {
+position: absolute;
+top: 7%;
+right: 6%;
+width: 36%;
+height: 64%;
+transform-origin: 86% 11%;
+transition: transform 0.25s ease-out;
+pointer-events: none;
+}
+
+/* Gray cylinder behind the pivot (the counterweight post). */
+.vinyl-deck__arm-post {
+position: absolute;
+top: 0;
+right: 4%;
+width: 17%;
+height: 17%;
+border-radius: 6px;
+background: linear-gradient(118deg, #8f8b7e, #d9d6ca 52%, #847f72);
+transform: rotate(-34deg);
+box-shadow: 0 2px 4px rgba(72, 66, 50, 0.25);
+}
+.vinyl-deck__arm-pivot {
+position: absolute;
+top: 0;
+right: 0;
+width: 24%;
+aspect-ratio: 1;
+border-radius: 50%;
+background: #fbfaf5;
+border: 1px solid #dcd8c9;
+box-shadow: 0 2px 5px rgba(72, 66, 50, 0.2);
+
+&::after {
+content: "";
+position: absolute;
+inset: 32%;
+border-radius: 50%;
+background: #a9a598;
+box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.4);
+}
+}
+
+.vinyl-deck__arm {
+position: absolute;
+top: 9%;
+right: 9.5%;
+width: 4.2%;
+height: 84%;
+border-radius: 3px;
+background: linear-gradient(180deg, #dedbcd, #b6b2a4);
+box-shadow: 1px 0 2px rgba(72, 66, 50, 0.18);
+}
+
+/* Cartridge head with a stylus nub. */
+.vinyl-deck__head {
+position: absolute;
+bottom: -1%;
+right: 5%;
+width: 15%;
+height: 8.5%;
+border-radius: 4px;
+background: var(--accent);
+box-shadow: 0 2px 4px rgba(72, 66, 50, 0.28);
+transform: rotate(-8deg);
+
+&::after {
+content: "";
+position: absolute;
+left: 18%;
+bottom: -22%;
+width: 22%;
+height: 26%;
+border-radius: 1px;
+background: #191712;
+}
+}
+
+.vinyl-deck__controls {
+position: absolute;
+left: 7%;
+bottom: 14%;
+}
+
+/* Round deck button (draft): beige circle, teal glyph. */
+.vinyl-deck__start {
+width: 48px;
+height: 48px;
+border-radius: 50%;
+border: 1px solid #ddd8c9;
+background: #f1eee2;
+color: var(--accent);
+font-size: 14px;
+cursor: pointer;
+transition:
+border-color 0.15s ease,
+transform 0.1s ease;
+
+&:hover {
+border-color: var(--accent);
+}
+
+&:active {
+transform: scale(0.96);
+}
+}
+
+/* Pitch fader (draft): right edge, +8/-8 limits, mono readout. */
+.vinyl-deck__pitch-group {
+position: absolute;
+right: 5.5%;
+top: 50%;
+transform: translateY(-50%);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 8px;
+}
+
+.vinyl-deck__pitch-limit {
+font-family: var(--font-mono);
+font-size: 10px;
+color: var(--text-faint);
+}
+
+.vinyl-deck__pitch {
+writing-mode: vertical-lr;
+direction: rtl;
+appearance: none;
+width: 26px;
+height: clamp(120px, 24vh, 190px);
+background: transparent;
+cursor: pointer;
+
+&::-webkit-slider-runnable-track {
+width: 12px;
+border-radius: 7px;
+background: #f1eee2;
+border: 1px solid #ddd8c9;
+box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
+}
+
+&::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 22px;
+height: 10px;
+margin-left: -6px;
+border-radius: 3px;
+background: var(--accent);
+border: 1px solid #11655b;
+box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
+}
+
+&::-moz-range-track {
+width: 12px;
+border-radius: 7px;
+background: #f1eee2;
+border: 1px solid #ddd8c9;
+}
+
+&::-moz-range-thumb {
+width: 22px;
+height: 10px;
+border-radius: 3px;
+background: var(--accent);
+border: 1px solid #11655b;
+}
+}
+
+.vinyl-deck__pitch-value {
+font-family: var(--font-mono);
+font-size: 11px;
+color: var(--text-dim);
+}
+
+/* Now playing panel in the transport bar (draft). */
+.now-playing {
+flex: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 12px;
+min-width: 0;
+}
+
+.now-playing__meta {
+display: flex;
+flex-direction: column;
+gap: 1px;
+min-width: 0;
+}
+
+.now-playing__label {
+font-size: 9px;
+font-weight: 700;
+letter-spacing: 1.5px;
+color: var(--accent);
+}
+
+.now-playing__track {
+font-size: 13px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.now-playing__meter {
+display: flex;
+align-items: flex-end;
+gap: 2px;
+height: 22px;
+}
+
+.now-playing__meter canvas {
+height: 22px;
+width: 44px;
+}
+
+.station-now {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+max-width: 70%;
+text-align: center;
+}
+
+.station-now__icon {
+width: 72px;
+height: 72px;
+border-radius: 6px;
+object-fit: cover;
+}
+
+.station-now__icon-empty {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 72px;
+height: 72px;
+border-radius: 6px;
+background-color: var(--surface-hover);
+font-size: 32px;
+}
+
+.station-now__name {
+font-size: 18px;
+font-weight: 700;
+}
+
+.station-now__tags {
+font-size: 12px;
+color: var(--text-dim);
+}
+
+.lyrics {
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+overflow-y: auto;
+padding: 40px 20%;
+text-align: center;
+scrollbar-width: none;
+/* the panel overlays the whole content area; only lyric lines take clicks
+so the library and radio controls behind stay reachable _/
+pointer-events: none;
+/_ own stacking context: lines must paint and receive clicks above the
+positioned library overlay while the container itself stays click-through */
+z-index: 1;
+}
+
+.lyrics__text {
+display: flex;
+flex-direction: column;
+gap: 14px;
+font-size: 17px;
+line-height: 1.4;
+color: var(--text-dim);
+}
+.lyrics__line {
+color: var(--text-dim);
+cursor: pointer;
+transition: color 0.15s ease;
+/* inherit none from the overlay container: lines alone take clicks */
+pointer-events: auto;
+}
+
+.lyrics__line:hover {
+color: var(--text-faint);
+}
+
+.lyrics__line_active {
+color: var(--accent);
+font-weight: 700;
+}
+
+.lyrics__line_plain {
+cursor: default;
+}
+
+.lyrics__empty {
+color: var(--text-faint);
+font-size: 13px;
+}
+
+.radio__star {
+flex-shrink: 0;
+background: none;
+border: none;
+color: var(--text-dim);
+font-size: 15px;
+cursor: pointer;
+padding: 2px 4px;
+
+&:hover {
+color: var(--accent);
+}
+}
+
+.radio__star_saved {
+color: var(--accent);
+}
+
+## Raw source: other stylesheets
+
+### `src/styles/scrobbling.css`
+
+```css
+.player-controls__btn_scrobbling {
+  position: absolute;
+  right: 65px;
+
+  & > .icon {
+    background-image: url("/assets/images/scrobble.svg");
+    filter: grayscale(1) opacity(0.6);
+  }
+
+  &.scrobbling-on > .icon {
+    filter: none;
+  }
+}
+
+.scrobbling-popup {
+  position: absolute;
+  right: 65px;
+  bottom: 72px;
+  max-height: 0;
+  border: none;
+  background-color: var(--surface-raised);
+  overflow: hidden;
+  user-select: none;
+  transition: max-height 0.1s;
+
+  &.scrobbling-popup__open {
+    max-height: 300px;
+    overflow: visible;
+    border: 1px solid var(--accent);
+    transition: max-height 0.3s;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 20px;
+    bottom: -10px;
+    display: block;
+    width: 0;
+    height: 0;
+    border-width: 10px 9px 0 9px;
+    border-color: var(--accent) transparent transparent transparent;
+    border-style: solid;
+  }
+}
+
+.scrobbling-popup__header {
+  padding: 10px 20px 6px 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scrobbling-popup__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 20px;
+
+  button {
+    background-color: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--text-dim);
+    border-radius: 3px;
+    padding: 3px 10px;
+    font-size: 12px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.scrobbling-popup__token {
+  width: 200px;
+  background-color: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--text-dim);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.scrobbling-popup__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.scrobbling-popup__status {
+  padding: 6px 20px 2px 20px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.scrobbling-popup__queue {
+  padding: 2px 20px 12px 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+```
+
+### `src/styles/recommendations.css`
+
+```css
+/* "Created for you" section of the playlists view (ListenBrainz recommendations). */
+
+.recommendations {
+  margin-top: 10px;
+}
+
+.recommendations[hidden] {
+  display: none;
+}
+
+.recommendations__head {
+  padding: 6px 12px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.recommendations__brand {
+  margin-left: 4px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+}
+
+.recommendations__state {
+  padding: 4px 12px 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* the island renders nothing while the rows list is shown */
+.recommendations__state:empty {
+  display: none;
+}
+
+.recommendations__connect {
+  border: 1px solid var(--text-dim);
+  border-radius: 3px;
+  background: transparent;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.recommendations__connect:hover {
+  background: var(--surface-hover);
+}
+
+.recommendations__save {
+  color: var(--text);
+}
+
+/* A recommended track with no library counterpart: visible, not playable. */
+.recommendations__track_missing {
+  opacity: 0.4;
+  cursor: default;
+}
+```

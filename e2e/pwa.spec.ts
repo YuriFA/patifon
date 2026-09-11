@@ -15,20 +15,28 @@ test("manifest and icon are served same-origin and linked", async ({ page }) => 
       return { ok: false as const, reason: "no manifest link" };
     }
     const manifest = await (await fetch(manifestHref)).json();
-    const iconHref = new URL(manifest.icons[0].src, location.href).href;
-    const [manifestRes, iconRes] = await Promise.all([fetch(manifestHref), fetch(iconHref)]);
+    const [manifestRes, ...iconRes] = await Promise.all([
+      fetch(manifestHref),
+      ...manifest.icons.map((icon: { src: string }) =>
+        fetch(new URL(icon.src, location.href).href),
+      ),
+    ]);
     return {
-      ok: manifestRes.ok && iconRes.ok,
-      sameOrigin: [manifestHref, iconHref].every(
-        (href) => new URL(href).origin === location.origin,
+      ok: manifestRes.ok && iconRes.every((res: Response) => res.ok),
+      sameOrigin: [manifestHref, ...manifest.icons.map((icon: { src: string }) => icon.src)].every(
+        (href) => new URL(href, location.href).origin === location.origin,
       ),
       display: manifest.display,
       name: manifest.name,
       iconCount: manifest.icons.length,
+      background: manifest.background_color,
+      theme: manifest.theme_color,
     };
   });
   expect(result).toMatchObject({ ok: true, sameOrigin: true, display: "standalone", iconCount: 2 });
-  expect(result.name).toBe("Audio Player");
+  expect(result.name).toBe("Patifon");
+  expect(result.background).toBe("#f6f2ec");
+  expect(result.theme).toBe("#f6f2ec");
 });
 
 test("offline reload boots the interface", async ({ page }) => {

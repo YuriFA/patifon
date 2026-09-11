@@ -182,3 +182,41 @@ test("seeking through the strip matches the plain slider semantics", async ({ pa
   const finalRatio = (await page.evaluate(() => window.player.position)) / duration;
   expect(finalRatio).toBeLessThan(0.6);
 });
+
+test("the wave is one continuous silhouette with the times at the strip ends", async ({ page }) => {
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropFile(page, "Alpha - First.wav", 20);
+  await expectRowCount(page, 1);
+  await page.locator(".library__row").nth(0).click();
+  await expect.poll(() => hasWave(page)).toBe(true);
+
+  // no gap column between the lane edges: every x has painted pixels
+  const gapColumn = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>(".progress__wave");
+    if (!canvas) {
+      return -2;
+    }
+    const ctx = canvas.getContext("2d")!;
+    const { width, height } = canvas;
+    const data = ctx.getImageData(0, 0, width, height).data;
+    for (let x = 0; x < width; x++) {
+      let painted = false;
+      for (let y = 0; y < height; y += 2) {
+        if (data[(y * width + x) * 4 + 3] > 0) {
+          painted = true;
+          break;
+        }
+      }
+      if (!painted) {
+        return x;
+      }
+    }
+    return -1;
+  });
+  expect(gapColumn).toBe(-1);
+
+  // the strip row carries the time readouts at its ends
+  await expect(page.locator(".deck__time_now")).toHaveText(/^\d+:\d{2}$/u);
+  await expect(page.locator(".deck__time_total")).toHaveText("0:20");
+});

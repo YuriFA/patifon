@@ -1,5 +1,7 @@
+import { effect } from "@preact/signals";
 import type AudioPlayer from "../audio-player";
 import { MilkDropEngine, isWebGL2Supported } from "./butterchurn";
+import { areaMode } from "./area-mode";
 import { clearColumns, renderColumns } from "./columns";
 import { createVisualizerControls, type VisualizerControls } from "./controls";
 
@@ -97,8 +99,10 @@ function watchCanvasResize(
  */
 
 /**
- * Applies a mode switch: exactly one canvas stays visible, and the renderer
- * being left behind is cleared so no stale frame returns with it.
+ * Applies a renderer switch inside the VISUALIZER tab: exactly one canvas
+ * stays visible, and the renderer being left behind is cleared so no stale
+ * frame returns with it. The canvases only show while the VISUALIZER tab
+ * owns the area.
  */
 function applyCanvasMode(
   mode: VisualizerMode,
@@ -107,8 +111,9 @@ function applyCanvasMode(
   engine: MilkDropEngine,
   controls: VisualizerControls,
 ): void {
-  barsCanvas.hidden = mode === "milkdrop";
-  webglCanvas.hidden = mode !== "milkdrop";
+  const tabOwnsArea = areaMode.value === "visualizer";
+  barsCanvas.hidden = mode === "milkdrop" || !tabOwnsArea;
+  webglCanvas.hidden = mode !== "milkdrop" || !tabOwnsArea;
   if (mode === "milkdrop") {
     // leaving bars: drop the last columns frame, it must not come back stale
     clearColumns(barsCanvas);
@@ -140,6 +145,13 @@ export function initVisualizer(deps: VisualizerDeps): void {
   });
   controls.setSupported(webglSupported);
   applyCanvasMode(mode, barsCanvas, webglCanvas, engine, controls);
+
+  // leaving the VISUALIZER tab hides and clears both canvases; coming back
+  // re-applies the stored renderer choice (ownership: the tab owns the area)
+  effect(() => {
+    applyCanvasMode(mode, barsCanvas, webglCanvas, engine, controls);
+  });
+
   const loop = startRenderLoop({
     player,
     barsCanvas,

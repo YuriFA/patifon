@@ -26,6 +26,13 @@ playback is expected to be heard.
 - **WHEN** the underlying audio context is in a suspended state when the user clicks Play
 - **THEN** the system resumes the context and playback becomes audible without requiring a page reload
 
+#### Scenario: Idle transport plays the library
+
+- **WHEN** no source is engaged and the user activates Play while the
+  library holds tracks
+- **THEN** the library source engages (now-playing panel, MediaSession and
+  scrobbling follow it) and the first library track starts
+
 ### Requirement: Transport controls
 
 The system SHALL provide play, pause, stop, next-track and previous-track
@@ -94,3 +101,46 @@ casts to read it.
 - **WHEN** a consumer subscribes with an event name that is not part of the
   event contract
 - **THEN** the project type check (`tsc --noEmit`) fails
+
+### Requirement: Keyboard transport and seek
+
+The transport controls (play/pause, next, previous) and the seek control
+SHALL be operable by keyboard alone: each SHALL be reachable by keyboard
+focus in reading order, activation SHALL trigger the same behavior as
+pointer activation, and the focused control SHALL be visually indicated.
+Seeking by keyboard SHALL move playback position in discrete steps.
+
+#### Scenario: Keyboard play and pause
+
+- **WHEN** the play/pause control is focused and the user activates it with
+  the keyboard
+- **THEN** playback starts or pauses exactly as with pointer activation
+
+#### Scenario: Keyboard seek steps position
+
+- **WHEN** the seek control is focused and the user presses the forward step
+  key
+- **THEN** playback position moves forward by a step without interrupting
+  playback
+
+### Requirement: Playback rate
+
+The player SHALL support a bounded playback rate for library playback,
+with normal speed at the center of the range and roughly equal steps in
+both directions. Changing the rate SHALL affect the audible speed
+immediately, SHALL NOT require restarting playback, and the rate SHALL
+persist across track changes and visualization mode switches until the
+user changes it again. Radio playback SHALL NOT be affected: engaging a
+station MUST NOT apply the rate to the stream, and the rate SHALL be
+reapplied to subsequent library playback as set.
+
+#### Scenario: Rate persists across tracks
+
+- **WHEN** the user raises the playback rate and the next library track starts
+- **THEN** the new track plays at the raised rate without a per-track reset
+
+#### Scenario: Radio is unaffected
+
+- **WHEN** a radio station takes over while the rate differs from normal
+- **THEN** the station plays at its normal speed, and the rate is applied
+  again when a library track plays next

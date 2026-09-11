@@ -14,9 +14,13 @@ Decisions recorded on 2026-09-07 during the planning session:
 - Demo content: no binary audio files in the repo; e2e uses a generated
   sine-wave WAV fixture.
 
-Decision recorded on 2026-09-09 (ADR-0001): the UI redesign adopts
-**Preact + @preact/signals + react-aria** for the view layer; the playback
-core stays vanilla TypeScript modules.
+Decision recorded on 2026-09-09 (ADR-0001, amended 2026-09-10): the UI
+redesign adopts **Preact + @preact/signals** for the view layer; the
+playback core stays vanilla TypeScript modules. Accessibility is
+native-first, with Zag.js sanctioned for hard patterns (dialog focus trap,
+combobox); react-aria was tried and dropped (does not work over
+`preact/compat`, Adobe declined Preact support). Research:
+`docs/research/preact-component-libraries.md`.
 
 ## Completed phases (OpenSpec changes, archived)
 
@@ -42,19 +46,58 @@ core stays vanilla TypeScript modules.
 
 ## Current phase: UI redesign (HI-FI SYSTEM direction)
 
-Stack per ADR-0001 (Preact + signals + react-aria; vanilla core). Waves,
-one OpenSpec change each:
+Stack per ADR-0001 (amended): Preact + signals; vanilla core; native-first
+a11y, Zag.js for hard patterns. Waves, one OpenSpec change each:
 
-1. **redesign-phase-1** - foundation + library + transport on Preact:
-   sidebar layout, track rows, filter, shared row/list primitives,
-   accessible slider/tabs, transport bar with waveform seek; behavioral e2e
-   preserved via `window.*` handles, layout selectors rewritten.
-2. **redesign-phase-2** - visualization area modes: lyrics panel, bars,
-   vinyl turntable (new), Butterchurn; now-playing treatment.
-3. **redesign-phase-3** - radio, playlists, recommendations, EQ popup,
-   scrobbling popup; volume knob (custom a11y rotary).
+1. **redesign-phase-1** (implemented 2026-09-10, commit `edcced6`) -
+   foundation + library + transport on Preact: sidebar layout, track rows
+   as a portal into the shared list, filter, signals bridge, native
+   accessible transport/seek/volume controls with keyboard scenarios;
+   behavioral e2e preserved via `window.*` handles, layout selectors
+   rewritten; `idbPut` durability fix (transaction completion).
+2. **redesign-phase-2** (implemented 2026-09-10, commit `2ade0e2`) -
+   visualization area modes: LYRICS/VINYL/VISUALIZER tabs, Warm Earth theme
+   tokens + dark transport, vinyl turntable with functional pitch fader and
+   progress-tracking tonearm, now-playing panel; karaoke badge replaced by
+   the lyrics tab.
+3. **redesign-phase-3** (implemented 2026-09-11, commit `387c263`) -
+   radio, playlists, and recommendations views as token-styled Preact
+   islands; EQ and scrobbling popups on the shared popup pattern
+   (aria-expanded, Escape, outside close); rotary volume knob (slider
+   role) replacing the linear slider; legacy theme aliases removed.
 
-The 2026-09-09 mockup is the direction reference, not a pixel contract.
+The UI redesign (HI-FI SYSTEM direction) is complete: every visible
+surface renders on the Warm Earth tokens and the Preact/signals island
+pattern. That direction was then iterated on the Superdesign canvas into
+the owner-approved Patifon design system (`.superdesign/design-system.md`,
+canvas draft 6dbe3073 v7), which supersedes the 2026-09-09 mockup: the
+canvas draft is now the pixel contract, and the design system file is the
+single source of truth for every visual decision.
+
+## Current phase: Patifon canvas port (Warm Earth v7, 1:1)
+
+Waves, one OpenSpec change each:
+
+1. **design-system-in-code** (implemented 2026-09-11, commit `e95fab9`) -
+   the canonical token set in `:root` (color roles, mech shadows, material
+   textures, fader materials), legacy phase-2 names as temporary aliases,
+   the shared primitives stylesheet (`src/styles/ui.css`: mech button,
+   glass screen, fader language, type utilities, 6px scrollbars), the
+   inline lucide icon set (`src/ui/icons.tsx`), and `theme-color` to
+   `#f6f2ec`; e2e pins the canonical token values.
+2. **patifon-page-port** (implemented 2026-09-11) - the page restructured
+   1:1 against canvas draft v7: the light 140px transport deck (strip row
+   with in-strip times + continuous gapless waveform in the canonical
+   colors, 2px playhead with glow) over the controls row (mech transport
+   with lucide glyphs, latched play, glass now-playing screen, round mute
+   - horizontal volume fader replacing the knob, EQ/SCROB mech toggles,
+     re-skinned popups); the 380px sidebar with the Patifon brand row,
+     three-button mech mode switcher, recessed search, context eyebrow row,
+     and TrackRow-anatomy rows; latched text-chip mode tabs; the vinyl deck
+     synced to the canon (strobe rim, mint label, power LED, fader-language
+     pitch rail); title + manifest renamed to Patifon; legacy token aliases
+     and the dark-strip machinery deleted. Verified with a per-region
+     side-by-side pass against the draft preview.
 
 ## Backlog (deferred, revisit when stated)
 

@@ -133,13 +133,14 @@ test("the lyrics panel pauses MilkDrop and resume redraws when it hides", async 
   await expect.poll(() => isReady(page)).toBe(true);
   await expect(page.locator(".lyrics")).toBeHidden();
 
-  // the lyrics panel takes the visualization area: the render loop pauses
+  // the LYRICS tab takes the visualization area: the render loop pauses
   await page.locator(".library__row").nth(1).click();
+  await page.getByRole("button", { name: "Lyrics" }).click();
   await expect(page.locator(".lyrics")).toBeVisible();
   await expect.poll(() => isRendering(page)).toBe(false);
 
-  // back to the plain track: the panel hides and scene updates resume
-  await page.locator(".library__row").first().click();
+  // back to the VISUALIZER tab: the panel hides and scene updates resume
+  await page.getByRole("button", { name: "Visualizer" }).click();
   await expect(page.locator(".lyrics")).toBeHidden();
   await expect.poll(() => isRendering(page)).toBe(true);
 });
@@ -193,8 +194,9 @@ test("without WebGL2 the mode control is hidden and bars stay the only mode", as
   await playFirstRow(page);
   await expect(page.locator(".visualizer-controls__mode")).toBeHidden();
   await expect(page.locator(".visualizer-controls__skip")).toBeHidden();
-  // the karaoke toggle lives in the same row and works without WebGL2
-  await expect(page.locator(".visualizer-controls__lyrics")).toBeVisible();
+  // the LYRICS/VINYL tabs live outside the WebGL2 path and stay available
+  await expect(page.getByRole("button", { name: "Lyrics" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Vinyl" })).toBeEnabled();
 
   await expect.poll(() => barsAlphaSum(page)).toBeGreaterThan(0);
   // MilkDrop never engaged: no lazy chunk was even requested

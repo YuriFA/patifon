@@ -3,6 +3,7 @@ import type { TrackSource } from "./playlist";
 import Equalizer from "./equalizer";
 import type { EqualizerPreset } from "./equalizer";
 import Analyser from "./analyser";
+import { validateInRange } from "./utils";
 import EventEmitter from "./utils/event-emitter";
 import { MEDIA_EVENTS_FORWARDED, type AudioPlayerEvents } from "./audio-player-events";
 
@@ -14,10 +15,10 @@ export interface AudioPlayerSettings {
 /**
  * Owns a single HTMLAudioElement for the whole playlist: switching tracks only
  * swaps the element source, and the media element feeds the Web Audio graph
- * through exactly one MediaElementAudioSourceNode created on first play.
+ * through exactly one MediaElementAudioSourceNode created on first play. The
+ * custom emitter keeps the historical on/off/emit API (EventTarget would force
+ * CustomEvent wrapping for no behavioral gain).
  */
-// The custom emitter keeps the historical on/off/emit API with plain argument
-// payloads; EventTarget would force CustomEvent wrapping for no behavioral gain.
 // eslint-disable-next-line unicorn/prefer-event-target
 export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
   readonly playlist: Playlist;
@@ -72,9 +73,15 @@ export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
     return this.audio.currentTime;
   }
 
-  /** Element playback rate. */
+  /** Element playback rate (clamped 0.5..2; 1 is normal speed). */
   get playbackRate(): number {
     return this.audio.playbackRate;
+  }
+
+  set playbackRate(value: number) {
+    // load() resets the rate to defaultPlaybackRate: pin both (no per-track reset)
+    this.audio.defaultPlaybackRate = validateInRange(value, 0.5, 2);
+    this.audio.playbackRate = this.audio.defaultPlaybackRate;
   }
 
   /** Fraction of the current source buffered (0..1); 0 before metadata loads. */
@@ -101,6 +108,8 @@ export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
     if (this.gain) {
       this.gain.gain.value = clamped;
     }
+    // the element never fires volumechange itself (gain owns volume): dispatch
+    this.audio.dispatchEvent(new Event("volumechange"));
   }
 
   get equalizer(): Equalizer | null {
@@ -268,16 +277,12 @@ export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
       nodes.push(this.analyserRef.analyser);
     }
     nodes.push(this.ctx.destination);
-    nodes.reduce((prev, curr) => {
-      prev.connect(curr);
-      return curr;
-    });
+    for (let i = 1; i < nodes.length; i++) {
+      nodes[i - 1].connect(nodes[i]);
+    }
   }
 
-  /**
-   * Points the shared media element at the current playlist track. Keeps the
-   * historical wrap-around: an out-of-range index resets to 0.
-   */
+  /** Points the media element at the current track (out-of-range resets to 0). */
   private loadCurrentTrack(): void {
     let track;
     try {

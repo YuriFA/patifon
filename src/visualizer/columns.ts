@@ -19,8 +19,11 @@ export function renderColumns(analyser: Analyser, canvas: HTMLCanvasElement): vo
   const { frequencyBinCount: length, minDecibels: minDb, maxDecibels: maxDb } = analyser.analyser;
 
   const ctx = canvas.getContext("2d")!;
-  ctx.strokeStyle = "#CE3D60";
-  ctx.fillStyle = "#CE3D60";
+  // canvas fills cannot read CSS vars: resolve the accent token once
+  const accent =
+    getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#0f766e";
+  ctx.strokeStyle = accent;
+  ctx.fillStyle = accent;
   ctx.lineJoin = "round";
 
   const { width, height } = canvas;
