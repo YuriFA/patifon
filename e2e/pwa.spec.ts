@@ -28,7 +28,7 @@ test("manifest and icon are served same-origin and linked", async ({ page }) => 
     };
   });
   expect(result).toMatchObject({ ok: true, sameOrigin: true, display: "standalone", iconCount: 2 });
-  expect(result.name).toBe("Audio Player");
+  expect(result.name).toBe("Patifon");
 });
 
 test("offline reload boots the interface", async ({ page }) => {

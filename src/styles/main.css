@@ -48,83 +48,103 @@
   --fader-cap-from: #fbfaf5;
   --fader-cap-to: #e8e3d3;
   --fader-cap-border: #cfc9b8;
-
-  /* The transport strip stays dark until the patifon-page-port change
-     replaces it with the light deck (see that change's design). */
-  --transport-bg: #262420;
-  --transport-line: #3a372f;
-  --transport-text: #e8e3d5;
-
-  /* Legacy phase-2 names alias the canonical tokens so every not-yet-ported
-     view keeps rendering; each alias is deleted when its region adopts the
-     canonical name in the patifon-page-port change. */
-  --surface: var(--bg);
-  --surface-raised: var(--card);
-  --surface-sunken: var(--secondary);
-  --surface-hover: var(--secondary);
-  --text: var(--fg);
-  --text-dim: var(--muted);
-  --text-faint: var(--muted);
-  --accent: var(--primary);
-  --line: var(--border);
 }
 
 * {
   padding: 0;
   margin: 0;
   font-family: var(--font-mono);
-  color: var(--text);
+  color: var(--fg);
 }
 
 body {
   overflow: hidden;
-  background-color: var(--surface);
+  background-color: var(--bg);
 }
 
 .audio_player {
-  width: 100vw;
+  width: 100%;
+  max-width: 1440px;
   height: 100vh;
   margin-left: auto;
   margin-right: auto;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 340px 1fr;
-  grid-template-rows: 1fr auto auto;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 1fr 140px;
   grid-template-areas:
     "sidebar main"
-    "progress progress"
-    "transport transport";
+    "deck deck";
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-plinth);
 }
 
 /* Focus visibility: one ring for every control the redesign renders. */
 :where(button, input, [tabindex], [role="slider"]):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
 
-.bar {
-  grid-area: transport;
-  height: 64px;
+.deck {
+  grid-area: deck;
+  position: relative;
   user-select: none;
-  /* the one dark region: rescope the generic tokens so every control inside
-     picks up light-on-dark without per-component overrides (draft) */
-  background-color: var(--transport-bg);
-  --surface-raised: #2e2b25;
-  --surface-hover: #38342c;
-  --text: var(--transport-text);
-  --text-dim: #a39d8d;
-  --line: var(--transport-line);
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-deck);
 }
 
-.progress {
-  grid-area: progress;
+/* Brushed-metal wash over the footer (the deck's only texture). */
+.deck::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--texture-metal);
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* The waveform strip row: current time - wave lane - total time. */
+.deck__strip {
   position: relative;
-  height: 26px;
-  user-select: none;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.deck__controls {
+  position: relative;
+  z-index: 1;
+  height: calc(100% - 40px);
 }
 
 #seek-root {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   height: 100%;
+  min-width: 0;
+}
+
+.deck__time {
+  flex: 0 0 48px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.deck__time_now {
+  color: var(--primary);
+}
+
+.deck__time_total {
+  color: var(--muted);
+  text-align: right;
 }
 
 .progress__wave {
@@ -141,15 +161,21 @@ body {
   display: block;
 }
 
-.progress_wave .progress__bar {
-  /* invisible but hit-testable: the canvas paints the visuals */
+/* While the wave renders, the plain slider visuals hide (opacity keeps the
+   measurable fill geometry for e2e); the canvas paints the wave instead. */
+.progress_wave .slider-horiz__track,
+.progress_wave .slider-horiz__filled,
+.progress_wave .slider-horiz__buffer,
+.progress_wave .slider-horiz__handle {
   opacity: 0;
 }
 
-/* The seek control: a slider whose track hosts the waveform strip canvas. */
+/* The seek control's wave lane: the seek surface spanning the deck. */
 .progress__bar {
   position: relative;
+  flex: 1 1 auto;
   height: 100%;
+  margin: 0 16px;
   cursor: pointer;
   touch-action: none;
 }
@@ -172,23 +198,42 @@ body {
 }
 
 .player-controls {
-  user-select: none;
-  padding-left: 15px;
-  padding-right: 15px;
+  height: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex: 1;
-  /* anchor for the absolute scrobbling/equalizer triggers and popups */
+  justify-content: space-between;
+  /* anchor for the absolute popup panels */
   position: relative;
 }
 
 /* the islands render inline controls: their roots join the flex row */
-#transport-root,
+#transport-root {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#nowplaying-root {
+  flex: 1 1 auto;
+  max-width: 420px;
+  margin: 0 auto;
+  min-width: 0;
+  padding: 0 24px;
+}
+
 #volume-root {
   display: flex;
   align-items: center;
-  gap: 4px;
+}
+
+#equalizer-root {
+  margin-left: 32px;
+}
+
+#scrobbling-root {
+  margin-left: 12px;
 }
 
 /* The invisible native range input owns interaction for both sliders. */
@@ -207,145 +252,78 @@ body {
 }
 
 /* Transport buttons render their glyphs as inline SVG (currentColor). */
+/* Transport mech buttons: prev/next 56x56, play 80x64 with the latched
+   look while playing; panel toggles 56x56 with icon + sublabel. The base
+   mech language comes from .mech-button (ui.css). */
 .player-controls__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 8px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--text);
-  opacity: 0.85;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 1;
-    background-color: var(--surface-hover);
-  }
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  color: var(--fg);
 
   &[aria-disabled="true"] {
     opacity: 0.35;
     cursor: default;
 
     &:hover {
-      background: transparent;
-    }
-  }
-
-  svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  /* the equalizer and scrobbling triggers keep their sprite icons for now */
-  .icon {
-    width: 24px;
-    height: 24px;
-    background: center center no-repeat;
-    background-size: 100% 100%;
-  }
-
-  &.player-controls__btn_equalizer {
-    & > .icon {
-      background-image: url("/assets/images/equalizer.svg");
+      background-color: var(--secondary);
+      border-color: var(--border);
     }
   }
 }
 
 .player-controls__btn_play {
-  width: 48px;
-  height: 48px;
-  color: var(--accent);
+  width: 80px;
+  height: 64px;
+  border-radius: 16px;
 }
 
-/* scrobbling and equalizer triggers stay absolute against .player-controls */
+/* Panel toggles (EQ/SCROB): icon over a 9px uppercase sublabel. */
+.player-controls__btn_panel {
+  flex-direction: column;
+  gap: 2px;
 
+  .player-controls__btn-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+
+  &.is-on .player-controls__btn-label {
+    color: var(--primary);
+  }
+}
+
+/* The volume group: round mute mech + the horizontal fader (ui.css fader
+   language; 150px rail like the canvas draft). */
 .player-controls__volume-container {
   display: flex;
   align-items: center;
-  margin-left: 12px;
+  gap: 12px;
 }
 
 .volume__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 7px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--text);
-  opacity: 0.85;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 1;
-    background-color: var(--surface-hover);
-  }
-
-  & > .volume__icon {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-}
-
-.volume__control {
-  display: flex;
-  align-items: center;
-  padding: 4px 0;
-}
-
-/* Rotary volume knob (draft): beige disc, teal needle on the 270-degree arc. */
-.volume__knob {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #f1eee2;
-  border: 1px solid #ddd8c9;
-  box-shadow: 0 2px 4px rgba(72, 66, 50, 0.14);
-  cursor: pointer;
-  touch-action: none;
-  display: grid;
-  place-items: center;
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
 }
 
-.volume__knob-body {
-  position: relative;
-  width: 100%;
-  height: 100%;
+.volume__fader {
+  width: 150px;
+  flex: 0 0 150px;
 }
 
-.volume__knob-indicator {
-  position: absolute;
-  top: calc(50% - 12px);
-  left: 50%;
-  width: 2px;
-  height: 12px;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: var(--accent);
-  transform-origin: 50% 100%;
-}
-
+/* Popup chrome (canon): card panel with a primary border, 8px radius,
+   drop shadow, and a caret pointing down at its trigger. */
 .equalizer-popup {
   position: absolute;
-  right: 15px;
-  bottom: 72px;
+  right: 96px;
+  bottom: calc(100% + 12px);
   max-height: 0;
   border: none;
-  background-color: var(--surface-raised);
+  background-color: var(--card);
+  border-radius: 8px;
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;
@@ -353,7 +331,7 @@ body {
   &.equalizer-popup__open {
     max-height: 500px;
     overflow: visible;
-    border: 1px solid var(--accent);
+    border: 1px solid var(--primary);
     transition: max-height 0.3s;
     box-shadow: 0 15px 30px rgba(28, 27, 23, 0.18);
   }
@@ -361,13 +339,13 @@ body {
   &::after {
     content: "";
     position: absolute;
-    right: 20px;
+    right: 24px;
     bottom: -10px;
     display: block;
     width: 0;
     height: 0;
     border-width: 10px 9px 0 9px;
-    border-color: var(--accent) transparent transparent transparent;
+    border-color: var(--primary) transparent transparent transparent;
     border-style: solid;
   }
 }
@@ -376,9 +354,9 @@ body {
   padding: 10px 20px 0 20px;
 
   select {
-    background-color: var(--surface-raised);
-    color: var(--text);
-    border: 1px solid var(--text-dim);
+    background-color: var(--card);
+    color: var(--fg);
+    border: 1px solid var(--muted);
     border-radius: 3px;
     padding: 2px 6px;
     font-size: 12px;
@@ -448,7 +426,7 @@ body {
     height: 100%;
     margin-left: -3px;
     border-radius: 3px;
-    background-color: var(--text-faint);
+    background-color: var(--muted);
   }
 
   .slider-vert__filled {
@@ -457,7 +435,7 @@ body {
     width: 6px;
     height: 0%;
     border-radius: 3px;
-    background-color: var(--accent);
+    background-color: var(--primary);
   }
 
   .slider-vert__handle {
@@ -479,7 +457,7 @@ body {
   .slider-vert__buffer {
     z-index: 2;
     width: 100%;
-    background-color: var(--text-dim);
+    background-color: var(--muted);
   }
 }
 
@@ -500,97 +478,235 @@ body {
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--bg);
 }
-/* Library sidebar */
+/* Library sidebar: the Patifon panel (card fill, inset panel shadow, right
+   hairline). Header = brand row + mode switcher, recessed search, context
+   eyebrow row; the list sits on the bg surface. */
 .playlist {
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  background: var(--surface-sunken);
-  border-right: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
   min-height: 0;
 }
 
 .library__header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.library__search {
-  order: -1;
-  flex: 1 1 100%;
-  min-width: 0;
-  background-color: var(--surface-raised);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 4px 8px;
-  font-size: 13px;
-  outline: none;
+.sidebar__brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-  &:focus {
-    border-color: var(--accent);
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+}
+
+.sidebar__brand svg {
+  color: var(--primary);
+}
+
+.sidebar__modes {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar__mode {
+  width: 48px;
+  height: 40px;
+  color: var(--muted);
+}
+
+.sidebar__mode.is-on {
+  color: var(--primary);
+}
+
+/* Recessed search field (canon): secondary fill, inner shadow, glyph left. */
+.sidebar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 3px rgba(34, 29, 22, 0.08);
+
+  svg {
+    position: absolute;
+    left: 12px;
+    color: var(--muted);
+    pointer-events: none;
   }
 }
 
-.library__add,
+.library__search {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px 6px 36px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+
+  &:focus {
+    box-shadow: 0 0 0 2px var(--accent-tint);
+  }
+}
+
+.sidebar__context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.sidebar__context-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar__context-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.library__add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 .library__add-dir,
 .playlists__new,
 .playlists__back {
-  background-color: var(--surface-raised);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 3px;
+  background-color: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--accent);
+    border-color: var(--primary);
+  }
+}
+
+/* Add folder shares the Add Files link language in the context row. */
+.library__add-dir {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+
+  svg {
+    flex-shrink: 0;
   }
 }
 
 .library__empty {
   padding: 30px 15px;
-  color: var(--text-dim);
+  color: var(--muted);
   font-size: 13px;
   text-align: center;
 }
 
 .library__list {
   margin: 0;
-  padding: 0 8px 15px 15px;
+  padding: 16px;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
 }
 
+/* TrackRow anatomy (canon): 48px artwork tile, title/artist column, right
+   meta; playing = 3px primary left bar + tint fill; hover on idle rows =
+   card fill + hairline appears. */
 .library__row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: 3px;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   cursor: pointer;
-  border-left: 2px solid transparent;
 
   &:hover {
-    background-color: var(--surface-hover);
+    background-color: var(--card);
+    border-color: var(--border);
   }
 
   &.library__row_playing {
-    background-color: var(--surface-raised);
-    border-left-color: var(--accent);
+    background-color: var(--accent-tint);
+    border-color: rgba(15, 118, 110, 0.4);
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(15, 118, 110, 0.5);
+    }
   }
 }
 
 .library__thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 3px;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
   object-fit: cover;
   flex-shrink: 0;
 
@@ -598,70 +714,77 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--surface-hover);
-    color: var(--text-dim);
-    font-size: 16px;
+    background-color: var(--secondary);
+    color: var(--muted);
+    font-size: 20px;
   }
 }
 
 .library__meta {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.library__title {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  .library__row_playing & {
+    font-weight: 700;
+  }
+}
+
+.library__artist {
+  font-size: 12px;
+  color: var(--muted);
   white-space: nowrap;
-  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .library__duration {
-  color: var(--text-dim);
+  color: var(--muted);
   font-size: 12px;
+
+  .library__row_playing & {
+    font-weight: 700;
+    color: var(--primary);
+  }
+}
+
+.library__playing-glyph {
+  display: none;
+  color: var(--primary);
+
+  .library__row_playing & {
+    display: inline-flex;
+  }
 }
 
 body.drop-hover::after {
   content: "";
   position: fixed;
   inset: 8px;
-  border: 2px dashed var(--accent);
+  border: 2px dashed var(--primary);
   border-radius: 6px;
   pointer-events: none;
   z-index: 10;
 }
 
-/* Radio mode */
-
-.library__mode,
-.library__mode-playlists {
-  flex-shrink: 0;
-  background-color: var(--surface-hover);
-  color: var(--text);
-  border: 1px solid var(--text-dim);
-  border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--accent);
-  }
-
-  &_active {
-    background-color: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
-}
-
+/* Radio rows share the TrackRow anatomy; broken stations dim with a tag. */
 .radio__row {
-  .library__meta {
-    font-size: 13px;
-  }
-
   &_error {
     opacity: 0.55;
 
     &::after {
       content: "unavailable";
-      color: var(--accent);
+      color: var(--primary);
       font-size: 11px;
       margin-left: 8px;
     }
@@ -682,7 +805,7 @@ body.drop-hover::after {
   width: 22px;
   height: 22px;
   background: transparent;
-  color: var(--text-dim);
+  color: var(--muted);
   border: none;
   border-radius: 3px;
   font-size: 14px;
@@ -690,8 +813,8 @@ body.drop-hover::after {
   padding: 0;
 
   &:hover {
-    color: var(--text);
-    background-color: var(--surface-hover);
+    color: var(--fg);
+    background-color: var(--secondary);
   }
 }
 
@@ -701,7 +824,7 @@ body.drop-hover::after {
 
 .library__row_queued::after {
   content: "queued";
-  color: var(--accent);
+  color: var(--primary);
   font-size: 10px;
   margin-left: 4px;
   flex-shrink: 0;
@@ -719,8 +842,8 @@ body.drop-hover::after {
   top: 100%;
   z-index: 5;
   min-width: 150px;
-  background-color: var(--surface-hover);
-  border: 1px solid var(--text-dim);
+  background-color: var(--secondary);
+  border: 1px solid var(--muted);
   border-radius: 3px;
   padding: 4px;
   display: flex;
@@ -730,7 +853,7 @@ body.drop-hover::after {
 
 .playlists__popover-item {
   background: transparent;
-  color: var(--text);
+  color: var(--fg);
   border: none;
   border-radius: 3px;
   font-size: 13px;
@@ -739,17 +862,17 @@ body.drop-hover::after {
   cursor: pointer;
 
   &:hover {
-    background-color: var(--surface-hover);
-    color: var(--accent);
+    background-color: var(--secondary);
+    color: var(--primary);
   }
 }
 
 .playlists__rename-input {
   flex: 1;
   min-width: 0;
-  background-color: var(--surface-hover);
-  color: var(--text);
-  border: 1px solid var(--accent);
+  background-color: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--primary);
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 13px;
@@ -770,73 +893,72 @@ body.drop-hover::after {
 .progress__live {
   display: none;
   position: absolute;
-  right: 12px;
-  top: -5px;
+  top: 3px;
+  right: 10px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--primary);
+  border: 1px solid var(--primary);
   border-radius: 3px;
   padding: 0 4px;
+  background: var(--card);
+  z-index: 2;
 }
 
 .visualizer-controls {
   position: absolute;
   /* the visualization area's free corner: below the library header, above
-     the progress strip - the top-right corner is owned by the mode tabs */
+     the deck - the top-right corner is owned by the mode tabs */
   bottom: 16px;
-  right: 12px;
+  right: 24px;
   z-index: 2;
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
+.visualizer-controls__mode,
 .visualizer-controls__skip {
+  background: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-mech);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 3px;
-  padding: 0 4px;
-  /* scenes render behind the row: a dim backing keeps the badge legible */
-  background: rgba(250, 248, 242, 0.72);
+  text-transform: uppercase;
+  padding: 4px 10px;
   cursor: pointer;
+  transition: all 75ms;
 
-  &:hover {
-    background-color: var(--surface-hover);
+  &:active {
+    box-shadow: var(--shadow-mech-pressed);
+    transform: translateY(1px);
   }
 }
 
-/* Mode tabs: top-right of the visualization area (draft). */
+/* Mode tabs: latching text mech chips pinned top-right of the stage. */
 .area-tabs {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 24px;
   z-index: 2;
   display: flex;
-  gap: 2px;
+  gap: 8px;
 }
 
 .area-tabs__tab {
-  background: transparent;
-  color: var(--text-dim);
-  border: none;
-  border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  cursor: pointer;
+  color: var(--muted);
 
   &:hover {
-    color: var(--text);
-  }
-
-  &[aria-pressed="true"] {
-    color: var(--accent);
+    color: var(--fg);
   }
 }
 
@@ -852,12 +974,12 @@ body.drop-hover::after {
 
 .vinyl-deck__plinth {
   position: relative;
-  width: min(66vh, 86%);
-  aspect-ratio: 1.08;
-  background: #fdfcf7;
-  border: 1px solid #eceade;
-  border-radius: 24px;
-  box-shadow: 0 24px 48px rgba(72, 66, 50, 0.16);
+  width: min(600px, 92%);
+  aspect-ratio: 5 / 4;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-plinth);
 }
 
 .vinyl-deck__screw {
@@ -865,66 +987,68 @@ body.drop-hover::after {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #e6e2d3;
-  box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.35);
+  background: var(--metal-base);
+  box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.35);
 
   &_tl {
-    top: 22px;
-    left: 26px;
+    top: 24px;
+    left: 28px;
   }
   &_tr {
-    top: 22px;
-    right: 26px;
+    top: 24px;
+    right: 28px;
   }
   &_bl {
-    bottom: 22px;
-    left: 26px;
+    bottom: 24px;
+    left: 28px;
   }
   &_br {
-    bottom: 22px;
-    right: 26px;
+    bottom: 24px;
+    right: 28px;
   }
 }
 
 .vinyl-deck__platter-wrap {
   position: absolute;
   top: 50%;
-  left: 44%;
+  left: 39%;
   transform: translate(-50%, -50%);
-  width: 76%;
+  width: 63.5%;
   aspect-ratio: 1;
 }
 
-/* Platter rim with strobe notches around the edge (draft). */
+/* Strobe rim around the platter edge (the strobe texture, canon). */
 .vinyl-deck__rim {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   background:
-    repeating-conic-gradient(from 1deg, #ebe7da 0deg 3deg, #dedac9 3deg 7.5deg) padding-box,
-    #e4e0d2;
+    var(--texture-strobe) padding-box,
+    #e5e5e4;
+  border: 1px solid var(--border);
   box-shadow:
-    inset 0 2px 6px rgba(72, 66, 50, 0.18),
-    0 1px 2px rgba(72, 66, 50, 0.12);
+    inset 0 2px 4px rgba(255, 255, 255, 0.7),
+    0 12px 25px rgba(34, 29, 22, 0.15);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 8px dashed #d4d4d1;
+  }
 }
 
-/* The vinyl: black disc with fine concentric grooves and two band gaps. */
+/* The vinyl: grooves texture with a diagonal sheen, spinning while playing. */
 .vinyl-deck__platter {
   position: absolute;
-  inset: 4.5%;
+  inset: 4%;
   border-radius: 50%;
   background:
-    radial-gradient(
-      circle,
-      transparent 0 57%,
-      rgba(250, 248, 242, 0.07) 57.4% 58.2%,
-      transparent 58.6% 71%,
-      rgba(250, 248, 242, 0.07) 71.4% 72.2%,
-      transparent 72.6%
-    ),
-    repeating-radial-gradient(circle, #191712 0 2px, #201d16 2px 3.5px);
-  box-shadow: inset 0 0 0 2px #0e0d0a;
-  animation: vinyl-spin 1.8s linear infinite;
+    linear-gradient(to top right, rgba(255, 255, 255, 0.1), transparent, rgba(255, 255, 255, 0.1)),
+    var(--texture-vinyl-grooves);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  animation: vinyl-spin 4s linear infinite;
   animation-play-state: paused;
   will-change: transform;
 }
@@ -933,45 +1057,47 @@ body.drop-hover::after {
   animation-play-state: running;
 }
 
-/* Mint center label with the deck engraving, rotating with the record. */
+/* Mint center label (accent-tint) ringed dark, rotating with the record. */
 .vinyl-deck__label {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 30%;
+  width: 36.5%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #cfe3d9;
-  box-shadow: 0 0 0 1px rgba(72, 66, 50, 0.12);
+  background: var(--accent-tint);
+  border: 3px solid var(--fg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4%;
-  color: #2f6f61;
+  gap: 4px;
   font-family: var(--font-mono);
-  letter-spacing: 0.14em;
   user-select: none;
 }
 
 .vinyl-deck__label-stereo {
-  font-size: clamp(7px, 1.1vh, 10px);
-  font-weight: 600;
+  font-size: clamp(8px, 1.2vh, 10px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--primary);
 }
 
 .vinyl-deck__label-rpm {
-  font-size: clamp(11px, 1.8vh, 17px);
+  font-size: clamp(12px, 1.9vh, 14px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  color: var(--fg);
 }
 
 .vinyl-deck__hole {
-  width: 14%;
-  aspect-ratio: 1;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #191712;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  background: var(--metal-dark);
+  box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.5);
 }
 
 @keyframes vinyl-spin {
@@ -994,7 +1120,7 @@ body.drop-hover::after {
   pointer-events: none;
 }
 
-/* Gray cylinder behind the pivot (the counterweight post). */
+/* Metal cylinder behind the pivot (the counterweight post). */
 .vinyl-deck__arm-post {
   position: absolute;
   top: 0;
@@ -1002,9 +1128,9 @@ body.drop-hover::after {
   width: 17%;
   height: 17%;
   border-radius: 6px;
-  background: linear-gradient(118deg, #8f8b7e, #d9d6ca 52%, #847f72);
+  background: linear-gradient(118deg, var(--metal-dark), var(--metal-light) 52%, var(--metal-base));
   transform: rotate(-34deg);
-  box-shadow: 0 2px 4px rgba(72, 66, 50, 0.25);
+  box-shadow: 0 2px 4px rgba(34, 29, 22, 0.25);
 }
 .vinyl-deck__arm-pivot {
   position: absolute;
@@ -1013,17 +1139,17 @@ body.drop-hover::after {
   width: 24%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #fbfaf5;
-  border: 1px solid #dcd8c9;
-  box-shadow: 0 2px 5px rgba(72, 66, 50, 0.2);
+  background: var(--fader-cap-from);
+  border: 1px solid var(--fader-cap-border);
+  box-shadow: 0 2px 5px rgba(34, 29, 22, 0.2);
 
   &::after {
     content: "";
     position: absolute;
     inset: 32%;
     border-radius: 50%;
-    background: #a9a598;
-    box-shadow: inset 0 1px 2px rgba(72, 66, 50, 0.4);
+    background: var(--metal-base);
+    box-shadow: inset 0 1px 2px rgba(34, 29, 22, 0.4);
   }
 }
 
@@ -1034,8 +1160,8 @@ body.drop-hover::after {
   width: 4.2%;
   height: 84%;
   border-radius: 3px;
-  background: linear-gradient(180deg, #dedbcd, #b6b2a4);
-  box-shadow: 1px 0 2px rgba(72, 66, 50, 0.18);
+  background: linear-gradient(180deg, var(--metal-light), var(--metal-base));
+  box-shadow: 1px 0 2px rgba(34, 29, 22, 0.18);
 }
 
 /* Cartridge head with a stylus nub. */
@@ -1046,8 +1172,8 @@ body.drop-hover::after {
   width: 15%;
   height: 8.5%;
   border-radius: 4px;
-  background: var(--accent);
-  box-shadow: 0 2px 4px rgba(72, 66, 50, 0.28);
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
   transform: rotate(-8deg);
 
   &::after {
@@ -1058,121 +1184,184 @@ body.drop-hover::after {
     width: 22%;
     height: 26%;
     border-radius: 1px;
-    background: #191712;
+    background: var(--vinyl);
   }
 }
 
 .vinyl-deck__controls {
   position: absolute;
   left: 7%;
-  bottom: 14%;
+  bottom: 12%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-/* Round deck button (draft): beige circle, teal glyph. */
+/* Round start/stop mech button (canon deck button). */
 .vinyl-deck__start {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1px solid #ddd8c9;
-  background: #f1eee2;
-  color: var(--accent);
+  color: var(--primary);
   font-size: 14px;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    transform 0.1s ease;
-
-  &:hover {
-    border-color: var(--accent);
-  }
 
   &:active {
-    transform: scale(0.96);
+    transform: translateY(1px);
   }
 }
 
-/* Pitch fader (draft): right edge, +8/-8 limits, mono readout. */
+/* Strobe power dot: a pulsing LED in a secondary ring while playing. */
+.vinyl-deck__power {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+
+.vinyl-deck__power-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.55;
+}
+
+.vinyl-deck_playing .vinyl-deck__power-led {
+  opacity: 1;
+  animation: vinyl-power-pulse 2s ease-in-out infinite;
+}
+
+@keyframes vinyl-power-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(15, 118, 110, 0.45);
+  }
+}
+
+/* Pitch fader: the shared fader language on a vertical rail (recessed
+   capsule + center hairline + wide cap with the teal line), +8/0/-8 scale
+   beside it, mono readout below. */
 .vinyl-deck__pitch-group {
   position: absolute;
-  right: 5.5%;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 24px;
+  bottom: 40px;
+  width: 64px;
+  height: 160px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
 }
 
-.vinyl-deck__pitch-limit {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-faint);
+.vinyl-deck__pitch-rail {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  /* the vertical range input's intrinsic height must not floor the flex
+     item - the group owns the 160px budget */
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.vinyl-deck__pitch-scale {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 9px;
+  color: var(--muted);
+  pointer-events: none;
 }
 
 .vinyl-deck__pitch {
   writing-mode: vertical-lr;
   direction: rtl;
   appearance: none;
-  width: 26px;
-  height: clamp(120px, 24vh, 190px);
+  width: 34px;
+  height: 100%;
   background: transparent;
   cursor: pointer;
 
   &::-webkit-slider-runnable-track {
-    width: 12px;
-    border-radius: 7px;
-    background: #f1eee2;
-    border: 1px solid #ddd8c9;
+    width: 14px;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--fader-rail-line), var(--fader-rail-line)) center / 2px calc(100% - 8px)
+        no-repeat,
+      var(--fader-rail);
+    border: 1px solid var(--fader-rail-border);
     box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
   }
 
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 22px;
-    height: 10px;
-    margin-left: -6px;
-    border-radius: 3px;
-    background: var(--accent);
-    border: 1px solid #11655b;
+    width: 34px;
+    height: 16px;
+    margin-left: -10px;
+    border-radius: 4px;
+    background:
+      linear-gradient(var(--primary), var(--primary)) center / 100% 2px no-repeat,
+      linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+    border: 1px solid var(--fader-cap-border);
     box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
   }
 
   &::-moz-range-track {
-    width: 12px;
-    border-radius: 7px;
-    background: #f1eee2;
-    border: 1px solid #ddd8c9;
+    width: 14px;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--fader-rail-line), var(--fader-rail-line)) center / 2px calc(100% - 8px)
+        no-repeat,
+      var(--fader-rail);
+    border: 1px solid var(--fader-rail-border);
   }
 
   &::-moz-range-thumb {
-    width: 22px;
-    height: 10px;
-    border-radius: 3px;
-    background: var(--accent);
-    border: 1px solid #11655b;
+    width: 34px;
+    height: 16px;
+    border-radius: 4px;
+    background:
+      linear-gradient(var(--primary), var(--primary)) center / 100% 2px no-repeat,
+      linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+    border: 1px solid var(--fader-cap-border);
   }
 }
 
 .vinyl-deck__pitch-value {
+  margin-top: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--muted);
 }
 
-/* Now playing panel in the transport bar (draft). */
+/* Now playing: the deck's glass readout screen (canon). */
 .now-playing {
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 12px;
   min-width: 0;
+  height: 64px;
+  border-radius: 6px;
+  padding: 0 20px;
 }
 
 .now-playing__meta {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -1180,11 +1369,13 @@ body.drop-hover::after {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: var(--accent);
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .now-playing__track {
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1193,12 +1384,13 @@ body.drop-hover::after {
 .now-playing__meter {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 22px;
+  gap: 3px;
+  height: 28px;
+  opacity: 0.9;
 }
 
 .now-playing__meter canvas {
-  height: 22px;
+  height: 28px;
   width: 44px;
 }
 
@@ -1229,7 +1421,7 @@ body.drop-hover::after {
   width: 72px;
   height: 72px;
   border-radius: 6px;
-  background-color: var(--surface-hover);
+  background-color: var(--secondary);
   font-size: 32px;
 }
 
@@ -1240,7 +1432,7 @@ body.drop-hover::after {
 
 .station-now__tags {
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--muted);
 }
 
 .lyrics {
@@ -1267,10 +1459,10 @@ body.drop-hover::after {
   gap: 14px;
   font-size: 17px;
   line-height: 1.4;
-  color: var(--text-dim);
+  color: var(--muted);
 }
 .lyrics__line {
-  color: var(--text-dim);
+  color: var(--muted);
   cursor: pointer;
   transition: color 0.15s ease;
   /* inherit none from the overlay container: lines alone take clicks */
@@ -1278,11 +1470,11 @@ body.drop-hover::after {
 }
 
 .lyrics__line:hover {
-  color: var(--text-faint);
+  color: var(--muted);
 }
 
 .lyrics__line_active {
-  color: var(--accent);
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -1291,7 +1483,7 @@ body.drop-hover::after {
 }
 
 .lyrics__empty {
-  color: var(--text-faint);
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -1299,16 +1491,16 @@ body.drop-hover::after {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--muted);
   font-size: 15px;
   cursor: pointer;
   padding: 2px 4px;
 
   &:hover {
-    color: var(--accent);
+    color: var(--primary);
   }
 }
 
 .radio__star_saved {
-  color: var(--accent);
+  color: var(--primary);
 }

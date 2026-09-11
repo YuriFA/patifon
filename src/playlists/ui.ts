@@ -20,7 +20,6 @@ export interface PlaylistsUiDeps {
   emptyHint: HTMLDivElement;
   newButton: HTMLButtonElement;
   backButton: HTMLButtonElement;
-  modeButton: HTMLButtonElement;
   player: AudioPlayer;
   /** Current library records, to resolve playlist track references. */
   records(): readonly LibraryRecord[];
@@ -93,7 +92,6 @@ export async function initPlaylists(deps_: PlaylistsUiDeps): Promise<void> {
 }
 
 function enterPlaylistsView(): void {
-  deps.modeButton.classList.add("library__mode_active");
   deps.search.placeholder = "Search playlists";
   deps.newButton.hidden = false;
   deps.backButton.hidden = true;
@@ -102,7 +100,6 @@ function enterPlaylistsView(): void {
 }
 
 function exitPlaylistsView(): void {
-  deps.modeButton.classList.remove("library__mode_active");
   openId = null;
   deps.newButton.hidden = true;
   deps.backButton.hidden = true;

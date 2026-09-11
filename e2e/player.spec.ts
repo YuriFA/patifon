@@ -7,7 +7,7 @@ const prevBtn = ".player-controls__btn_prev";
 
 test("page loads with the player shell and empty library", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle(/Audio Player/u);
+  await expect(page).toHaveTitle(/Patifon/u);
   await expect(page.locator(".player-controls")).toBeVisible();
   await expect(page.locator("#visualizer")).toBeVisible();
   await expect(page.locator(".library__empty")).toBeVisible();
@@ -122,7 +122,18 @@ test("next and previous switch tracks", async ({ page }) => {
   await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);
 });
 
-test("seek through the progress bar keeps playback running", async ({ page }) => {
+test("play button carries the latched look only while playing", async ({ page }) => {
+  await seedLibrary(page);
+
+  const play = page.locator(playBtn);
+  await expect(play).not.toHaveClass(/is-on/u);
+  await page.click(playBtn);
+  await expect(play).toHaveClass(/is-on/u);
+  await page.click(playBtn);
+  await expect(play).not.toHaveClass(/is-on/u);
+});
+
+test("seek through the progress lane keeps playback running", async ({ page }) => {
   await seedLibrary(page);
 
   await page.click(playBtn);
@@ -139,32 +150,28 @@ test("seek through the progress bar keeps playback running", async ({ page }) =>
   expect(width).toBeGreaterThan(60);
 });
 
-test("volume knob reflects state and adjusts by drag", async ({ page }) => {
+test("volume fader reflects state and adjusts by drag", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".library__empty")).toBeVisible();
 
-  const knob = page.locator(".volume__knob");
+  const fader = page.locator(".volume__fader");
+  const input = fader.locator("input");
   // player starts at volume 0.1
-  await expect(knob).toHaveAttribute("aria-valuenow", "10");
+  await expect(input).toHaveValue("0.1");
 
-  // a pointerdown jumps the value to the pointer's angle on the 270-degree
-  // arc: 108 degrees = (0.9 * 270) - 135, i.e. the 90% position
-  const box = (await knob.boundingBox())!;
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  const radius = box.width * 0.4;
-  const deg = ((0.9 * 270 - 135) * Math.PI) / 180;
-  await page.mouse.click(cx + radius * Math.sin(deg), cy - radius * Math.cos(deg));
-  await expect.poll(() => page.evaluate(() => window.player.volume)).toBeCloseTo(0.9, 1);
-  await expect(knob).toHaveAttribute("aria-valuenow", "90");
+  // setting the range value fires the same input path as a pointer drag on
+  // the rail (the native input owns pointer interaction)
+  await input.fill("0.85");
+  await expect.poll(() => page.evaluate(() => window.player.volume)).toBeCloseTo(0.85, 2);
+  await expect(input).toHaveValue("0.85");
 
-  const volumeIcon = page.locator(".volume__icon");
-  // mute
+  // mute: the glyph crosses and the fill hides, the value stays
   await page.click(".volume__btn");
-  await expect(volumeIcon).toHaveClass(/volume__icon_mute/u);
-  // unmute
+  await expect(fader.locator(".fader__fill")).toHaveCSS("width", "0px");
+  await expect.poll(() => page.evaluate(() => window.player.volume)).toBeCloseTo(0.85, 2);
+  // unmute restores the fill at the same level
   await page.click(".volume__btn");
-  await expect(volumeIcon).not.toHaveClass(/volume__icon_mute/u);
+  await expect(fader.locator(".fader__fill")).not.toHaveCSS("width", "0px");
 });
 
 test("equalizer preset applies to every band", async ({ page }) => {

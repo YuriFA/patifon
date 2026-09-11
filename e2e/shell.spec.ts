@@ -5,13 +5,50 @@ import { mockCatalog } from "./radio.helpers";
 async function expectShellRegions(page: Page): Promise<void> {
   await expect(page.locator(".playlist")).toBeVisible();
   await expect(page.locator(".audio_visualize")).toBeVisible();
-  await expect(page.locator(".bar")).toBeVisible();
+  await expect(page.locator(".deck")).toBeVisible();
   await expect(page.locator(".library__header")).toBeVisible();
 }
 
 const playerVolume = (page: Page) => page.evaluate(() => window.player.volume);
 const playerMuted = (page: Page) => page.evaluate(() => window.player.muted);
 const playerPosition = (page: Page) => page.evaluate(() => window.player.position);
+
+const DESKTOP_SIZES = [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+];
+
+async function expectNoPageScroll(page: Page): Promise<void> {
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight,
+  );
+  expect(overflow).toBe(0);
+}
+
+test.describe("ui-shell layout", () => {
+  for (const size of DESKTOP_SIZES) {
+    test(`shell fills the ${size.width}x${size.height} viewport without page scroll`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await page.goto("/");
+      await waitForAppReady(page);
+      await expectNoPageScroll(page);
+    });
+  }
+
+  test("the sidebar shows the Patifon brand and the deck carries the strip row", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await waitForAppReady(page);
+
+    await expect(page.locator(".sidebar__brand")).toHaveText(/Patifon/u);
+    const deck = page.locator(".deck");
+    await expect(deck.locator(".deck__strip")).toBeVisible();
+    await expect(deck.locator(".deck__controls .player-controls")).toBeVisible();
+  });
+});
 
 test.describe("ui-shell regions", () => {
   test("shell regions persist across mode switches", async ({ page }) => {
@@ -49,7 +86,7 @@ test.describe("ui-shell regions", () => {
     await page.click(".library__mode");
     await page.fill(".library__search", "");
     await expect(page.locator(".library__row")).toHaveCount(1);
-    await expect(page.locator(".library__row")).toContainText("Artist - Test Track");
+    await expect(page.locator(".library__row")).toContainText("Test Track");
 
     // library -> playlists -> library: playlist rows must not linger
     await page.click(".library__mode-playlists");
@@ -116,7 +153,7 @@ test.describe("keyboard operability: volume", () => {
     await page.goto("/");
     await waitForAppReady(page);
 
-    const volume = page.locator("#volume-root .volume__knob");
+    const volume = page.locator("#volume-root .volume__fader input");
     await volume.focus();
     const before = await playerVolume(page);
 
@@ -126,10 +163,10 @@ test.describe("keyboard operability: volume", () => {
     const mute = page.locator(".volume__btn");
     await mute.focus();
     await page.keyboard.press("Enter");
-    await expect(page.locator(".volume__icon")).toHaveClass(/volume__icon_mute/u);
+    await expect(page.locator(".volume__btn svg")).toBeVisible();
     expect(await playerMuted(page)).toBe(true);
 
     await page.keyboard.press("Enter");
-    await expect(page.locator(".volume__icon")).not.toHaveClass(/volume__icon_mute/u);
+    expect(await playerMuted(page)).toBe(false);
   });
 });

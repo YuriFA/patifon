@@ -14,7 +14,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--muted);
 }
 
 .recommendations__brand {
@@ -22,13 +22,13 @@
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .recommendations__state {
   padding: 4px 12px 8px;
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--muted);
 }
 
 /* the island renders nothing while the rows list is shown */
@@ -37,21 +37,21 @@
 }
 
 .recommendations__connect {
-  border: 1px solid var(--text-dim);
+  border: 1px solid var(--muted);
   border-radius: 3px;
   background: transparent;
   padding: 2px 8px;
   font-size: 12px;
-  color: var(--text);
+  color: var(--fg);
   cursor: pointer;
 }
 
 .recommendations__connect:hover {
-  background: var(--surface-hover);
+  background: var(--secondary);
 }
 
 .recommendations__save {
-  color: var(--text);
+  color: var(--fg);
 }
 
 /* A recommended track with no library counterpart: visible, not playable. */

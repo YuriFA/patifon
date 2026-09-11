@@ -65,9 +65,12 @@ function DeckControls({ player }: { player: AudioPlayer }) {
 
   return (
     <div class="vinyl-deck__controls">
+      <span class="vinyl-deck__power" aria-hidden="true">
+        <span class="vinyl-deck__power-led" />
+      </span>
       <button
         type="button"
-        class="vinyl-deck__start"
+        class="mech-button vinyl-deck__start"
         aria-label={playing ? "Stop" : "Start"}
         onClick={togglePlayback}
       >
@@ -86,24 +89,25 @@ function PitchFader({ player }: { player: AudioPlayer }) {
   const pitch = rateToPitch(bridge.playbackRate.value);
   return (
     <div class="vinyl-deck__pitch-group">
-      <span class="vinyl-deck__pitch-limit" aria-hidden="true">
-        +8
-      </span>
-      <input
-        type="range"
-        class="vinyl-deck__pitch"
-        min={-8}
-        max={8}
-        step={1}
-        defaultValue={pitch}
-        aria-label="Pitch"
-        onInput={(event) => {
-          player.playbackRate = pitchToRate(Number(event.currentTarget.value));
-        }}
-      />
-      <span class="vinyl-deck__pitch-limit" aria-hidden="true">
-        -8
-      </span>
+      <div class="vinyl-deck__pitch-rail">
+        <div class="vinyl-deck__pitch-scale" aria-hidden="true">
+          <span>+8</span>
+          <span>0</span>
+          <span>-8</span>
+        </div>
+        <input
+          type="range"
+          class="vinyl-deck__pitch"
+          min={-8}
+          max={8}
+          step={1}
+          defaultValue={pitch}
+          aria-label="Pitch"
+          onInput={(event) => {
+            player.playbackRate = pitchToRate(Number(event.currentTarget.value));
+          }}
+        />
+      </div>
       <output class="vinyl-deck__pitch-value">{formatPitch(pitch)}</output>
     </div>
   );

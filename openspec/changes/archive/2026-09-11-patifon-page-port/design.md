@@ -96,19 +96,20 @@ behavior and native controls; only the skin changes.
 ### 6. Sidebar
 
 `sidebar-header.tsx` renders the brand row (RadioReceiverIcon in primary
-+ "Patifon" 20px/700/+0.06em), the three-button mode switcher (mech
-48x40, Library/ListMusic/Radio icons, `.is-on` for the active mode,
-titles for a11y), the recessed `.search-field` (SearchIcon at 24px
-offset, muted placeholder), and the context row (eyebrow "LOCAL LIBRARY"
-+ Add Files action with FolderPlusIcon; the playlists/radio contexts get
-their existing labels). Rows move to the TrackRow anatomy: 48px artwork
-tile (radius 6, secondary fill, border, MusicIcon placeholder), title
-14px (700 while playing) + artist 12px muted, right meta duration or
-BarChartIcon + primary time while playing; playing row gets the 3px
-primary left bar + accent-tint fill; hover on inactive rows is card fill
-+ border. Station rows and playlist rows reuse the same anatomy (favicon
-tile / drag handle as today). The recommendations section restyles onto
-the same card/eyebrow language.
+
+- "Patifon" 20px/700/+0.06em), the three-button mode switcher (mech
+  48x40, Library/ListMusic/Radio icons, `.is-on` for the active mode,
+  titles for a11y), the recessed `.search-field` (SearchIcon at 24px
+  offset, muted placeholder), and the context row (eyebrow "LOCAL LIBRARY"
+- Add Files action with FolderPlusIcon; the playlists/radio contexts get
+  their existing labels). Rows move to the TrackRow anatomy: 48px artwork
+  tile (radius 6, secondary fill, border, MusicIcon placeholder), title
+  14px (700 while playing) + artist 12px muted, right meta duration or
+  BarChartIcon + primary time while playing; playing row gets the 3px
+  primary left bar + accent-tint fill; hover on inactive rows is card fill
+- border. Station rows and playlist rows reuse the same anatomy (favicon
+  tile / drag handle as today). The recommendations section restyles onto
+  the same card/eyebrow language.
 
 ### 7. Stage
 

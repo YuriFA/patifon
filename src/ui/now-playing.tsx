@@ -65,7 +65,7 @@ export function NowPlaying({ player }: { player: AudioPlayer }) {
   const artist = bridge.trackArtist.value;
 
   return (
-    <div class="now-playing">
+    <div class="now-playing glass-screen">
       <div class="now-playing__meta">
         <span class="now-playing__label">Now playing</span>
         <span class="now-playing__track">{artist ? `${title} - ${artist}` : title}</span>

@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { PRESETS } from "../equalizer";
 import type AudioPlayer from "../audio-player";
 import { usePopup } from "./popup";
+import { SlidersIcon } from "./icons";
 
 const BAND_HZ = ["60", "170", "310", "600", "1k", "3k", "6k", "12k", "14k", "16k"];
 
@@ -103,13 +104,14 @@ export function EqualizerPopup({ player }: { player: AudioPlayer }) {
     <div class="player-controls__equalizer-container" ref={containerRef}>
       <button
         type="button"
-        class="player-controls__btn player-controls__btn_equalizer"
+        class={`mech-button player-controls__btn player-controls__btn_panel player-controls__btn_equalizer${open ? " is-on" : ""}`}
         title="Equalizer"
         aria-label="Equalizer"
         aria-expanded={open}
         onClick={toggle}
       >
-        <div class="icon" />
+        <SlidersIcon size={20} />
+        <span class="player-controls__btn-label">EQ</span>
       </button>
       <div class={`equalizer-popup${open ? " equalizer-popup__open" : ""}`} hidden={!open}>
         <div class="equalizer-popup__header">

@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["assets/images/icon.svg"],
       manifest: {
-        name: "Audio Player",
-        short_name: "Audio Player",
+        name: "Patifon",
+        short_name: "Patifon",
         description: "Local music library player with a Web Audio equalizer",
         display: "standalone",
         start_url: "/",

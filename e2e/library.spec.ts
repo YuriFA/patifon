@@ -8,7 +8,7 @@ test("drop import adds rows with filename fallback metadata", async ({ page }) =
   await dropFile(page, "Artist - Test Track.wav");
   const rows = page.locator(".library__row");
   await expectRowCount(page, 1);
-  await expect(rows.first().locator(".library__meta")).toHaveText("Artist - Test Track");
+  await expect(rows.first().locator(".library__title")).toHaveText("Test Track");
   // duration parsed from the audio itself: 20 s
   await expect(rows.first().locator(".library__duration")).toHaveText("0:20");
 });
@@ -47,7 +47,8 @@ test("search narrows the list and clearing restores it", async ({ page }) => {
 
   await page.fill(".library__search", "Alpha");
   await expect(page.locator(".library__row")).toHaveCount(1);
-  await expect(page.locator(".library__row .library__meta")).toHaveText("Artist - Alpha");
+  await expect(page.locator(".library__row .library__title")).toHaveText("Alpha");
+  await expect(page.locator(".library__row .library__artist")).toHaveText("Artist");
 
   await page.fill(".library__search", "");
   await expectRowCount(page, 2);

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Audio Player</title>
+    <title>Patifon</title>
     <link rel="icon" type="image/svg+xml" href="/assets/images/icon.svg" />
     <meta name="theme-color" content="#f6f2ec" />
   </head>
@@ -52,19 +52,21 @@
           </button>
         </div>
       </div>
-      <div class="progress">
-        <div id="seek-root"></div>
-        <span class="progress__live" hidden>LIVE</span>
-      </div>
-      <div class="bar">
-        <div class="player-controls">
-          <div id="transport-root"></div>
-          <div id="nowplaying-root"></div>
-          <div id="volume-root"></div>
-          <div id="scrobbling-root"></div>
-          <div id="equalizer-root"></div>
+      <footer class="deck">
+        <div class="deck__strip progress">
+          <div id="seek-root"></div>
+          <span class="progress__live" hidden>LIVE</span>
         </div>
-      </div>
+        <div class="deck__controls">
+          <div class="player-controls">
+            <div id="transport-root"></div>
+            <div id="nowplaying-root"></div>
+            <div id="volume-root"></div>
+            <div id="equalizer-root"></div>
+            <div id="scrobbling-root"></div>
+          </div>
+        </div>
+      </footer>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,5 +1,5 @@
-import "./styles/main.css";
 import "./styles/ui.css";
+import "./styles/main.css";
 import "./styles/scrobbling.css";
 import "./styles/recommendations.css";
 import { render } from "preact";
@@ -123,7 +123,6 @@ render(
 await initRadio({
   search: document.querySelector<HTMLInputElement>(".library__search")!,
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
-  modeButton: document.querySelector<HTMLButtonElement>(".library__mode")!,
   progress: document.querySelector<HTMLElement>(".progress")!,
   liveBadge: document.querySelector<HTMLElement>(".progress__live")!,
   nowPlaying: document.querySelector<HTMLElement>(".station-now")!,
@@ -145,7 +144,6 @@ await initPlaylists({
   emptyHint: document.querySelector<HTMLDivElement>(".library__empty")!,
   newButton: document.querySelector<HTMLButtonElement>(".playlists__new")!,
   backButton: document.querySelector<HTMLButtonElement>(".playlists__back")!,
-  modeButton: document.querySelector<HTMLButtonElement>(".library__mode-playlists")!,
   player,
   records: libraryRecords,
   artworkUrl: libraryArtworkUrl,
@@ -175,7 +173,8 @@ initVisualizer({
 initScrobbling(player, { currentRecord: currentLibraryRecord });
 initWaveformStrip({
   player,
-  progress: document.querySelector<HTMLDivElement>(".progress")!,
+  strip: document.querySelector<HTMLElement>(".progress")!,
+  lane: document.querySelector<HTMLElement>(".progress__bar")!,
   getBufferRatio: () => bridge.buffered.value,
   isRadioActive: () => isStationEngaged() || bridge.mode.value === "radio",
   currentRecord: currentLibraryRecord,

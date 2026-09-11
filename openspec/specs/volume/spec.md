@@ -63,31 +63,33 @@ same clamping rules as pointer adjustment.
 - **THEN** output is muted, and activating it again restores the previous
   volume level
 
-### Requirement: Rotary volume control surface
+### Requirement: Volume fader control surface
 
-The transport volume control SHALL present a rotary knob styled to the
-Warm Earth draft instead of a linear slider. The knob SHALL support pointer
-drag (angular or vertical drag mapped onto the 0.0..1.0 range), mouse wheel
-adjustment, and keyboard adjustment on focus. The knob SHALL expose the
-current value to assistive technology (slider semantics: accessible name,
-`aria-valuemin` 0, `aria-valuemax` 100, `aria-valuenow` as a percentage).
-The existing mute toggle, wheel-adjustment, and keyboard-requirements
-semantics (clamping, step sizes, mute independence) SHALL be preserved.
+The transport volume control SHALL present a horizontal fader (recessed
+rail with a fill from the rail start to the thumb and a raised fader-cap
+thumb with the teal indicator line) styled to the canonical design
+system, plus a round mute button showing the full/half/muted speaker
+glyph. The fader SHALL support pointer drag along the rail, mouse wheel
+adjustment over the volume group, and keyboard adjustment on focus; it
+SHALL expose slider semantics to assistive technology (accessible name,
+0..100 value range, current value as a percentage). The existing mute
+toggle, wheel-adjustment, and keyboard-requirements semantics (clamping,
+step sizes, mute independence) SHALL be preserved.
 
 #### Scenario: Pointer drag changes volume
 
-- **WHEN** the user drags the knob clockwise past its midpoint
-- **THEN** the volume exceeds 0.5 and `aria-valuenow` reflects the new
-  percentage
+- **WHEN** the user drags the fader cap past the rail's midpoint
+- **THEN** the volume exceeds 0.5 and the value exposed to assistive
+  technology reflects the new percentage
 
-#### Scenario: Keyboard steps on the knob
+#### Scenario: Keyboard steps the fader
 
-- **WHEN** the knob is focused and the user presses the up-arrow key
+- **WHEN** the fader is focused and the user presses the up-arrow key
 - **THEN** the volume increases by one step, matching the existing
   keyboard-control step size
 
-#### Scenario: Mute is independent of the knob angle
+#### Scenario: Mute is independent of the fader position
 
 - **WHEN** the volume is muted
-- **THEN** the knob keeps showing the pre-mute level and the mute state is
+- **THEN** the fader keeps showing the pre-mute level and the mute state is
   visible on the control

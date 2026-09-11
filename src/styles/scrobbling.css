@@ -1,24 +1,19 @@
+/* The scrobbling trigger is a mech panel toggle (56x56, icon + sublabel);
+   latched while its popup is open, primary ink while scrobbling is on. */
 .player-controls__btn_scrobbling {
-  position: absolute;
-  right: 65px;
-
-  & > .icon {
-    background-image: url("/assets/images/scrobble.svg");
-    filter: grayscale(1) opacity(0.6);
-  }
-
-  &.scrobbling-on > .icon {
-    filter: none;
-  }
+  position: static;
 }
 
+/* Popup chrome (canon): card panel with a primary border, 8px radius,
+   drop shadow, and a caret pointing down at its trigger. */
 .scrobbling-popup {
   position: absolute;
-  right: 65px;
-  bottom: 72px;
+  right: 32px;
+  bottom: calc(100% + 12px);
   max-height: 0;
   border: none;
-  background-color: var(--surface-raised);
+  background-color: var(--card);
+  border-radius: 8px;
   overflow: hidden;
   user-select: none;
   transition: max-height 0.1s;
@@ -26,21 +21,21 @@
   &.scrobbling-popup__open {
     max-height: 300px;
     overflow: visible;
-    border: 1px solid var(--accent);
+    border: 1px solid var(--primary);
     transition: max-height 0.3s;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(28, 27, 23, 0.18);
   }
 
   &::after {
     content: "";
     position: absolute;
-    right: 20px;
+    right: 24px;
     bottom: -10px;
     display: block;
     width: 0;
     height: 0;
     border-width: 10px 9px 0 9px;
-    border-color: var(--accent) transparent transparent transparent;
+    border-color: var(--primary) transparent transparent transparent;
     border-style: solid;
   }
 }
@@ -58,10 +53,10 @@
   padding: 4px 20px;
 
   button {
-    background-color: var(--surface-raised);
-    color: var(--text);
-    border: 1px solid var(--text-dim);
-    border-radius: 3px;
+    background-color: var(--secondary);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     padding: 3px 10px;
     font-size: 12px;
     cursor: pointer;
@@ -75,10 +70,10 @@
 
 .scrobbling-popup__token {
   width: 200px;
-  background-color: var(--surface-raised);
-  color: var(--text);
-  border: 1px solid var(--text-dim);
-  border-radius: 3px;
+  background-color: var(--secondary);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   padding: 3px 6px;
   font-size: 12px;
 }
@@ -94,11 +89,11 @@
 .scrobbling-popup__status {
   padding: 6px 20px 2px 20px;
   font-size: 12px;
-  color: var(--text-faint);
+  color: var(--muted);
 }
 
 .scrobbling-popup__queue {
   padding: 2px 20px 12px 20px;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--muted);
 }

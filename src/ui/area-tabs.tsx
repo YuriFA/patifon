@@ -18,7 +18,7 @@ export function AreaTabs() {
         <button
           key={mode}
           type="button"
-          class="area-tabs__tab"
+          class={`mech-button area-tabs__tab${areaMode.value === mode ? " is-on" : ""}`}
           aria-pressed={areaMode.value === mode}
           onClick={() => setAreaMode(mode)}
         >

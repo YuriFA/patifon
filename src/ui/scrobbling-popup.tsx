@@ -13,6 +13,7 @@ import {
   setUsername,
 } from "../scrobbling/settings";
 import { usePopup } from "./popup";
+import { RadioTowerIcon } from "./icons";
 
 /** External open requests (the recommendations connect prompt). */
 export const scrobblingOpenRequest = signal(0);
@@ -204,13 +205,14 @@ export function ScrobblingPopup() {
     <div class="player-controls__scrobbling-container" ref={containerRef}>
       <button
         type="button"
-        class={`player-controls__btn player-controls__btn_scrobbling${on ? " scrobbling-on" : ""}`}
+        class={`mech-button player-controls__btn player-controls__btn_panel player-controls__btn_scrobbling${open || on ? " is-on" : ""}${on ? " scrobbling-on" : ""}`}
         title="Scrobbling"
         aria-label="Scrobbling"
         aria-expanded={open}
         onClick={toggle}
       >
-        <div class="icon" />
+        <RadioTowerIcon size={20} />
+        <span class="player-controls__btn-label">SCROB</span>
       </button>
       <div class={`scrobbling-popup${open ? " scrobbling-popup__open" : ""}`} hidden={!open}>
         <ScrobblingPanel

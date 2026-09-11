@@ -34,7 +34,6 @@ declare global {
 export interface RadioUiDeps {
   search: HTMLInputElement;
   emptyHint: HTMLDivElement;
-  modeButton: HTMLButtonElement;
   progress: HTMLElement;
   liveBadge: HTMLElement;
   /** Root of the now-playing station card inside the visualization area. */
@@ -242,7 +241,6 @@ function scheduleCatalogSearch(): void {
 }
 
 function enterRadioView(): void {
-  deps.modeButton.classList.add("library__mode_active");
   deps.search.placeholder = "Search radio stations";
   // in radio mode the pinned list item represents the station
   hideNowPlaying(nowPlaying);
@@ -258,7 +256,6 @@ function enterRadioView(): void {
 }
 
 function exitRadioView(next: Mode): void {
-  deps.modeButton.classList.remove("library__mode_active");
   cancelScheduledSearch();
   // back in the library view the card is the only radio indicator
   if (next === "library" && playingStation) {

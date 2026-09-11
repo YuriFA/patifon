@@ -11,6 +11,7 @@ import {
 import { createAddToPlaylistButton } from "../playlists/picker";
 import { createPlayNextButton } from "../library/row-actions";
 import { bridge } from "./bridge";
+import { BarChartIcon } from "./icons";
 function useLibraryView(list: HTMLUListElement): LibraryViewSnapshot {
   const [snapshot, setSnapshot] = useState(libraryViewSnapshot);
   // Whether the portal currently owns the list: on gaining ownership the
@@ -87,8 +88,10 @@ function LibraryRow({
         <span class="library__thumb library__thumb_empty">{"\u266A"}</span>
       )}
       <div class="library__meta" title={row.title}>
-        {row.label}
+        <span class="library__title">{row.record.title}</span>
+        {row.record.artist ? <span class="library__artist">{row.record.artist}</span> : null}
       </div>
+      {playing ? <BarChartIcon size={16} class="library__playing-glyph" /> : null}
       <span class="library__duration">{row.duration}</span>
       <RowActions record={row.record} />
     </li>
