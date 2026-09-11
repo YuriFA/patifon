@@ -14,8 +14,8 @@ export default defineConfig({
         description: "Local music library player with a Web Audio equalizer",
         display: "standalone",
         start_url: "/",
-        background_color: "#262f35",
-        theme_color: "#262f35",
+        background_color: "#f6f2ec",
+        theme_color: "#f6f2ec",
         icons: [
           {
             src: "assets/images/icon.svg",
@@ -24,7 +24,7 @@ export default defineConfig({
             purpose: "any",
           },
           {
-            src: "assets/images/icon.svg",
+            src: "assets/images/icon-maskable.svg",
             sizes: "any",
             type: "image/svg+xml",
             purpose: "maskable",

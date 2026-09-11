@@ -202,7 +202,17 @@ test("queues failed listens and retries them after a reload and the online event
   await connect(page);
 
   await playRow(page, 0);
-  await page.waitForTimeout(1200);
+  // wait until the interrupted listen qualifies (>= 1s = 50% of the 2s
+  // track) but stays below the 90% ended path, regardless of play() lag
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () => (window.player as unknown as { audio: HTMLAudioElement }).audio.currentTime,
+        ),
+      { timeout: 5_000 },
+    )
+    .toBeGreaterThan(1.2);
   await playRow(page, 1);
   // the completion settles into the queue but the submit fails (offline)
   await expect.poll(() => queuedCount(page), { timeout: 5000 }).toBe(1);
