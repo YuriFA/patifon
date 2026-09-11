@@ -85,12 +85,19 @@ Waves, one OpenSpec change each:
    glass screen, fader language, type utilities, 6px scrollbars), the
    inline lucide icon set (`src/ui/icons.tsx`), and `theme-color` to
    `#f6f2ec`; e2e pins the canonical token values.
-2. **patifon-page-port** (planned) - the page restructured 1:1 against
-   canvas draft v7: 380px sidebar with the Patifon brand row and mech mode
-   switcher, the light 140px transport deck with the full-width continuous
-   waveform strip (times inside the strip), the horizontal volume fader
-   replacing the knob, EQ/SCROB mech toggles, light vinyl deck values, and
-   per-region adoption of the canonical token names (aliases deleted).
+2. **patifon-page-port** (implemented 2026-09-11) - the page restructured
+   1:1 against canvas draft v7: the light 140px transport deck (strip row
+   with in-strip times + continuous gapless waveform in the canonical
+   colors, 2px playhead with glow) over the controls row (mech transport
+   with lucide glyphs, latched play, glass now-playing screen, round mute
+   + horizontal volume fader replacing the knob, EQ/SCROB mech toggles,
+   re-skinned popups); the 380px sidebar with the Patifon brand row,
+   three-button mech mode switcher, recessed search, context eyebrow row,
+   and TrackRow-anatomy rows; latched text-chip mode tabs; the vinyl deck
+   synced to the canon (strobe rim, mint label, power LED, fader-language
+   pitch rail); title + manifest renamed to Patifon; legacy token aliases
+   and the dark-strip machinery deleted. Verified with a per-region
+   side-by-side pass against the draft preview.
 
 ## Backlog (deferred, revisit when stated)
 
