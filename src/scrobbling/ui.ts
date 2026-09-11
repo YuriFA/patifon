@@ -1,13 +1,11 @@
 import type AudioPlayer from "../audio-player";
 import { initScrobblingTracker } from "./listens";
-import { loadScrobblingSettings } from "./settings";
 
 /**
- * Scrobbling boot: settings hydration and the listen tracker (playing-now +
- * completed-listen submissions with the retry queue). The popup UI lives in
- * the ScrobblingPopup island.
+ * Scrobbling boot: the listen tracker (playing-now + completed-listen
+ * submissions with the retry queue). Settings hydration happens where the
+ * state is first read - the ScrobblingPopup island's state initializer.
  */
 export function initScrobbling(player: AudioPlayer): void {
-  loadScrobblingSettings();
   initScrobblingTracker(player);
 }

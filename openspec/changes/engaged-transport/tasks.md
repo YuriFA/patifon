@@ -18,4 +18,5 @@
 - [x] 3.3 Initialize `library/ui.ts` module state at declaration; delete the `libraryViewSnapshot` stub guard and its comment. Verify: app boots with an empty library without errors; e2e library suite green.
 
 ## 4. Gate
+
 - [x] 4.1 Run the full gate: `npm run build && npm run typecheck && npm run lint && npm run format:check && npm run test:e2e`. Verify: all green.

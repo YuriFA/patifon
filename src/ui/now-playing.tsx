@@ -1,3 +1,4 @@
+import { effect } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import type AudioPlayer from "../audio-player";
 import { bridge } from "./bridge";
@@ -26,7 +27,6 @@ function NowPlayingMeter({ player }: { player: AudioPlayer }) {
 
     let raf = 0;
     const draw = () => {
-      raf = requestAnimationFrame(draw);
       const analyser = player.analyser;
       ctx2d.clearRect(0, 0, METER_WIDTH, METER_HEIGHT);
       if (!analyser || !bridge.playing.value) {
@@ -42,9 +42,20 @@ function NowPlayingMeter({ player }: { player: AudioPlayer }) {
         const h = Math.max(2, level * METER_HEIGHT);
         ctx2d.fillRect(bar * 3, METER_HEIGHT - h, 2, h);
       }
+      raf = requestAnimationFrame(draw);
     };
-    draw();
-    return () => cancelAnimationFrame(raf);
+    // the loop lives only while audibly playing: a pause ends it on the
+    // next frame, a play edge restarts it - no frames tick while paused
+    const stopSync = effect(() => {
+      if (bridge.playing.value) {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(draw);
+      }
+    });
+    return () => {
+      stopSync();
+      cancelAnimationFrame(raf);
+    };
   }, [player]);
 
   return (

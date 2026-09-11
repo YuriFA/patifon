@@ -83,8 +83,8 @@ function DeckControls({ player }: { player: AudioPlayer }) {
 
 /**
  * The functional pitch fader (draft): a right-edge vertical fader with
- * +8/-8 limits. Writes the player rate; the readout mirrors the bridge so
- * external rate changes stay visible.
+ * +8/-8 limits. The fader and the readout both follow the bridge's rate, so
+ * external rate changes stay visible; dragging writes the player rate.
  */
 function PitchFader({ player }: { player: AudioPlayer }) {
   const pitch = rateToPitch(bridge.playbackRate.value);
@@ -102,7 +102,7 @@ function PitchFader({ player }: { player: AudioPlayer }) {
           min={-8}
           max={8}
           step={1}
-          defaultValue={pitch}
+          value={pitch}
           aria-label="Pitch"
           onInput={(event) => {
             player.playbackRate = pitchToRate(Number(event.currentTarget.value));
