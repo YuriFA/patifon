@@ -1198,27 +1198,28 @@ body.drop-hover::after {
    joint, and the small gray stylus tab centered at the far tip. */
 .vinyl-deck__head {
   position: absolute;
-  top: 140px;
-  left: -20px;
+  top: 170px;
+  left: -36px;
   width: 54px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--metal-light);
   border: 1.5px solid var(--metal-dark);
   box-shadow: 0 2px 4px rgba(34, 29, 22, 0.28);
-  /* long axis continues the tube downward, bent ~15° toward the
-     spindle; the tube tip lands flush on the upper short side */
-  transform: rotate(105deg);
+  /* long axis continues the tube downward, bent ~10° toward the
+     spindle */
+  transform: rotate(100deg);
 
   &::after {
     content: "";
     position: absolute;
-    right: 5px;
+    right: 2px;
     top: 50%;
-    margin-top: -3.5px;
-    width: 10px;
-    height: 7px;
-    border-radius: 2px;
+    margin-top: 0;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 4px;
+    border-radius: 1px;
     background: var(--metal-dark);
   }
 }
@@ -1226,10 +1227,10 @@ body.drop-hover::after {
 .vinyl-deck__cartridge {
   position: absolute;
   left: 5px;
-  top: 50%;
+  top: 45%;
   margin-top: -7px;
   width: 26px;
-  height: 14px;
+  height: 16px;
   border-radius: 5px;
   background: var(--primary);
 }
