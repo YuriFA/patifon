@@ -268,15 +268,16 @@ export default class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
     if (!this.ctx || !this.source || !this.gain) {
       return;
     }
+    // the analyser taps the signal before the volume gain: the visualization
+    // shows the music, not the volume knob (EQ still applies, radio is outside)
     const nodes: AudioNode[] = [this.source];
     if (this.eqFilters) {
       nodes.push(...this.eqFilters.filters);
     }
-    nodes.push(this.gain);
     if (this.analyserRef) {
       nodes.push(this.analyserRef.analyser);
     }
-    nodes.push(this.ctx.destination);
+    nodes.push(this.gain, this.ctx.destination);
     for (let i = 1; i < nodes.length; i++) {
       nodes[i - 1].connect(nodes[i]);
     }

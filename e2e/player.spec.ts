@@ -199,7 +199,9 @@ test("equalizer preset applies to every band", async ({ page }) => {
   expect(Number(boostedLast.replace("%", ""))).toBeCloseTo(50, 0);
 });
 
-test("visualizer renders while playing, freezes on pause, survives resize", async ({ page }) => {
+test("visualizer renders while playing, sinks to cleared on pause, survives resize", async ({
+  page,
+}) => {
   await seedLibrary(page);
   const canvas = page.locator("#visualizer");
 
@@ -208,33 +210,34 @@ test("visualizer renders while playing, freezes on pause, survives resize", asyn
       const el = node as HTMLCanvasElement;
       const ctx = el.getContext("2d")!;
       const { data } = ctx.getImageData(0, 0, el.width, el.height);
+      // lit cells are --primary teal; the window backgrounds are not, so the
+      // count moves only with the column heights
       let sum = 0;
-      for (let i = 3; i < data.length; i += 4) {
-        sum += data[i];
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] < 80 && data[i + 1] > 90 && data[i + 2] > 90 && data[i + 1] - data[i] > 30) {
+          sum += 1;
+        }
       }
-      // alpha channel of drawn pixels
       return sum;
     });
 
   await page.click(playBtn);
   await page.waitForTimeout(800);
   const playingSum = await sampleSum();
-  // something is drawn
+  // something is drawn (a steady sine is a steady picture; the falloff below
+  // is what proves the canvas animates rather than freezes)
   expect(playingSum).toBeGreaterThan(0);
 
-  await page.waitForTimeout(500);
-  const playingSumLater = await sampleSum();
-  // animating: a later frame differs
-  expect(playingSumLater).not.toBe(playingSum);
-
-  // pause
+  // pause: mid-falloff the pixels are still lit but already below the live
+  // frame, and the canvas ends fully cleared - no frozen frame
   await page.click(playBtn);
-  await page.waitForTimeout(500);
-  const frozenSum = await sampleSum();
-  await page.waitForTimeout(500);
-  const frozenSumLater = await sampleSum();
-  // frozen
-  expect(frozenSum).toBe(frozenSumLater);
+  await page.waitForTimeout(100);
+  const sinkingSum = await sampleSum();
+  expect(sinkingSum).toBeGreaterThan(0);
+  expect(sinkingSum).toBeLessThan(playingSum);
+  await expect.poll(() => sampleSum(), { timeout: 3000 }).toBe(0);
+  await page.waitForTimeout(300);
+  expect(await sampleSum()).toBe(0);
 
   await page.setViewportSize({ width: 900, height: 600 });
   await page.waitForTimeout(300);

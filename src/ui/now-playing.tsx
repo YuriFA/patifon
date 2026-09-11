@@ -1,61 +1,52 @@
-import { effect } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import type AudioPlayer from "../audio-player";
+import { Spectrum, type SpectrumFrame } from "../visualizer/spectrum";
+import { spectrumStyle } from "../visualizer/spectrum-style";
+import { renderMiniMeter } from "../visualizer/render";
 import { bridge } from "./bridge";
 
-const BARS = 16;
+const MINI_COLUMNS = 9;
 const METER_WIDTH = 44;
-const METER_HEIGHT = 22;
+const METER_HEIGHT = 28;
+
+/** The panel's idle screen: an all-zero frame in the meter's own columns. */
+const idleFrame: SpectrumFrame = {
+  levels: new Float32Array(MINI_COLUMNS),
+  peaks: new Float32Array(MINI_COLUMNS),
+};
 
 /**
- * The panel's live meter: a tiny canvas fed by the same analyser the
- * visualizers use (no second AnalyserNode). Draws only while a library track
- * is audibly playing.
+ * The panel's live meter: a tiny canvas fed by the shared spectrum pipeline
+ * (no second AnalyserNode, no second mapping). While paused the columns
+ * sink through the same release path as the big renderer and then hold the
+ * empty screen; the loop lives only while the panel is mounted.
  */
 function NowPlayingMeter({ player }: { player: AudioPlayer }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx2d = canvas?.getContext("2d");
-    if (!canvas || !ctx2d) {
+    if (!canvas?.getContext("2d")) {
       return;
     }
-
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
-    ctx2d.fillStyle = accent || "#0f766e";
+    const spectrum = new Spectrum();
+    spectrum.setColumns(MINI_COLUMNS);
 
     let raf = 0;
     const draw = () => {
       const analyser = player.analyser;
-      ctx2d.clearRect(0, 0, METER_WIDTH, METER_HEIGHT);
-      if (!analyser || !bridge.playing.value) {
-        return;
+      let frame: SpectrumFrame | null;
+      if (bridge.playing.value && analyser) {
+        analyser.updateData();
+        frame = spectrum.update(analyser.fFrequencyData, analyser.analyser.context.sampleRate);
+      } else {
+        frame = spectrum.decay() ?? idleFrame;
       }
-      analyser.updateData();
-      const data = analyser.fFrequencyData;
-      // log-ish sampling over the bins keeps the bars music-shaped
-      const step = Math.floor(data.length / 64);
-      for (let bar = 0; bar < BARS; bar++) {
-        const bin = Math.floor((bar / BARS) * 48) * step;
-        const level = (Math.max(-72, data[bin]) + 72) / 72;
-        const h = Math.max(2, level * METER_HEIGHT);
-        ctx2d.fillRect(bar * 3, METER_HEIGHT - h, 2, h);
-      }
+      renderMiniMeter(canvas, frame, spectrumStyle.value);
       raf = requestAnimationFrame(draw);
     };
-    // the loop lives only while audibly playing: a pause ends it on the
-    // next frame, a play edge restarts it - no frames tick while paused
-    const stopSync = effect(() => {
-      if (bridge.playing.value) {
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(draw);
-      }
-    });
-    return () => {
-      stopSync();
-      cancelAnimationFrame(raf);
-    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
   }, [player]);
 
   return (

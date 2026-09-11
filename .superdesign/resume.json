@@ -89,9 +89,45 @@
           "title": "Patifon Mobile - Warm Earth Hi-Fi Player",
           "visualDirection": "Warm Earth mobile: same cream/teal canon at ~390px; single column (brand+search header, compact vinyl stage + track list, pinned transport deck with continuous waveform, EQ bottom sheet). Standalone root node re-imported from the approved branch HTML (the depth-2 branch 0075d21e renders invisibly on canvas)",
           "currentVersion": 1
+        },
+        "e31ce348-8f29-40cc-bc7b-38f05372c189": {
+          "title": "Patifon - Spectrum Visualizer View (LED ladder)",
+          "visualDirection": "Visualizer bars variant 1: mirrored bass-center LED-segment spectrum in a recessed charcoal window with bezel, dB ruler, peak-hold markers; footer mini-VU restyled to matching LED segments",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 1
+        },
+        "3bfbc05a-1c65-4bd2-8472-92d5a8f0a918": {
+          "title": "Patifon - VISUAL View Update (continuous slot)",
+          "visualDirection": "Visualizer bars variant 2: continuous rounded bars filling a recessed beige cassette-tray slot with etched dB/octave ruler, glass reflection, peak-hold ticks; footer mini-VU restyled to mirrored continuous bars",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 1
+        },
+        "4f45eaf5-63d5-4f08-aff7-7804fdab103f": {
+          "title": "Patifon - Spectrum Visualizer View (LCD matrix)",
+          "visualDirection": "Visualizer bars variant 3: dot-matrix LCD spectrum on pale scanlined LCD field in glass-screen frame, unlit cell ghosts, dark-teal lit cells, peak-hold cells; footer mini-VU restyled to LCD cell matrix",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 1
+        },
+        "f2edc494-d4ca-4114-9b2d-c6fe37b74d5a": {
+          "title": "Patifon - Visualizer V1 LED Ladder",
+          "visualDirection": "Canvas-visible standalone root re-import of depth-2 branch e31ce348 (depth-2 nodes render invisibly); mirrored bass-center LED-segment spectrum in recessed charcoal window",
+          "parentDraftId": "e31ce348-8f29-40cc-bc7b-38f05372c189",
+          "currentVersion": 1
+        },
+        "d7418cc7-49c0-4130-bf81-fa98cf444d23": {
+          "title": "Patifon - Visualizer V2 Slot Bars",
+          "visualDirection": "Canvas-visible standalone root re-import of depth-2 branch 3bfbc05a; continuous mirrored bars in recessed beige cassette-tray slot with etched dB ruler",
+          "parentDraftId": "3bfbc05a-1c65-4bd2-8472-92d5a8f0a918",
+          "currentVersion": 1
+        },
+        "92846f2f-c653-447b-a7e8-7e58c51674b5": {
+          "title": "Patifon - Visualizer V3 LCD Matrix",
+          "visualDirection": "Canvas-visible standalone root re-import of depth-2 branch 4f45eaf5; dot-matrix LCD spectrum with unlit cell ghosts, scanlines, peak-hold cells",
+          "parentDraftId": "4f45eaf5-63d5-4f08-aff7-7804fdab103f",
+          "currentVersion": 1
         }
       },
-      "updatedAt": "2026-09-11T14:11:33.965Z"
+      "updatedAt": "2026-09-11T19:25:00.000Z"
     }
   }
 }

@@ -4,6 +4,13 @@ declare global {
   interface Window {
     appReady?: boolean;
     player: import("../src/audio-player").default;
+    visualizer?: {
+      mode: () => import("../src/visualizer/controller").VisualizerMode;
+      style: () => "lcd" | "led";
+      isRendering: () => boolean;
+      isReady: () => boolean;
+      presetName: () => string | null;
+    };
     mediaSessionHandlers?: Map<string, (details?: { seekTime?: number }) => void>;
     mediaSessionPositions?: Array<{ duration: number; playbackRate: number; position: number }>;
   }

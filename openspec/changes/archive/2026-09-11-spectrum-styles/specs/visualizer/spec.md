@@ -1,11 +1,4 @@
-# visualizer Specification
-
-## Purpose
-
-Real-time frequency visualization of the audio being played, rendered on a
-canvas that fills the available space above the control bar.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Live audio visualization
 
@@ -46,17 +39,6 @@ mode switch to radio SHALL clear the last frame instead of keeping it.
 - **THEN** the waveform is cleared while the panel is visible and resumes
   when the area switches back to VISUALIZER mode
 
-### Requirement: Adapt to window size
-
-The system SHALL keep the visualization canvas sized to the window area above
-the control bar. On window resize the canvas MUST be resized accordingly
-without requiring a reload.
-
-#### Scenario: Window resize
-
-- **WHEN** the user resizes the browser window while a track plays
-- **THEN** the visualization resizes with the window and keeps rendering
-
 ### Requirement: Two render modes
 
 The visualization area SHALL be switched between exactly three modes at a
@@ -90,6 +72,8 @@ follow the existing clear/pause rules.
 
 - **WHEN** the browser does not support WebGL2
 - **THEN** the LYRICS and VINYL tabs remain available and both spectrum styles render, while only the MilkDrop renderer is unavailable
+
+## ADDED Requirements
 
 ### Requirement: Spectrum styles
 

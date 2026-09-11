@@ -2,7 +2,9 @@ import { effect } from "@preact/signals";
 import type AudioPlayer from "../audio-player";
 import { MilkDropEngine, isWebGL2Supported } from "./butterchurn";
 import { areaMode } from "./area-mode";
-import { clearColumns, renderColumns } from "./columns";
+import { Spectrum } from "./spectrum";
+import { spectrumStyle } from "./spectrum-style";
+import { clearSpectrum, columnsForWidth, renderSpectrum } from "./render";
 import { createVisualizerControls, type VisualizerControls } from "./controls";
 
 export type VisualizerMode = "bars" | "milkdrop";
@@ -22,6 +24,7 @@ declare global {
   interface Window {
     visualizer?: {
       mode: () => VisualizerMode;
+      style: () => "lcd" | "led";
       isRendering: () => boolean;
       isReady: () => boolean;
       presetName: () => string | null;
@@ -34,10 +37,62 @@ interface RenderLoopState {
 }
 
 /**
+ * The bars renderer's frame step: live frames while playing, the release
+ * falloff while stopped, cleared once the falloff ends. Returns whether a
+ * frame is currently held.
+ */
+function createSpectrumRenderer(deps: {
+  player: AudioPlayer;
+  barsCanvas: HTMLCanvasElement;
+  shouldDraw: () => boolean;
+}): () => boolean {
+  const { player, barsCanvas, shouldDraw } = deps;
+  const spectrum = new Spectrum();
+  let drawing = false;
+  let columnsFor = 0;
+
+  return () => {
+    const analyser = player.analyser;
+    if (!analyser || !shouldDraw()) {
+      if (drawing) {
+        clearSpectrum(barsCanvas);
+        drawing = false;
+      }
+      return false;
+    }
+    // the band count follows the canvas width wherever it was resized
+    if (barsCanvas.width !== columnsFor) {
+      spectrum.setColumns(columnsForWidth(barsCanvas.width));
+      columnsFor = barsCanvas.width;
+    }
+    if (player.isPlaying) {
+      analyser.updateData();
+      const frame = spectrum.update(analyser.fFrequencyData, analyser.analyser.context.sampleRate);
+      renderSpectrum(barsCanvas, frame, spectrumStyle.value);
+      drawing = true;
+      return true;
+    }
+    // stopped: columns sink through the release path and the canvas ends
+    // cleared (a physical falloff, not a frozen frame)
+    const frame = spectrum.decay();
+    if (!frame) {
+      clearSpectrum(barsCanvas);
+      drawing = false;
+      return false;
+    }
+    renderSpectrum(barsCanvas, frame, spectrumStyle.value);
+    drawing = true;
+    return true;
+  };
+}
+
+/**
  * The single frame loop for both render modes: draws through whichever
- * renderer the mode controller selected and, once, clears the active canvas
- * on the transition into a blocked state (radio takeover/mode, lyrics panel,
- * stopped playback). The columns rules and the MilkDrop rules are one rule.
+ * renderer the mode controller selected. The spectrum follows one rule on
+ * stop: columns sink through the release path and the canvas ends cleared
+ * (a physical falloff, not a frozen frame); MilkDrop and the blocked states
+ * (radio takeover/mode, lyrics panel) clear once on entry. The columns
+ * rules and the MilkDrop rules are one rule.
  */
 function startRenderLoop(deps: {
   player: AudioPlayer;
@@ -46,33 +101,27 @@ function startRenderLoop(deps: {
   shouldDraw: () => boolean;
   isMilkdropActive: () => boolean;
 }): RenderLoopState {
-  const { player, barsCanvas, engine, shouldDraw, isMilkdropActive } = deps;
-  let wasDrawing = false;
+  const { player, engine, shouldDraw, isMilkdropActive } = deps;
+  const drawBars = createSpectrumRenderer(deps);
+  let drawing = false;
 
   const draw = () => {
-    // read live: the analyser only exists once the audio graph is built lazily
-    const analyser = player.analyser;
-    const milkdrop = isMilkdropActive();
-    if (player.isPlaying && analyser && shouldDraw()) {
-      if (milkdrop) {
+    if (isMilkdropActive()) {
+      if (player.isPlaying && player.analyser && shouldDraw()) {
         engine.render();
-      } else {
-        renderColumns(analyser, barsCanvas);
-      }
-      wasDrawing = true;
-    } else if (wasDrawing) {
-      if (milkdrop) {
+        drawing = true;
+      } else if (drawing) {
         engine.clear();
-      } else {
-        clearColumns(barsCanvas);
+        drawing = false;
       }
-      wasDrawing = false;
+    } else {
+      drawing = drawBars();
     }
     requestAnimationFrame(draw);
   };
 
   requestAnimationFrame(draw);
-  return { isRendering: () => wasDrawing };
+  return { isRendering: () => drawing };
 }
 
 /** Keeps both canvases at body size; MilkDrop re-buffers through the engine. */
@@ -115,8 +164,8 @@ function applyCanvasMode(
   barsCanvas.hidden = mode === "milkdrop" || !tabOwnsArea;
   webglCanvas.hidden = mode !== "milkdrop" || !tabOwnsArea;
   if (mode === "milkdrop") {
-    // leaving bars: drop the last columns frame, it must not come back stale
-    clearColumns(barsCanvas);
+    // leaving bars: drop the last spectrum frame, it must not come back stale
+    clearSpectrum(barsCanvas);
   } else {
     // leaving MilkDrop: stop preset rotation and clear the WebGL canvas
     engine.clear();
@@ -164,6 +213,7 @@ export function initVisualizer(deps: VisualizerDeps): void {
   // debug/observability handle (also used by e2e to inspect render state)
   window.visualizer = {
     mode: () => mode,
+    style: () => spectrumStyle.value,
     isRendering: loop.isRendering,
     isReady: () => engine.isReady,
     presetName: () => engine.presetName,

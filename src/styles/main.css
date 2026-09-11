@@ -928,7 +928,8 @@ body.drop-hover::after {
 }
 
 .visualizer-controls__mode,
-.visualizer-controls__skip {
+.visualizer-controls__skip,
+.visualizer-controls__style {
   background: var(--secondary);
   color: var(--fg);
   border: 1px solid var(--border);
@@ -946,6 +947,14 @@ body.drop-hover::after {
     box-shadow: var(--shadow-mech-pressed);
     transform: translateY(1px);
   }
+}
+
+/* The latched spectrum style chip (the mech-button latching language). */
+.visualizer-controls__style.is-on {
+  background: var(--accent-tint);
+  border-color: rgba(15, 118, 110, 0.4);
+  color: var(--primary);
+  box-shadow: var(--shadow-mech-pressed);
 }
 
 /* Mode tabs: latching text mech chips pinned top-right of the stage. */
