@@ -493,7 +493,9 @@ body {
   /* drop shadow cast onto the stage across the right border; the
      grid item must paint above the stage background */
   z-index: 1;
-  box-shadow: var(--shadow-panel), 10px 0 20px -6px rgba(34, 29, 22, 0.09);
+  box-shadow:
+    var(--shadow-panel),
+    10px 0 20px -6px rgba(34, 29, 22, 0.09);
   min-height: 0;
 }
 
@@ -1568,4 +1570,262 @@ body.drop-hover::after {
 
 .radio__star_saved {
   color: var(--primary);
+}
+
+/* ============================================================
+   Mobile shell (mobile-shell change). Below 760px the desktop grid
+   reflows into the approved mobile draft's single column: the sidebar
+   chrome pins as a header, the stage and the shared list scroll as one
+   column, the deck stays pinned with its rows stacked, and the transport
+   popups dock as bottom sheets. Desktop (761px and up) is untouched -
+   the reflow is additive CSS only, no DOM restructuring.
+   ============================================================ */
+@media (max-width: 760px) {
+  .audio_player {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  /* The two grid containers donate their children to the shell column;
+     the children are placed with order (header, tabs, stage, list, deck). */
+  .playlist,
+  .audio_visualize {
+    display: contents;
+  }
+
+  .library__header {
+    order: 1;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    gap: 12px;
+    padding: 16px 16px 12px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    background: var(--card);
+  }
+
+  #area-tabs-root {
+    order: 2;
+    padding: 16px 16px 0;
+  }
+
+  .area-tabs {
+    position: static;
+    justify-content: flex-end;
+  }
+
+  /* Stage: the canvases carry explicit flow sizing (their boot-time
+     buffer sizing follows the CSS box); the station card and the lyrics
+     join the column instead of overlaying the stage. */
+  #visualizer,
+  .visualizer__webgl {
+    order: 3;
+    width: 100%;
+    height: 55dvh;
+  }
+
+  .station-now {
+    order: 3;
+    position: static;
+    transform: none;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  .lyrics {
+    order: 3;
+    position: static;
+    overflow: visible;
+    padding: 24px;
+  }
+
+  .visualizer-controls {
+    order: 3;
+    position: static;
+    justify-content: flex-end;
+    padding: 8px 16px 0;
+  }
+
+  /* Turntable: the plinth anatomy is percentage-based already; zoom
+     scales the fixed-px parts (tonearm, deck buttons, screws) as one
+     unit, and the width divide compensates so the rendered box still
+     fills the column. */
+  .vinyl-deck {
+    position: static;
+    padding: 16px 16px 24px;
+  }
+
+  .vinyl-deck__plinth {
+    zoom: 0.6;
+    width: calc(100% / 0.6);
+  }
+
+  /* Shared list: released into the column flow - the column itself
+     scrolls, the list no longer runs its own scrollbar. */
+  .library__empty,
+  .library__list,
+  .recommendations,
+  #library-rows-root,
+  #radio-rows-root,
+  #playlists-rows-root {
+    order: 4;
+  }
+
+  .library__empty {
+    padding: 24px 16px;
+  }
+
+  .library__list {
+    flex: none;
+    overflow-y: visible;
+    min-height: 0;
+    padding: 12px 16px 16px;
+  }
+
+  /* Deck: pinned to the viewport bottom (sticky while the column
+     scrolls; margin-top keeps it there when the content is short), with
+     the rows stacked - strip, then readout + volume, then transport +
+     panel toggles. */
+  .deck {
+    order: 10;
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    height: auto;
+    margin-top: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .deck__strip {
+    padding: 0 12px;
+  }
+
+  .deck__controls {
+    height: auto;
+  }
+
+  .player-controls {
+    flex-wrap: wrap;
+    column-gap: 12px;
+    row-gap: 10px;
+    justify-content: space-between;
+    padding: 10px 16px 12px;
+  }
+
+  #nowplaying-root {
+    order: 1;
+    flex: 1 1 140px;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  #volume-root {
+    order: 2;
+    margin-left: auto;
+  }
+
+  #transport-root {
+    order: 3;
+    gap: 12px;
+  }
+
+  #equalizer-root,
+  #scrobbling-root {
+    margin-left: 0;
+  }
+
+  #equalizer-root {
+    order: 4;
+  }
+
+  #scrobbling-root {
+    order: 5;
+  }
+
+  /* Touch ergonomics: every chrome/deck control reaches a 44px hit area
+     (desktop sizes stay above the breakpoint). */
+  .sidebar__mode {
+    width: 44px;
+    height: 44px;
+  }
+
+  .player-controls__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .player-controls__btn_play {
+    width: 64px;
+    height: 48px;
+  }
+
+  .player-controls__btn_panel {
+    width: 48px;
+    height: 48px;
+  }
+
+  .volume__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .volume__fader {
+    width: 110px;
+    flex-basis: 110px;
+  }
+
+  /* Transport popups dock as bottom sheets: full width, rounded top,
+     a drag-handle affordance, sliding up through the existing
+     max-height transition; the trigger caret disappears. The extra
+     .player-controls anchor outranks the popup rules that live in the
+     later-loaded per-feature stylesheets. */
+  .player-controls .equalizer-popup,
+  .player-controls .scrobbling-popup {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+
+    &::after {
+      display: none;
+    }
+
+    &::before {
+      content: "";
+      display: block;
+      width: 44px;
+      height: 4px;
+      margin: 10px auto 0;
+      border-radius: 999px;
+      background: var(--border);
+    }
+  }
+
+  .player-controls .equalizer-popup.equalizer-popup__open,
+  .player-controls .scrobbling-popup.scrobbling-popup__open {
+    max-height: min(500px, 75dvh);
+    overflow-y: auto;
+    border: 1px solid var(--primary);
+    border-bottom: none;
+  }
+
+  .equalizer__bands {
+    width: auto;
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+  }
 }

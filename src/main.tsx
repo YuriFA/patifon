@@ -50,8 +50,10 @@ declare global {
 }
 const visualizerArea = document.querySelector<HTMLElement>(".audio_visualize")!;
 const visualizerCanvas = document.querySelector<HTMLCanvasElement>("#visualizer")!;
-visualizerCanvas.width = visualizerArea.clientWidth;
-visualizerCanvas.height = visualizerArea.clientHeight;
+// On mobile the stage container opens with display: contents (no box to
+// measure), so the canvas measures its own CSS box instead.
+visualizerCanvas.width = visualizerArea.clientWidth || visualizerCanvas.clientWidth;
+visualizerCanvas.height = visualizerArea.clientHeight || visualizerCanvas.clientHeight;
 const scrobblingRoot = document.querySelector<HTMLDivElement>("#scrobbling-root")!;
 const equalizerRoot = document.querySelector<HTMLDivElement>("#equalizer-root")!;
 
@@ -178,6 +180,18 @@ initWaveformStrip({
   getBufferRatio: () => bridge.buffered.value,
   isRadioActive: () => isStationEngaged() || bridge.mode.value === "radio",
   currentRecord: currentLibraryRecord,
+});
+// Mobile flow layout: a hidden canvas (a stored vinyl/lyrics tab) cannot be
+// measured at boot - match the drawing buffer to the CSS box the first time
+// the visualizer tab becomes visible.
+areaMode.subscribe((mode) => {
+  if (mode !== "visualizer" || visualizerCanvas.clientWidth === 0) {
+    return;
+  }
+  visualizerCanvas.width = visualizerCanvas.clientWidth;
+  visualizerCanvas.height = visualizerCanvas.clientHeight;
+  webglCanvas.width = visualizerCanvas.width;
+  webglCanvas.height = visualizerCanvas.height;
 });
 // Boot complete: all listeners attached. Tests wait for this before interacting.
 window.appReady = true;
