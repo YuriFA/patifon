@@ -23,17 +23,12 @@
       <div class="audio_visualize">
         <canvas id="visualizer" height="500"></canvas>
         <canvas class="visualizer__webgl" hidden></canvas>
-        <div class="station-now" hidden>
-          <img class="station-now__icon" alt="" hidden />
-          <span class="station-now__icon-empty">♪</span>
-          <div class="station-now__name"></div>
-          <div class="station-now__tags"></div>
-        </div>
         <div class="lyrics" hidden>
           <div class="lyrics__text"></div>
           <div class="lyrics__empty" hidden>No lyrics for this track</div>
         </div>
         <div id="vinyl-root"></div>
+        <div id="radio-deck-root"></div>
         <div id="area-tabs-root"></div>
         <div class="visualizer-controls">
           <button
@@ -67,7 +62,6 @@
       <footer class="deck">
         <div class="deck__strip progress">
           <div id="seek-root"></div>
-          <span class="progress__live" hidden>LIVE</span>
         </div>
         <div class="deck__controls">
           <div class="player-controls">

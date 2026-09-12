@@ -50,13 +50,29 @@ the list.
 ### Requirement: Live stream transport semantics
 
 Radio streams are live: the system SHALL NOT offer seeking or a playback
-position for a playing station, and the progress area SHALL indicate a live
-state instead of a position.
+position for an engaged station. While a station is engaged, the deck strip
+SHALL NOT retain the previously played library track's position, duration or
+waveform: both time readouts SHALL be empty and the seek control SHALL be
+disabled. The progress area SHALL indicate the live state with a LIVE badge
+occupying the total-time slot: bright while the station plays, dimmed while
+the station is paused, and hidden otherwise.
 
 #### Scenario: Live state instead of a position
 
 - **WHEN** a station plays
-- **THEN** the progress area shows the live state and does not offer a seek position
+- **THEN** the progress area shows the LIVE badge in the total-time slot and
+  does not offer a seek position
+
+#### Scenario: Stale times are cleared
+
+- **WHEN** a station takes over while a library track was loaded
+- **THEN** both time readouts are empty (no duration digits from the previous
+  track) and the seek control is disabled
+
+#### Scenario: Badge dims on pause
+
+- **WHEN** the user pauses the engaged station
+- **THEN** the LIVE badge stays in place in a dimmed state
 
 ### Requirement: Playback is reported to the catalog
 
@@ -121,13 +137,14 @@ a search, and they SHALL remain playable after a page reload.
 - **WHEN** the user reloads the page after saving stations and opens radio mode without a search query
 - **THEN** the saved stations are listed and playing one of them works
 
-### Requirement: Now-playing station display
+### Requirement: Playing station visibility
 
 While a station is engaged, the system SHALL keep it visible as a pinned list
-item with its own save star in radio mode, and SHALL show its name, icon and
-tags in a card in the library view, so the user always sees what is playing.
-The visualizer SHALL NOT leave a frozen frame behind when playback stops or
-radio takes over.
+item with its own save star in radio mode, and the radio deck receiver (see
+the radio-deck capability) SHALL show its name in the visualization area, so
+the user always sees what is playing. The system SHALL NOT render a separate
+station card in the visualization area. The visualizer SHALL NOT leave a
+frozen frame behind when playback stops or radio takes over.
 
 #### Scenario: Playing station pinned in the radio list
 
@@ -135,12 +152,12 @@ radio takes over.
 - **THEN** the station appears as the first list row with the active
   highlight and a working save star, without duplicating a row already listed
 
-#### Scenario: Station card in the library view
+#### Scenario: Station identity in the area
 
-- **WHEN** a station is playing or paused and the user switches to the library view
-- **THEN** the visualization area shows exactly one station icon (or the
-  placeholder) with the station's name and tags, and no library waveform is
-  left behind it
+- **WHEN** a station is playing or paused and the user switches to the library
+  view
+- **THEN** the visualization area shows the radio deck receiver carrying the
+  station's name, with no station card and no library waveform behind it
 
 #### Scenario: Radio mode hides the library waveform
 

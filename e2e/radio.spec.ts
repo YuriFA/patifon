@@ -186,7 +186,7 @@ test("saving a station persists it across reloads", async ({ page }) => {
   await expect(page.locator(".library__empty")).toContainText("No saved stations yet");
 });
 
-test("playing station is pinned in the list and the card shows in library view", async ({
+test("playing station is pinned in the list and the deck shows in library view", async ({
   page,
 }) => {
   await mockCatalog(page);
@@ -194,30 +194,34 @@ test("playing station is pinned in the list and the card shows in library view",
   await waitForAppReady(page);
   await searchAndPlayFirst(page);
 
-  // radio mode: the station is a pinned list item with its star, no card
-  const card = page.locator(".station-now");
+  // radio mode: the station is a pinned list item with its star; the deck
+  // owns the visualization area with the station's name
   const firstRow = page.locator(".radio__row").first();
   await expect(firstRow).toHaveClass(/library__row_playing/u);
   await expect(firstRow.locator(".radio__star")).toBeVisible();
   await expect(firstRow).toContainText("Test Radio One");
-  await expect(card).toBeHidden();
+  await expect(page.locator(".station-now")).toHaveCount(0);
+  const deck = page.locator(".radio-deck");
+  await expect(deck).toBeVisible();
+  await expect(deck.locator(".radio-deck__station")).toHaveText("Test Radio One");
+  await expect(deck.locator(".radio-deck__meta")).toHaveText("rock, pop · 128 kbps");
+  await expect(page.locator(".area-tabs")).toHaveCount(0);
+  await expect(page.locator('.visualizer-controls__style[data-style="lcd"]')).toBeHidden();
 
-  // library view: the card is the only radio indicator (single icon, no fallback)
+  // library view: the deck stays (it follows the source, not the mode)
   await page.click(".library__mode");
-  await expect(card).toBeVisible();
-  await expect(card.locator(".station-now__name")).toHaveText("Test Radio One");
-  await expect(card.locator(".station-now__tags")).toHaveText("rock, pop");
-  await expect(card.locator(".station-now__icon-empty")).toBeVisible();
-  await expect(card.locator(".station-now__icon")).toBeHidden();
+  await expect(deck).toBeVisible();
 
-  // paused radio keeps the card; back in radio mode the pinned row returns
+  // paused radio keeps the deck in its dimmed idle state; the pinned row
+  // returns when radio mode reopens
   await page.click(".player-controls__btn_play");
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("paused");
-  await expect(card).toBeVisible();
+  await expect(deck).toHaveClass(/radio-deck_idle/u);
+  await expect(deck.locator(".radio-deck__station")).toHaveText("Test Radio One");
 
   await page.click(".library__mode");
-  await expect(card).toBeHidden();
   await expect(page.locator(".radio__row").first()).toHaveClass(/library__row_playing/u);
+  await expect(deck).toBeVisible();
 });
 
 test("radio mode hides the library waveform while a track keeps playing", async ({ page }) => {
@@ -282,5 +286,5 @@ test("radio takeover clears the frozen library visualizer frame", async ({ page 
   await page.locator(".radio__row").first().click();
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
   await expect.poll(pixelAlphaSum).toBe(0);
-  await expect(page.locator(".station-now")).toBeHidden();
+  await expect(page.locator(".radio-deck")).toBeVisible();
 });

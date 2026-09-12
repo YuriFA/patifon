@@ -55,11 +55,26 @@ function NowPlayingMeter({ player }: { player: AudioPlayer }) {
 }
 
 /**
- * The transport bar's now-playing panel (draft): NOW PLAYING label, the
- * library track's title - artist, and a small live meter. Library playback
- * only - radio keeps its station card and the panel clears (spec).
+ * The transport bar's now-playing panel (draft): for library playback a NOW
+ * PLAYING label, the track's title - artist and a small live meter; for an
+ * engaged station an ON AIR label with the station's name and no meter
+ * (radio bypasses the analyser). Clears on release; pause keeps the content.
  */
 export function NowPlaying({ player }: { player: AudioPlayer }) {
+  if (bridge.source.value === "radio") {
+    const station = bridge.station.value;
+    if (!station) {
+      return null;
+    }
+    return (
+      <div class="now-playing glass-screen">
+        <div class="now-playing__meta">
+          <span class="now-playing__label">On air</span>
+          <span class="now-playing__track">{station.name}</span>
+        </div>
+      </div>
+    );
+  }
   const title = bridge.trackTitle.value;
   if (!title) {
     return null;

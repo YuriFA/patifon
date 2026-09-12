@@ -3,6 +3,7 @@ import type { VisualizerMode } from "./controller";
 import { areaMode } from "./area-mode";
 import { setSpectrumStyle, spectrumStyle } from "./spectrum-style";
 import type { SpectrumStyle } from "./spectrum";
+import { bridge } from "../ui/bridge";
 
 export interface VisualizerControlsDeps {
   /** Overlay container inside the visualization area (`.visualizer-controls`). */
@@ -42,7 +43,9 @@ export function createVisualizerControls(deps: VisualizerControlsDeps): Visualiz
   let mode: VisualizerMode = "bars";
 
   const sync = () => {
-    const visualizerTab = areaMode.value === "visualizer";
+    // an engaged station owns the area: the radio deck replaces the whole
+    // corner chrome, whatever the tabs say
+    const visualizerTab = areaMode.value === "visualizer" && bridge.source.value !== "radio";
     modeButton.hidden = !supported || !visualizerTab;
     modeButton.textContent = mode === "bars" ? "MilkDrop" : "Bars";
     skipButton.hidden = !supported || mode !== "milkdrop" || !visualizerTab;

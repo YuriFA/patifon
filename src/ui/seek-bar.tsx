@@ -3,6 +3,25 @@ import { formatDuration } from "../utils";
 import { bridge } from "./bridge";
 
 /**
+ * The live badge (radio): occupies the total-time slot while a station is
+ * engaged - bright while playing, dimmed while paused, hidden on stop and
+ * stream errors (the radio deck carries the error state instead).
+ */
+function LiveBadge() {
+  const state = bridge.radioState.value;
+  const dim = state === "paused";
+  const visible = state === "playing" || dim;
+  if (!visible) {
+    return null;
+  }
+  return (
+    <span class={`deck__time deck__time_total progress__live${dim ? " progress__live_dim" : ""}`}>
+      Live
+    </span>
+  );
+}
+
+/**
  * The seek control: the deck strip row's time - lane - time layout. The lane
  * is a native range input layered invisibly over the styled track (which also
  * hosts the waveform strip canvas mounted by the vanilla strip module).
@@ -14,6 +33,7 @@ export function SeekBar({ player }: { player: AudioPlayer }) {
   const seekable = duration > 0;
   const ratio = seekable ? bridge.position.value / duration : 0;
   const percent = ratio * 100;
+  const radioOwns = bridge.source.value === "radio";
 
   return (
     <>
@@ -37,9 +57,13 @@ export function SeekBar({ player }: { player: AudioPlayer }) {
           onInput={(event) => player.rewind(Number(event.currentTarget.value))}
         />
       </div>
-      <span class="deck__time deck__time_total" aria-hidden="true">
-        {seekable ? formatDuration(duration) : ""}
-      </span>
+      {radioOwns ? (
+        <LiveBadge />
+      ) : (
+        <span class="deck__time deck__time_total" aria-hidden="true">
+          {seekable ? formatDuration(duration) : ""}
+        </span>
+      )}
     </>
   );
 }

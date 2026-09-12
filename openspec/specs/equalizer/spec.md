@@ -47,19 +47,32 @@ list the named presets and, when activated, apply the preset and move every
 band slider to the preset's gains. Manually moving a band slider SHALL
 update that band's gain live during the drag.
 
+While a radio station is engaged, the popup SHALL additionally show a notice
+that the equalizer affects library playback only; the notice SHALL NOT be
+shown while a library source is engaged.
+
 #### Scenario: Band slider reflects and drives gain
 
-- **WHEN** the popup opens after the 1000 Hz band was set to +6 dB
-- **THEN** the 1000 Hz slider shows +6 dB, and moving it changes the applied
-  gain immediately
+- **WHEN** the user moves the 60 Hz band slider
+- **THEN** the 60 Hz gain follows the slider value live
 
 #### Scenario: Preset moves all band sliders
 
-- **WHEN** the user selects a named preset
-- **THEN** all ten band sliders move to the preset's gains and the audio
-  graph applies them
+- **WHEN** the user activates a preset in the selector
+- **THEN** the preset is applied and every band slider moves to the preset's gains
 
 #### Scenario: Keyboard adjustment
 
 - **WHEN** a band slider is focused and the user presses an arrow key
-- **THEN** the band's gain steps within the -12..+12 dB range
+- **THEN** the band's gain changes by one step and aria-valuenow updates
+
+#### Scenario: Radio notice while a station is engaged
+
+- **WHEN** the user opens the equalizer popup while a radio station is engaged
+- **THEN** the popup shows a notice that the equalizer affects library
+  playback only
+
+#### Scenario: No radio notice for library playback
+
+- **WHEN** the user opens the equalizer popup while a library track plays
+- **THEN** the popup shows no radio notice

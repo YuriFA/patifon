@@ -2,20 +2,17 @@ import { signal } from "@preact/signals";
 import { reportListen, type RadioStation } from "./api";
 import { cancelScheduledSearch, scheduleSearch } from "./search";
 import { createStationSource } from "./session";
-import {
-  hideNowPlaying,
-  queryNowPlaying,
-  showNowPlaying,
-  type NowPlayingElements,
-} from "./now-playing";
 import * as playback from "./playback";
 import type { RadioPlaybackState } from "./playback";
 import { deleteStation, loadSavedStations, saveStation } from "./store";
 import { refreshMediaSession, setActiveSource } from "../media-session";
+import { stationTags } from "./rows";
+import { bridge, type BridgeStation } from "../ui/bridge";
 import {
   engageSource,
   getMode,
   onModeChange,
+  onSourceChange,
   registerModeSearch,
   releaseSource,
   searchQuery,
@@ -36,8 +33,6 @@ declare global {
 
 let player: AudioPlayer;
 let progress: HTMLElement;
-let liveBadge: HTMLElement;
-let nowPlaying: NowPlayingElements;
 let stations: RadioStation[] = [];
 let savedStations: RadioStation[] = [];
 
@@ -137,32 +132,22 @@ function setRowError(uuid: string, failed: boolean): void {
 function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | null): void {
   switch (state) {
     case "playing":
-      setLiveIndicator(true);
       if (getMode() === "radio") {
         renderStations();
-      }
-      if (station && getMode() !== "radio") {
-        showNowPlaying(nowPlaying, station);
       }
       refreshMediaSession();
       break;
     case "paused":
-      setLiveIndicator(true);
-      if (station && getMode() !== "radio") {
-        showNowPlaying(nowPlaying, station);
-      }
       refreshMediaSession();
       break;
     case "stopped":
-      setLiveIndicator(false);
-      hideNowPlaying(nowPlaying);
       if (getMode() === "radio") {
         renderStations();
       }
       break;
     case "error":
-      setLiveIndicator(false);
-      hideNowPlaying(nowPlaying);
+      // the deck stays engaged and shows NO SIGNAL; the badge hides itself
+      // (the SeekBar derives it from the bridge's radio state)
       if (getMode() === "radio") {
         renderStations();
       }
@@ -173,13 +158,19 @@ function handlePlaybackState(state: RadioPlaybackState, station: RadioStation | 
   }
 }
 
-function setLiveIndicator(active: boolean): void {
-  liveBadge.hidden = !active;
-  progress.classList.toggle("progress_live", active);
+/** The engaged station as the display islands see it. */
+function toBridgeStation(station: RadioStation): BridgeStation {
+  return {
+    name: station.name,
+    tags: stationTags(station),
+    bitrate: station.bitrate,
+    uuid: station.stationuuid,
+  };
 }
 
 export async function playStation(station: RadioStation): Promise<void> {
   engageSource("radio");
+  bridge.station.value = toBridgeStation(station);
   stations = stations.some((s) => s.stationuuid === station.stationuuid)
     ? stations
     : [...stations, station];
@@ -192,9 +183,9 @@ export async function playStation(station: RadioStation): Promise<void> {
 }
 export function stopPlayback(): void {
   playback.stopStation();
+  bridge.station.value = null;
   setPlayingStation(null);
   releaseSource("radio");
-  hideNowPlaying(nowPlaying);
   if (getMode() === "radio") {
     notifyRows();
   }
@@ -236,8 +227,6 @@ function scheduleCatalogSearch(): void {
 }
 
 function enterRadioView(): void {
-  // in radio mode the pinned list item represents the station
-  hideNowPlaying(nowPlaying);
   stations = [];
   // entering with query text renders the catalog for that text: the search
   // field serves whichever mode is active
@@ -248,19 +237,21 @@ function enterRadioView(): void {
   }
 }
 
-function exitRadioView(next: Mode): void {
+function exitRadioView(_next: Mode): void {
   cancelScheduledSearch();
-  // back in the library view the card is the only radio indicator
-  if (next === "library" && playingStation) {
-    showNowPlaying(nowPlaying, playingStation);
-  }
+  // the engaged station stays visible through the radio deck and the pinned
+  // list row; the library view needs no extra indicator
 }
 
 export async function initRadio(audioPlayer: AudioPlayer): Promise<void> {
   player = audioPlayer;
   progress = document.querySelector<HTMLElement>(".progress")!;
-  liveBadge = document.querySelector<HTMLElement>(".progress__live")!;
-  nowPlaying = queryNowPlaying(document.querySelector<HTMLElement>(".station-now")!);
+  // The strip's lane stays dimmed exactly while a station is engaged (any
+  // playback state, including the transient stop at start and errors); the
+  // LIVE badge in the total-time slot follows the bridge's radio state.
+  onSourceChange(({ source }) => {
+    progress.classList.toggle("progress_live", source === "radio");
+  });
   playback.onRadioStateChange(handlePlaybackState);
   onModeChange(({ mode: next, previous }) => {
     if (next === "radio") {

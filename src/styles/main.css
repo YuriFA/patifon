@@ -350,6 +350,13 @@ body {
   }
 }
 
+.equalizer-popup__notice {
+  margin: 10px 14px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .equalizer-popup__header {
   padding: 10px 20px 0 20px;
 
@@ -889,31 +896,26 @@ body.drop-hover::after {
   outline: none;
 }
 
+/* Live state (radio owns the strip): the lane dims and the LIVE badge takes
+   the total-time slot (bright while playing, dimmed while paused). */
 .progress_live {
   .progress__bar {
     opacity: 0.35;
     pointer-events: none;
   }
-
-  .progress__live {
-    display: inline-block;
-  }
 }
 
 .progress__live {
-  display: none;
-  position: absolute;
-  top: 3px;
-  right: 10px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: 3px;
-  padding: 0 4px;
-  background: var(--card);
-  z-index: 2;
+  text-align: right;
+}
+
+.progress__live_dim {
+  color: var(--muted);
 }
 
 .visualizer-controls {
@@ -1429,6 +1431,541 @@ body.drop-hover::after {
   color: var(--muted);
 }
 
+/* Radio deck: the radio mode's tabletop receiver (superdesign draft
+   "mahogany"). DOM/CSS only - wood body, dot grille, dial glass, station
+   screen, knobs and a telescopic antenna. Playing is the lit default; the
+   idle (paused) state dims the glass and folds the antenna; the error state
+   flickers NO SIGNAL with the needle parked. */
+.radio-deck {
+  position: absolute;
+  inset: 24px 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio-deck__body {
+  --radio-wood-edge: #5f4730;
+  --radio-wood-dark: #3a2c1c;
+  --radio-frame: #4a3826;
+  --radio-glass-edge: #3a2d1d;
+  --radio-brass: #f2e6c8;
+  --radio-brass-dim: #c9b98d;
+  --radio-cream: #f8ecd0;
+  --radio-screen-text: #f5dfa8;
+  --radio-needle: #e03434;
+  --radio-teal: var(--primary);
+
+  position: relative;
+  width: min(680px, 94%);
+  border-radius: 24px;
+  border: 1px solid var(--radio-wood-edge);
+  padding: 20px 30px 16px;
+  background:
+    repeating-linear-gradient(90deg, rgba(56, 38, 20, 0.1) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(90deg, rgba(255, 240, 210, 0.05) 0 9px, transparent 9px 17px),
+    linear-gradient(180deg, #a5825a, #8f6c46 55%, #7c5c3a);
+  box-shadow:
+    var(--shadow-plinth),
+    0 18px 40px rgba(34, 29, 22, 0.28);
+  user-select: none;
+}
+
+/* Soft top sheen + bottom vignette over the wood. */
+.radio-deck__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 220, 0.14), transparent 18%),
+    linear-gradient(0deg, rgba(34, 20, 8, 0.22), transparent 22%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.radio-deck__screw {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--metal-dark), var(--metal-dark)) center / 60% 1.5px no-repeat,
+    #6b543a;
+  border: 1px solid var(--radio-wood-dark);
+  box-shadow:
+    inset 0 1px 2px rgba(34, 29, 22, 0.4),
+    0 1px 1px rgba(255, 244, 220, 0.35);
+}
+
+.radio-deck__screw_tl {
+  top: 10px;
+  left: 12px;
+}
+
+.radio-deck__screw_tr {
+  top: 10px;
+  right: 12px;
+}
+
+.radio-deck__screw_bl {
+  bottom: 10px;
+  left: 12px;
+}
+
+.radio-deck__screw_br {
+  bottom: 10px;
+  right: 12px;
+}
+
+.radio-deck__feet {
+  position: absolute;
+  bottom: -12px;
+  width: 92px;
+  height: 16px;
+  border-radius: 4px 4px 8px 8px;
+  background: var(--radio-wood-dark);
+  box-shadow: 0 3px 5px rgba(34, 29, 22, 0.35);
+}
+
+.radio-deck__feet_left {
+  left: 64px;
+}
+
+.radio-deck__feet_right {
+  right: 64px;
+}
+
+/* Telescopic antenna on the top edge: raised while playing, folded down
+   otherwise (the fold swings it onto the body edge). */
+.radio-deck__antenna {
+  position: absolute;
+  top: -48px;
+  right: 58px;
+  transform-origin: bottom center;
+  transform: rotate(12deg);
+  transition: transform 0.5s ease;
+}
+
+.radio-deck_idle .radio-deck__antenna,
+.radio-deck_error .radio-deck__antenna {
+  transform: rotate(97deg);
+}
+
+.radio-deck__antenna-base {
+  position: absolute;
+  bottom: -7px;
+  left: -13px;
+  width: 30px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #5a4630, var(--radio-wood-dark));
+  box-shadow:
+    0 2px 3px rgba(34, 29, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.radio-deck__antenna-seg {
+  display: block;
+  margin: 0 auto;
+}
+
+.radio-deck__antenna-seg_thick {
+  width: 6px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--metal-dark), var(--metal-base) 50%, var(--metal-dark));
+}
+
+.radio-deck__antenna-seg_thin {
+  width: 4px;
+  height: 38px;
+  border-radius: 2px;
+  margin-top: -2px;
+  background: linear-gradient(90deg, var(--metal-dark), var(--metal-light) 50%, var(--metal-dark));
+}
+
+.radio-deck__antenna-tip {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--metal-light), var(--metal-dark));
+  box-shadow: 0 1px 2px rgba(34, 29, 22, 0.4);
+}
+
+.radio-deck__brand {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--radio-brass);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.radio-deck__grille-frame {
+  position: relative;
+  margin-top: 10px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--radio-frame);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 244, 220, 0.15);
+}
+
+.radio-deck__grille {
+  position: relative;
+  height: 138px;
+  border-radius: 9px;
+  background-color: #ddd2b8;
+  background-image: radial-gradient(circle, rgba(74, 56, 38, 0.55) 1.3px, transparent 1.6px);
+  background-size: 7px 7px;
+  box-shadow: inset 0 3px 10px rgba(34, 20, 8, 0.45);
+}
+
+.radio-deck__grille-vignette {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(58, 42, 24, 0.38));
+}
+
+.radio-deck__stereo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(246, 234, 214, 0.85);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  background: rgba(74, 56, 38, 0.75);
+  border: 1px solid rgba(246, 234, 214, 0.25);
+  border-radius: 4px;
+  padding: 3px 12px;
+}
+
+/* The full-width dial glass: band label, STEREO tell-tale, 88-108 scale and
+   the red needle. Lit while playing; dimmed when idle or in error. */
+.radio-deck__dial {
+  position: relative;
+  height: 84px;
+  border-radius: 10px;
+  border: 1px solid var(--radio-glass-edge);
+  background: linear-gradient(180deg, #2b2318, #1d1710);
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 244, 220, 0.14);
+  overflow: hidden;
+  transition: filter 0.4s ease;
+}
+
+.radio-deck_idle .radio-deck__dial,
+.radio-deck_error .radio-deck__dial {
+  filter: brightness(0.55) saturate(0.85);
+}
+
+.radio-deck__band {
+  position: absolute;
+  top: 7px;
+  left: 16px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--radio-brass-dim);
+  text-shadow: 0 0 6px rgba(255, 240, 200, 0.3);
+}
+
+.radio-deck__dial-stereo {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #2dd4bf;
+  text-shadow: 0 0 6px rgba(45, 212, 191, 0.5);
+}
+
+.radio-deck__dial-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 7px rgba(45, 212, 191, 0.9);
+}
+
+.radio-deck__scale {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  top: 32px;
+  height: 40px;
+}
+
+.radio-deck__scale::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13px;
+  height: 1px;
+  background: #8f7f5f;
+}
+
+.radio-deck__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.radio-deck__tick-line {
+  display: block;
+  width: 1px;
+  height: 9px;
+  margin: 0 auto;
+  background: #8f7f5f;
+}
+
+.radio-deck__tick-label {
+  display: block;
+  font-size: 10px;
+  color: var(--radio-brass-dim);
+  margin-top: 2px;
+}
+
+.radio-deck__tick_major .radio-deck__tick-line {
+  width: 2px;
+  height: 12px;
+  background: var(--radio-brass-dim);
+}
+
+.radio-deck__tick_major .radio-deck__tick-label {
+  font-weight: 700;
+  color: var(--radio-cream);
+  text-shadow: 0 0 5px rgba(255, 240, 200, 0.35);
+}
+
+/* The needle: a lane-positioned wrapper carrying the glass-high line and
+   its cap dot; the left offset comes from the pseudo-frequency. */
+.radio-deck__needle-pos {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  z-index: 3;
+  transition: left 0.6s ease;
+}
+
+.radio-deck__needle {
+  position: absolute;
+  inset: 0;
+  background: var(--radio-needle);
+  box-shadow: 0 0 8px rgba(224, 52, 52, 0.85);
+}
+
+.radio-deck__needle-cap {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--radio-needle);
+  box-shadow: 0 0 8px rgba(224, 52, 52, 0.9);
+}
+
+.radio-deck__glass-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.03) 30%,
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
+/* The control band: volume knob - station screen - tuning knob. */
+.radio-deck__controls {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(246, 234, 214, 0.18);
+}
+
+.radio-deck__knob-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.radio-deck__knob {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--radio-frame);
+  background: repeating-conic-gradient(from 0deg, #efe9dd 0deg 5deg, #d6d0c2 5deg 10deg);
+  box-shadow:
+    0 4px 9px rgba(0, 0, 0, 0.4),
+    inset 0 2px 3px rgba(255, 255, 255, 0.55);
+  cursor: ns-resize;
+  transition: opacity 0.3s ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--radio-teal);
+    outline-offset: 2px;
+  }
+}
+
+.radio-deck__knob_muted {
+  opacity: 0.45;
+}
+
+.radio-deck__knob_static {
+  cursor: default;
+}
+
+.radio-deck__knob-face {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #f6f0e2, #d9d2c0);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.radio-deck__knob-face_detent {
+  transform: rotate(-20deg);
+}
+
+.radio-deck__knob-pointer {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--radio-teal);
+}
+
+.radio-deck__knob_static .radio-deck__knob-pointer {
+  background: #8a8072;
+}
+
+.radio-deck__knob-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--radio-brass);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* The retro station screen on warm dark glass. */
+.radio-deck__screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: min(300px, 52%);
+  height: 60px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--radio-glass-edge);
+  background: var(--texture-scanlines), linear-gradient(180deg, #2b2318, #1d1710);
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.7),
+    0 1px 0 rgba(255, 244, 220, 0.15);
+  overflow: hidden;
+  transition: filter 0.4s ease;
+}
+
+.radio-deck_idle .radio-deck__screen,
+.radio-deck_error .radio-deck__screen {
+  filter: brightness(0.55) saturate(0.85);
+}
+
+.radio-deck__station {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--radio-screen-text);
+  text-shadow: 0 0 8px rgba(245, 223, 168, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.radio-deck__meta {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--radio-brass-dim);
+  text-shadow: 0 0 5px rgba(255, 240, 200, 0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.radio-deck__nosignal {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--radio-needle);
+  text-shadow: 0 0 8px rgba(224, 52, 52, 0.6);
+  animation: radio-deck-flicker 1.4s steps(1) infinite;
+}
+
+@keyframes radio-deck-flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+
+  45% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  55% {
+    opacity: 0.35;
+  }
+}
+
 /* Now playing: the deck's glass readout screen (canon). */
 .now-playing {
   display: flex;
@@ -1475,47 +2012,6 @@ body.drop-hover::after {
 .now-playing__meter canvas {
   height: 28px;
   width: 44px;
-}
-
-.station-now {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  max-width: 70%;
-  text-align: center;
-}
-
-.station-now__icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.station-now__icon-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 6px;
-  background-color: var(--secondary);
-  font-size: 32px;
-}
-
-.station-now__name {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.station-now__tags {
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .lyrics {
@@ -1639,21 +2135,13 @@ body.drop-hover::after {
   }
 
   /* Stage: the canvases carry explicit flow sizing (their boot-time
-     buffer sizing follows the CSS box); the station card and the lyrics
-     join the column instead of overlaying the stage. */
+     buffer sizing follows the CSS box); the lyrics panel
+     joins the column instead of overlaying the stage. */
   #visualizer,
   .visualizer__webgl {
     order: 3;
     width: 100%;
     height: 55dvh;
-  }
-
-  .station-now {
-    order: 3;
-    position: static;
-    transform: none;
-    margin: 24px auto;
-    padding: 0 16px;
   }
 
   .lyrics {
@@ -1684,6 +2172,22 @@ body.drop-hover::after {
   }
 
   .vinyl-deck__plinth {
+    zoom: 0.6;
+    width: calc(100% / 0.6);
+  }
+
+  /* Radio receiver: same zoom trick as the turntable; the top padding
+     leaves room for the raised antenna. */
+  #radio-deck-root {
+    order: 3;
+  }
+
+  .radio-deck {
+    position: static;
+    padding: 72px 16px 40px;
+  }
+
+  .radio-deck__body {
     zoom: 0.6;
     width: calc(100% / 0.6);
   }

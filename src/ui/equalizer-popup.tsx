@@ -1,10 +1,16 @@
 import { useState } from "preact/hooks";
 import { PRESETS } from "../equalizer";
 import type AudioPlayer from "../audio-player";
+import { bridge } from "./bridge";
 import { usePopup } from "./popup";
 import { SlidersIcon } from "./icons";
 
 const BAND_HZ = ["60", "170", "310", "600", "1k", "3k", "6k", "12k", "14k", "16k"];
+
+/** Shown only while a radio station is engaged: the EQ shapes library audio. */
+function RadioNotice() {
+  return <p class="equalizer-popup__notice">Affects library playback only</p>;
+}
 
 function gainPercent(gain: number): number {
   return ((gain + 12) / 24) * 100;
@@ -114,6 +120,7 @@ export function EqualizerPopup({ player }: { player: AudioPlayer }) {
         <span class="player-controls__btn-label">EQ</span>
       </button>
       <div class={`equalizer-popup${open ? " equalizer-popup__open" : ""}`} hidden={!open}>
+        {bridge.source.value === "radio" && <RadioNotice />}
         <div class="equalizer-popup__header">
           <PresetSelect onApply={applyPreset} />
         </div>

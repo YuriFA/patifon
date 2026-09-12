@@ -125,9 +125,34 @@
           "visualDirection": "Canvas-visible standalone root re-import of depth-2 branch 4f45eaf5; dot-matrix LCD spectrum with unlit cell ghosts, scanlines, peak-hold cells",
           "parentDraftId": "4f45eaf5-63d5-4f08-aff7-7804fdab103f",
           "currentVersion": 1
+        },
+        "c9339d09-29d6-4356-ae28-87c47d956194": {
+          "title": "Patifon - Radio Receiver View (tabletop slide-rule)",
+          "visualDirection": "Radio-mode view: wide 1970s tabletop FM receiver, slide-rule dial 88-108 with red needle, speaker slats left + photo frame/nameplate right, START/STOP + volume/tuning knobs, raised antenna; deck strip empty times + flat disabled lane + enlarged LIVE badge in total slot; ON AIR now-playing panel; PAUSED/NO SIGNAL state chips; area tabs hidden",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 2
+        },
+        "81802961-7438-48c3-a378-83b419e8423f": {
+          "title": "Patifon - Radio Receiver View (portable)",
+          "visualDirection": "Radio-mode view: compact vertical portable receiver per attached vintage photo, chrome carry handle, slide-rule dial, wood-grain band with fabric grille + photo frame, nameplate, START/STOP + volume/tuning knobs, raised telescopic antenna; same deck strip/ON AIR/state chips; area tabs hidden",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 1
+        },
+        "4d22b2c1-9e9b-4e3d-b855-7dde596a6b84": {
+          "title": "Patifon - Radio Receiver View (mahogany)",
+          "visualDirection": "Radio-mode v2 final: solid wood-grain tabletop receiver, dot-weave grille with STEREO plate, FULL-WIDTH dark glass FM 88-108 dial with glowing red needle, knurled VOLUME/TUNING corner knobs, center retro LCD screen (dark glass, warm glow) with station name + genre/bitrate line (no buttons/artwork on the body; playback toggle lives in deck transport), feet, edge-mounted antenna; empty times + flat lane + enlarged LIVE badge; ON AIR panel; compact PAUSED/NO SIGNAL chips; tabs hidden",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 6
+        },
+        "1b798bc2-8bbe-4120-8223-a700a0f53730": {
+          "title": "Patifon - Radio Receiver View (porthole)",
+          "visualDirection": "Radio-mode v2: flat cream body with dark outline, dot speaker panel, round porthole dial 88-108 with station artwork as the dial face and a red sweeping needle, flat knobs + START/STOP, carry handle + flat antenna, solid offset shadows; same deck strip/ON AIR/chips; tabs hidden",
+          "parentDraftId": "6dbe3073-c87b-42bf-ac7b-4fdd2f3342dc",
+          "currentVersion": 2
         }
       },
-      "updatedAt": "2026-09-11T19:25:00.000Z"
+      "updatedAt": "2026-09-12T10:32:16.000Z",
+      "referenceIds": ["786009c7-f0ae-4f99-93dd-2d4d085e1100"]
     }
   }
 }

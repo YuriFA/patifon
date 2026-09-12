@@ -19,6 +19,17 @@ import {
 import { currentRecord, isPlayingLibrary, switchToLibrarySource } from "../library/source";
 
 /**
+ * The engaged station as the views see it: display data only - no stream URL
+ * and no catalog record shape - so radio internals stay behind the feature.
+ */
+export interface BridgeStation {
+  name: string;
+  tags: string;
+  bitrate: number;
+  uuid: string;
+}
+
+/**
  * The one-way bridge from the vanilla playback core to Preact views: core
  * events write signals, components read them and issue commands through
  * `toggle` for engaged-source playback. No playback logic ever moves into
@@ -44,6 +55,8 @@ export const bridge = {
   /** Active library track metadata for the transport panel; null clears it. */
   trackTitle: signal<string | null>(null),
   trackArtist: signal<string | null>(null),
+  /** The engaged station's display data; null while no station is engaged. */
+  station: signal<BridgeStation | null>(null),
 
   /**
    * Play/pause for the engaged source: an engaged station toggles through
@@ -79,8 +92,12 @@ function finiteDuration(player: AudioPlayer): number {
 }
 
 function syncPosition(player: AudioPlayer): void {
-  bridge.position.value = player.position;
-  bridge.duration.value = finiteDuration(player);
+  // Radio takes over without unloading the library element, so late library
+  // timeupdates still land here: while radio owns the transport both values
+  // are forced to 0 and the strip shows the live state instead of stale digits.
+  const radioOwns = getActiveSource() === "radio";
+  bridge.position.value = radioOwns ? 0 : player.position;
+  bridge.duration.value = radioOwns ? 0 : finiteDuration(player);
 }
 
 function syncPlayback(player: AudioPlayer): void {
@@ -93,9 +110,10 @@ function syncPlayback(player: AudioPlayer): void {
   syncNowPlaying(source);
 }
 
-// Transport panel: library metadata only - radio keeps its station card and
-// the panel clears (spec). Pause keeps the last track visible; stop/radio
-// clear it through the source change.
+// Transport panel: the library variant carries the track metadata; the radio
+// variant reads the station from `bridge.station` (written by the radio
+// feature on engage/stop). Pause keeps the last shown content; the release
+// clears it through the source change.
 function syncNowPlaying(source: SourceKind | null): void {
   const record = source === "library" ? currentRecord() : null;
   bridge.trackTitle.value = record?.title ?? null;

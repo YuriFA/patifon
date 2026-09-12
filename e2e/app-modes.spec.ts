@@ -66,15 +66,15 @@ test("playing a library track takes over from a playing station", async ({ page 
   await searchAndPlayFirst(page);
   await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);
 
-  // back to the library view: the station stays engaged as the now-playing card
+  // back to the library view: the station stays engaged on the radio deck
   await page.click(".library__mode");
-  await expect(page.locator(".station-now")).toBeVisible();
+  await expect(page.locator(".radio-deck")).toBeVisible();
 
   await page.fill(".library__search", "");
   await page.locator(".library__row").first().click();
   await expect(page.evaluate(() => window.radio.state())).resolves.toBe("stopped");
   await expect(page.evaluate(() => window.player.isPlaying)).resolves.toBe(true);
-  await expect(page.locator(".station-now")).toBeHidden();
+  await expect(page.locator(".radio-deck")).toBeHidden();
 });
 
 test("entering playlists while a track plays keeps it playing", async ({ page }) => {
@@ -124,7 +124,7 @@ test("transport icon follows the newly audible source", async ({ page }) => {
 
   // a library track takes over: the glyph flips to pause for the new source
   await page.click(".library__mode");
-  await expect(page.locator(".station-now")).toBeVisible();
+  await expect(page.locator(".radio-deck")).toBeVisible();
   await page.fill(".library__search", "");
   await page.locator(".library__row").first().click();
   await expect(page.locator(playBtn)).toHaveClass(/player-controls__btn_pause/u);

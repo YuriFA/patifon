@@ -136,14 +136,13 @@ MUST NOT be mutated by a non-owning view.
 
 ### Requirement: Now playing panel in transport
 
-The transport bar SHALL show a now-playing panel for library playback: a
-NOW PLAYING label, the track title and artist of the active library track,
-and a small live meter reacting to the audio through the shared spectrum
-band mapping (mirrored bass-center layout, AGC normalization), rendered in
-the currently selected spectrum style. The panel SHALL clear when playback
-stops and SHALL NOT show stale track information after the track changes.
-Radio playback SHALL keep the existing station card in the visualization
-area; the panel SHALL NOT display radio content.
+The transport bar SHALL show a now-playing panel: for library playback a NOW
+PLAYING label, the track title and artist of the active library track, and a
+small live meter reacting to the audio through the shared spectrum band
+mapping (mirrored bass-center layout, AGC normalization), rendered in the
+currently selected spectrum style; for radio playback an ON AIR label and the
+engaged station's name without the meter. The panel SHALL clear when playback
+stops and SHALL NOT show stale information after the track or station changes.
 
 #### Scenario: Panel follows the playing track
 
@@ -158,8 +157,9 @@ area; the panel SHALL NOT display radio content.
 #### Scenario: Radio keeps its own display
 
 - **WHEN** a radio station takes over
-- **THEN** the station card shows in the visualization area and the
-  transport panel holds no library track information
+- **THEN** the panel shows the ON AIR label with the station's name and no
+  library track information, and the visualization area is owned by the
+  radio deck receiver
 
 #### Scenario: Meter follows the selected style
 

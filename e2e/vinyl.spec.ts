@@ -60,9 +60,13 @@ test("with a station engaged the deck start/stop acts on the station, not the li
   // a library track exists but stays silent: the deck must never start it
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
   await expectRowCount(page, 1);
+  // the vinyl tab is selected first; the radio deck then owns the area and
+  // hides the tabs and the turntable
+  await areaTab(page, "Vinyl").click();
   await searchAndPlayFirst(page);
   await expect(page.locator(".progress__live")).toBeVisible();
-  await areaTab(page, "Vinyl").click();
+  await expect(page.locator(".radio-deck")).toBeVisible();
+  await expect(page.locator(".area-tabs")).toHaveCount(0);
 
   // the deck is hidden while radio owns the transport; the control still
   // routes through the engaged source if it ever fires
@@ -144,8 +148,12 @@ test("the now-playing panel follows the library track and clears on radio", asyn
   await expect(panel).toContainText("Now playing");
   await expect(page.locator(".now-playing__meter")).toBeVisible();
 
-  // radio mode renders its own view; the panel holds no library content
+  // the radio takeover swaps the panel to its on-air variant: the station's
+  // name and no library track, no meter (no analyser behind the stream)
   await searchAndPlayFirst(page);
   await expect(page.locator(".progress__live")).toBeVisible();
-  await expect(panel).toHaveCount(0);
+  await expect(panel).toContainText("On air");
+  await expect(panel).toContainText("Test Radio One");
+  await expect(panel).not.toContainText("Song One");
+  await expect(page.locator(".now-playing__meter")).toHaveCount(0);
 });

@@ -22,6 +22,7 @@ import { SeekBar } from "./ui/seek-bar";
 import { VolumeControl } from "./ui/volume-control";
 import { AreaTabs } from "./ui/area-tabs";
 import { VinylDeck } from "./ui/vinyl-deck";
+import { RadioDeck } from "./ui/radio-deck";
 import { NowPlaying } from "./ui/now-playing";
 import { ScrobblingPopup } from "./ui/scrobbling-popup";
 import { EqualizerPopup } from "./ui/equalizer-popup";
@@ -75,6 +76,7 @@ render(
 render(<VolumeControl player={player} />, document.querySelector<HTMLDivElement>("#volume-root")!);
 render(<AreaTabs />, document.querySelector<HTMLDivElement>("#area-tabs-root")!);
 render(<VinylDeck player={player} />, document.querySelector<HTMLDivElement>("#vinyl-root")!);
+render(<RadioDeck player={player} />, document.querySelector<HTMLDivElement>("#radio-deck-root")!);
 render(<NowPlaying player={player} />, document.querySelector<HTMLDivElement>("#nowplaying-root")!);
 render(
   <RecommendationsRows />,
