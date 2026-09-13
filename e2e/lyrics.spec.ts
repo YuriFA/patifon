@@ -1,34 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { dropFile, dropTaggedWav, expectRowCount, waitForAppReady } from "./helpers";
+import { dropFile, dropTaggedWav, waitForAppReady } from "./helpers";
 import { mockCatalog, searchAndPlayFirst } from "./radio.helpers";
-
-const SYNCED_LRC = [
-  "[00:01.00]First line",
-  "[00:04.00]Second line",
-  "[00:08.00]Third line",
-  "[00:12.00]Fourth line",
-].join("\n");
-
-const PLAIN_TEXT = "Just a plain text\nwithout any timestamps";
-
-interface LyricsCounters {
-  requests: string[];
-}
-
-async function mockLrclib(page: Page, tracks: Record<string, unknown>): Promise<LyricsCounters> {
-  const counters: LyricsCounters = { requests: [] };
-  await page.route("**/lrclib.net/api/get*", (route) => {
-    const url = new URL(route.request().url());
-    const track = url.searchParams.get("track_name") ?? "";
-    counters.requests.push(track);
-    const body = tracks[track];
-    if (body === undefined) {
-      return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
-    }
-    return route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
-  });
-  return counters;
-}
+import {
+  currentTime,
+  mockLrclib,
+  openLyricsTab,
+  playFirstRow,
+  PLAIN_TEXT,
+  SYNCED_TRACK,
+} from "./lyrics.helpers";
 
 /** Alpha-channel sum of the columns canvas: > 0 drawn, 0 cleared. */
 function barsAlphaSum(page: Page): Promise<number> {
@@ -42,28 +22,6 @@ function barsAlphaSum(page: Page): Promise<number> {
     return sum;
   });
 }
-
-async function playFirstRow(page: Page): Promise<void> {
-  await expectRowCount(page, 1);
-  await page.locator(".library__row").first().click();
-}
-
-/** Selects the LYRICS tab: the panel shows only while this tab is active. */
-async function openLyricsTab(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Lyrics" }).click();
-}
-
-function currentTime(page: Page): Promise<number> {
-  return page.evaluate(
-    () => (window.player as unknown as { audio: HTMLAudioElement }).audio.currentTime,
-  );
-}
-
-const SYNCED_TRACK = {
-  plainLyrics: null,
-  syncedLyrics: SYNCED_LRC,
-  instrumental: false,
-};
 
 test("highlight follows playback and clicking a line seeks", async ({ page }) => {
   const counters = await mockLrclib(page, { "Song One": SYNCED_TRACK });
@@ -114,6 +72,13 @@ test("repeat plays use the IndexedDB cache without new requests", async ({ page 
 
 test("missing lyrics keep the panel hidden and playback unaffected", async ({ page }) => {
   const counters = await mockLrclib(page, {});
+  // the fallback chain must exhaust quietly: no search hits, no external hit
+  await page.route("**/lrclib.net/api/search*", (route) =>
+    route.fulfill({ contentType: "application/json", body: "[]" }),
+  );
+  await page.route("**/api.lyrics.ovh/v1/**", (route) =>
+    route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
+  );
   await page.goto("/");
   await waitForAppReady(page);
   await dropTaggedWav(page, "unknown-song.wav", {
@@ -145,6 +110,8 @@ test("a network failure behaves like no lyrics", async ({ page }) => {
     requests.push(url.searchParams.get("track_name") ?? "");
     return route.abort();
   });
+  await page.route("**/lrclib.net/api/search*", (route) => route.abort());
+  await page.route("**/api.lyrics.ovh/v1/**", (route) => route.abort());
   await page.goto("/");
   await waitForAppReady(page);
   await dropTaggedWav(page, "offline-song.wav", {
