@@ -1102,6 +1102,17 @@ body.drop-hover::after {
   user-select: none;
 }
 
+/* The cover in place of the printed text: a circular crop inside the ring,
+   rotating with the record because it lives in the spinning platter. */
+.vinyl-deck__label-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .vinyl-deck__label-stereo {
   position: absolute;
   bottom: calc(50% + 12px);

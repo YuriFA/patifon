@@ -8,6 +8,7 @@ import { pendingQueueIds, prunePlayed } from "../playlists/queue";
 import {
   initSource,
   recordAt,
+  currentRecord,
   playbackOrder,
   isPlayingLibrary,
   switchToLibrarySource,
@@ -15,8 +16,10 @@ import {
 } from "./source";
 import { initDropzone } from "./dropzone";
 import { enrichArtwork } from "./artwork";
+import { artworkUrlFor } from "./artwork-url";
 import { formatDuration } from "../utils";
 import { engageSource, registerModeSearch, searchQuery } from "../modes";
+import { bridge } from "../ui/bridge";
 
 const FUSE_OPTIONS = {
   keys: ["title", "artist", "album"],
@@ -29,7 +32,6 @@ let fuse = new Fuse<LibraryRecord>([], FUSE_OPTIONS);
 
 const records: LibraryRecord[] = [];
 const objectUrls = new Map<string, string>();
-const artworkUrls = new Map<string, string>();
 
 function toSource(record: LibraryRecord): { src: string; name: string } {
   return { src: urlFor(record), name: record.title };
@@ -40,18 +42,6 @@ function urlFor(record: LibraryRecord): string {
   if (!url) {
     url = URL.createObjectURL(record.file);
     objectUrls.set(record.id, url);
-  }
-  return url;
-}
-
-function artworkUrlFor(record: LibraryRecord): string | null {
-  if (!record.artwork) {
-    return null;
-  }
-  let url = artworkUrls.get(record.id);
-  if (!url) {
-    url = URL.createObjectURL(record.artwork);
-    artworkUrls.set(record.id, url);
   }
   return url;
 }
@@ -199,6 +189,11 @@ async function maybeEnrichArtwork(): Promise<void> {
   record.artwork = artwork;
   await saveTrack(record);
   notifyView();
+  // the cover landed after the bridge last synced now-playing: hand it
+  // over so reactive surfaces (the vinyl label) swap without a track change
+  if (currentRecord() === record) {
+    bridge.trackArtworkUrl.value = artworkUrlFor(record);
+  }
 }
 
 function initLibraryModeControls(): void {
@@ -256,8 +251,4 @@ export function libraryMetadata(): MediaSessionMetadata | null {
     album: record.album,
     artworkUrl: artworkUrlFor(record),
   };
-}
-
-export function libraryArtworkUrl(record: LibraryRecord): string | null {
-  return artworkUrlFor(record);
 }

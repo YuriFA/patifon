@@ -114,6 +114,25 @@ function PitchFader({ player }: { player: AudioPlayer }) {
   );
 }
 
+/** The record's center label: the track's cover when it has one, the
+    printed STEREO/RPM text otherwise; the spindle hole always sits on top. */
+function DeckLabel() {
+  const artworkUrl = bridge.trackArtworkUrl.value;
+  return (
+    <div class="vinyl-deck__label">
+      {artworkUrl ? (
+        <img class="vinyl-deck__label-art" src={artworkUrl} alt="" />
+      ) : (
+        <>
+          <span class="vinyl-deck__label-stereo">STEREO</span>
+          <span class="vinyl-deck__label-rpm">33⅓ RPM</span>
+        </>
+      )}
+      <span class="vinyl-deck__hole" />
+    </div>
+  );
+}
+
 /** The swing assembly plus its static bearing circle (draft geometry). */
 function Tonearm({ armRef }: { armRef: RefObject<HTMLDivElement> }) {
   return (
@@ -167,11 +186,7 @@ export function VinylDeck({ player }: { player: AudioPlayer }) {
         <div class="vinyl-deck__platter-wrap">
           <div class="vinyl-deck__rim" />
           <div class="vinyl-deck__platter">
-            <div class="vinyl-deck__label">
-              <span class="vinyl-deck__label-stereo">STEREO</span>
-              <span class="vinyl-deck__label-rpm">33⅓ RPM</span>
-              <span class="vinyl-deck__hole" />
-            </div>
+            <DeckLabel />
           </div>
         </div>
         <Tonearm armRef={armRef} />

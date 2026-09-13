@@ -17,6 +17,7 @@ import {
   type RadioPlaybackState,
 } from "../radio/playback";
 import { currentRecord, isPlayingLibrary, switchToLibrarySource } from "../library/source";
+import { artworkUrlFor } from "../library/artwork-url";
 
 /**
  * The engaged station as the views see it: display data only - no stream URL
@@ -55,6 +56,8 @@ export const bridge = {
   /** Active library track metadata for the transport panel; null clears it. */
   trackTitle: signal<string | null>(null),
   trackArtist: signal<string | null>(null),
+  /** The active track's cover as an object URL; null keeps placeholders. */
+  trackArtworkUrl: signal<string | null>(null),
   /** The engaged station's display data; null while no station is engaged. */
   station: signal<BridgeStation | null>(null),
 
@@ -118,6 +121,7 @@ function syncNowPlaying(source: SourceKind | null): void {
   const record = source === "library" ? currentRecord() : null;
   bridge.trackTitle.value = record?.title ?? null;
   bridge.trackArtist.value = record?.artist ?? null;
+  bridge.trackArtworkUrl.value = record ? artworkUrlFor(record) : null;
 }
 
 /**

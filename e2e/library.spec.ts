@@ -82,7 +82,11 @@ async function mockArtworkCatalog(
   const images: string[] = [];
   await page.route("**/itunes.apple.com/search*", async (route) => {
     searches.push(route.request().url());
-    await route.fulfill({ status, contentType: "application/json", body: JSON.stringify({ results }) });
+    await route.fulfill({
+      status,
+      contentType: "application/json",
+      body: JSON.stringify({ results }),
+    });
   });
   await page.route("**mzstatic.com/**", async (route) => {
     images.push(route.request().url());

@@ -12,7 +12,8 @@ import { getCatalog, setCatalog, findInCatalog } from "./catalog";
 import { onModeChange, registerModeSearch, searchQuery } from "../modes";
 import { recordAt } from "../library/source";
 import { signal } from "@preact/signals";
-import { libraryRecords, libraryArtworkUrl } from "../library/ui";
+import { libraryRecords } from "../library/ui";
+import { artworkUrlFor } from "../library/artwork-url";
 
 let player: AudioPlayer;
 let openId: string | null = null;
@@ -118,7 +119,7 @@ function renderTracks(): void {
       position,
       length: resolved.length,
       duration: record.duration,
-      artwork: libraryArtworkUrl(record),
+      artwork: artworkUrlFor(record),
       playing: playingId === record.id,
     }));
   playlistsRowsView.value = {

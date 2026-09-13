@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { dropTaggedWav, expectRowCount, waitForAppReady } from "./helpers";
+import { dropTaggedWav, expectRowCount, waitForAppReady, PNG_PIXEL } from "./helpers";
 import { mockCatalog, searchAndPlayFirst } from "./radio.helpers";
 
 const areaTab = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
+
+const ARTWORK_URL_100 = "https://is1-ssl.mzstatic.com/image/thumb/test/100x100bb.jpg";
 
 async function playOnVinyl(page: Page): Promise<void> {
   await dropTaggedWav(page, "song-one.wav", { title: "Song One", artist: "Artist One" });
@@ -78,6 +80,75 @@ test("with a station engaged the deck start/stop acts on the station, not the li
   await start.dispatchEvent("click");
   await expect.poll(() => page.evaluate(() => window.radio.state())).toBe("playing");
   await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(false);
+});
+
+test("the center label shows the track's cover instead of the printed text", async ({ page }) => {
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropTaggedWav(page, "song-one.wav", {
+    title: "Song One",
+    artist: "Artist One",
+    artwork: true,
+  });
+  await expectRowCount(page, 1);
+  await page.locator(".library__row").first().click();
+  await areaTab(page, "Vinyl").click();
+
+  const label = page.locator(".vinyl-deck__label");
+  await expect(label.locator(".vinyl-deck__label-art")).toBeVisible();
+  // the spindle hole still punches through the cover
+  await expect(label.locator(".vinyl-deck__hole")).toBeVisible();
+  await expect(label).not.toContainText("STEREO");
+  await expect(label).not.toContainText("RPM");
+});
+
+test("an artless track keeps the printed STEREO/RPM label", async ({ page }) => {
+  await page.goto("/");
+  await waitForAppReady(page);
+  await playOnVinyl(page);
+
+  const label = page.locator(".vinyl-deck__label");
+  await expect(label).toContainText("STEREO");
+  await expect(label).toContainText("RPM");
+  await expect(label.locator("img")).toHaveCount(0);
+  await expect(label.locator(".vinyl-deck__hole")).toBeVisible();
+});
+
+test("a late enrichment swaps the placeholder for the fetched cover", async ({ page }) => {
+  await page.route("**/itunes.apple.com/search*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        results: [{ artistName: "Artist One", artworkUrl100: ARTWORK_URL_100 }],
+      }),
+    });
+  });
+  await page.route("**mzstatic.com/**", async (route) => {
+    await route.fulfill({ contentType: "image/jpeg", body: PNG_PIXEL });
+  });
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropTaggedWav(page, "song-one.wav", {
+    title: "Song One",
+    artist: "Artist One",
+    album: "Album One",
+  });
+  // the second track stays artless: the mocked catalog answers with a
+  // mismatching artist, so its own enrichment must keep the placeholder
+  await dropTaggedWav(page, "song-two.wav", { title: "Song Two", artist: "Artist Two" });
+  await expectRowCount(page, 2);
+  await page.locator(".library__row").first().click();
+  await areaTab(page, "Vinyl").click();
+
+  const label = page.locator(".vinyl-deck__label");
+  await expect(label.locator(".vinyl-deck__label-art")).toBeVisible();
+  await expect(label).not.toContainText("STEREO");
+
+  // switching to the artless track restores the printed label
+  await page.locator(".library__row").nth(1).click();
+  await expect(label.locator(".vinyl-deck__label-art")).toHaveCount(0);
+  await expect(label).toContainText("STEREO");
+  await expect(label).toContainText("RPM");
 });
 
 test("the pitch fader changes the playback rate and survives a track change", async ({ page }) => {
