@@ -92,7 +92,8 @@ export interface TaggedWavOptions {
   artwork?: boolean;
 }
 
-const pngPixel = Buffer.from(
+/** A 1x1 PNG: embedded-cover test data and mock image bodies. */
+export const PNG_PIXEL = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
 );
@@ -144,7 +145,7 @@ export function makeTaggedWav(seconds: number, options: TaggedWavOptions): Uint8
     frames.push(id3TextFrame("TALB", options.album));
   }
   if (options.artwork) {
-    frames.push(id3ApicFrame(pngPixel));
+    frames.push(id3ApicFrame(PNG_PIXEL));
   }
   const frameBytes = Buffer.concat(frames);
   let id3 = Buffer.concat([

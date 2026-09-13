@@ -14,6 +14,7 @@ import {
   markLibrarySource,
 } from "./source";
 import { initDropzone } from "./dropzone";
+import { enrichArtwork } from "./artwork";
 import { formatDuration } from "../utils";
 import { engageSource, registerModeSearch, searchQuery } from "../modes";
 
@@ -177,6 +178,29 @@ export async function importDirectory(): Promise<void> {
   await importAudioFiles(files);
 }
 
+/**
+ * Close the artwork gap for playing tracks: a track without embedded art
+ * (but with an artist) gets its album cover from the external catalog and
+ * keeps it like imported art - same field, same offline persistence. The
+ * lookup is album-scoped and deduplicated, so only the first artless track
+ * of an album pays the request. Failures stay silent placeholders.
+ */
+async function maybeEnrichArtwork(): Promise<void> {
+  const record = recordAt(player.currentTrackIndex);
+  if (!record || record.artwork || !record.artist) {
+    return;
+  }
+  const artwork = await enrichArtwork(record);
+  if (!artwork || !records.includes(record)) {
+    // no match, or the record was deleted while the fetch was in flight:
+    // writing it back would resurrect a deleted track
+    return;
+  }
+  record.artwork = artwork;
+  await saveTrack(record);
+  notifyView();
+}
+
 function initLibraryModeControls(): void {
   registerModeSearch("library", () => {
     notifyView();
@@ -205,6 +229,7 @@ export async function initLibrary(audioPlayer: AudioPlayer): Promise<void> {
       notifyView();
     }
     notifyView();
+    void maybeEnrichArtwork();
   });
   player.on("track:pause", () => {
     notifyView();
