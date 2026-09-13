@@ -3,7 +3,7 @@ import type { LibraryRecord } from "../library/store";
 import { enqueuePeakJob, onWaveformReady } from "./peaks";
 import { loadWaveform } from "./store";
 import { currentRecord } from "../library/source";
-import { getActiveSource, getMode } from "../modes";
+import { getActiveSource, getMode, onModeChange, onSourceChange } from "../modes";
 
 export interface WaveformStripDeps {
   player: AudioPlayer;
@@ -56,6 +56,10 @@ export function initWaveformStrip(deps_: WaveformStripDeps): void {
   deps.player.on("track:loadeddata", scheduleUpdate);
   deps.player.on("track:timeupdate", scheduleDraw);
   window.addEventListener("resize", scheduleUpdate);
+  // The wave follows the engaged source and the open view: entering radio
+  // mode (or a station takeover) clears it, leaving both brings it back.
+  onModeChange(() => scheduleUpdate());
+  onSourceChange(() => scheduleUpdate());
   onWaveformReady((trackId) => {
     // a lazy backfill finished for the track on air: swap the strip in
     if (trackId === drawnTrackId) {
@@ -80,8 +84,12 @@ async function showWaveformFor(record: LibraryRecord | null): Promise<void> {
     return;
   }
   const waveform = await loadWaveform(record.id);
-  if (record.id !== (currentRecord()?.id ?? null)) {
-    // the player moved on while the record was loading
+  if (
+    record.id !== (currentRecord()?.id ?? null) ||
+    getActiveSource() === "radio" ||
+    getMode() === "radio"
+  ) {
+    // the view or the source moved on while the record was loading
     return;
   }
   if (!waveform) {

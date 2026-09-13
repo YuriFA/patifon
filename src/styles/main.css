@@ -170,7 +170,9 @@ body {
   opacity: 0;
 }
 
-/* The seek control's wave lane: the seek surface spanning the deck. */
+/* The seek control's wave lane: the seek surface spanning the deck. The
+   plain progress line (visible whenever the wave canvas is absent) speaks
+   the fader language: recessed rail capsule, primary fill, raised cap. */
 .progress__bar {
   position: relative;
   flex: 1 1 auto;
@@ -182,19 +184,59 @@ body {
 
 .progress__bar .slider-horiz__track {
   position: absolute;
-  inset: 0;
-  border-radius: 0;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--fader-rail);
+  border: 1px solid var(--fader-rail-border);
+  box-shadow: inset 0 1px 3px rgba(72, 66, 50, 0.12);
 }
 
 .progress__bar .slider-horiz__filled {
-  height: 100%;
-  border-radius: 0;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--primary);
 }
 
 .progress__bar .slider-horiz__buffer {
   position: absolute;
-  inset: 0;
-  height: 100%;
+  top: 50%;
+  left: 0;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--fader-rail-line);
+}
+
+.progress__bar .slider-horiz__handle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 26px;
+  border-radius: 4px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, var(--fader-cap-from), var(--fader-cap-to));
+  border: 1px solid var(--fader-cap-border);
+  box-shadow: 0 1px 3px rgba(72, 66, 50, 0.3);
+}
+
+.progress__bar .slider-horiz__handle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--primary);
+  border-radius: 1px;
 }
 
 .player-controls {

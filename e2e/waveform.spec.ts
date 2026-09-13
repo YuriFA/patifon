@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { dropFile, expectRowCount, waitForAppReady } from "./helpers";
+import { dropFile, expectRowCount, progressWidth, waitForAppReady } from "./helpers";
 import { mockCatalog, searchAndPlayFirst } from "./radio.helpers";
 
 /** Counts OfflineAudioContext.decodeAudioData calls across reloads. */
@@ -107,6 +107,36 @@ test("radio keeps the plain progress line", async ({ page }) => {
   await searchAndPlayFirst(page);
   await expect(page.locator(".progress__live")).toBeVisible();
   expect(await hasWave(page)).toBe(false);
+});
+
+test("radio mode shows the plain line for library playback and the wave resumes on return", async ({
+  page,
+}) => {
+  await mockCatalog(page);
+  await page.goto("/");
+  await waitForAppReady(page);
+  await dropFile(page, "Alpha - First.wav", 20);
+  await expectRowCount(page, 1);
+  await page.locator(".library__row").nth(0).click();
+  await expect.poll(() => hasWave(page)).toBe(true);
+
+  // browsing radio mode while the track plays clears the wave; the plain
+  // fader-styled progress line must stay visible and keep moving
+  await page.click(".library__mode");
+  await expect.poll(() => hasWave(page)).toBe(false);
+  const fill = page.locator(".progress__bar .slider-horiz__filled");
+  await expect(fill).toHaveCSS("background-color", "rgb(15, 118, 110)");
+  await expect(page.locator(".progress__bar .slider-horiz__track")).toHaveCSS(
+    "background-color",
+    "rgb(241, 238, 226)",
+  );
+  await page.waitForTimeout(1500);
+  expect(await progressWidth(page)).toBeGreaterThan(1);
+
+  // returning to the library view brings the wave back without a restart
+  await page.click(".library__mode-library");
+  await expect.poll(() => hasWave(page)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.player.isPlaying)).toBe(true);
 });
 
 test("a legacy track gains its wave mid-playback via lazy backfill", async ({ page }) => {

@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 import { dropFile, expectRowCount, waitForAppReady } from "./helpers";
 import { mockCatalog, searchAndPlayFirst } from "./radio.helpers";
 
+function hasWave(page: import("@playwright/test").Page): Promise<boolean> {
+  return page.evaluate(
+    () => document.querySelector(".progress")?.classList.contains("progress_wave") ?? false,
+  );
+}
+
 test("station takeover clears the stale strip and shows the live badge", async ({ page }) => {
   await mockCatalog(page);
   await page.goto("/");
@@ -26,6 +32,9 @@ test("station takeover clears the stale strip and shows the live badge", async (
   await expect(now).toHaveText("");
   await expect(total).toHaveCount(0);
   await expect(seek).toBeDisabled();
+  // the drawn library wave goes with the takeover (spec: no live position,
+  // no stale waveform behind the receiver)
+  await expect.poll(() => hasWave(page)).toBe(false);
   const badge = page.locator(".progress__live");
   await expect(badge).toHaveText("Live");
   await expect(badge).not.toHaveClass(/progress__live_dim/u);
