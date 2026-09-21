@@ -5,13 +5,13 @@ export default defineConfig({
   timeout: 30_000,
   retries: 0,
   use: {
-    baseURL: "http://localhost:4173",
+    baseURL: "http://localhost:4173/patifon/",
     browserName: "chromium",
     viewport: { width: 1280, height: 720 },
   },
   webServer: {
     command: "npm run preview",
-    url: "http://localhost:4173",
+    url: "http://localhost:4173/patifon/",
     reuseExistingServer: true,
   },
 });

@@ -3,6 +3,8 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  // GitHub Pages serves this repo at https://yurifa.github.io/patifon/
+  base: "/patifon/",
   plugins: [
     preact(),
     VitePWA({
@@ -13,7 +15,8 @@ export default defineConfig({
         short_name: "Patifon",
         description: "Local music library player with a Web Audio equalizer",
         display: "standalone",
-        start_url: "/",
+        start_url: "./",
+        scope: "./",
         background_color: "#f6f2ec",
         theme_color: "#f6f2ec",
         icons: [
