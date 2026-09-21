@@ -18,9 +18,11 @@ time readouts and the LIVE badge) above the transport controls row. The
 shell SHALL persist across view mode switches and reloads; only region
 content changes with the active mode.
 
-At desktop widths the shell SHALL fill the viewport without page scroll,
-centered at a maximum width with hairline side borders, in the two-column
-grid (sidebar beside the visualization area, deck spanning below).
+At desktop widths the shell SHALL stretch to the full viewport width at
+every screen size - no maximum-width cap, no horizontal centering, and no
+side borders or page shadow - without page scroll, in the two-column grid
+(sidebar beside the visualization area, deck spanning below). The
+visualization area SHALL absorb all width beyond the fixed 380px sidebar.
 
 At mobile widths (narrow viewports where the sidebar column no longer
 fits) the shell SHALL reflow into a single column: the sidebar chrome
@@ -52,6 +54,13 @@ turntable renders at its mobile size) instead of clipping.
 
 - **WHEN** the app loads at a desktop viewport
 - **THEN** the document does not scroll; only inner lists scroll
+
+#### Scenario: Full-width shell on wide screens
+
+- **WHEN** the app loads at a desktop viewport wider than 1440px
+- **THEN** the shell spans the entire viewport width with no empty side
+  margins, the sidebar stays 380px and the visualization area absorbs the
+  remaining width
 
 #### Scenario: Mobile reflow to one column
 

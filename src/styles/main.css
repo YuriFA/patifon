@@ -64,10 +64,7 @@ body {
 
 .audio_player {
   width: 100%;
-  max-width: 1440px;
   height: 100vh;
-  margin-left: auto;
-  margin-right: auto;
   overflow: hidden;
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -75,9 +72,6 @@ body {
   grid-template-areas:
     "sidebar main"
     "deck deck";
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  box-shadow: var(--shadow-plinth);
 }
 
 /* Focus visibility: one ring for every control the redesign renders. */

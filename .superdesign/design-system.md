@@ -102,10 +102,10 @@ drop. Nothing else animates - hardware does not bounce.
 
 ## Layout
 
-App shell: fills the viewport exactly - full width up to 1440px centered, full
-height (`h-screen`), no page scroll at any desktop viewport; every region flexes
-(the stage absorbs leftover height), only inner lists scroll. Side hairline
-borders, plinth-level page shadow. Row 1 (flex-1): sidebar 380px (card bg, right
+App shell: fills the viewport exactly - full width at every screen size, full
+height (`h-screen`), no page scroll at any desktop viewport; every region
+flexes (the stage absorbs leftover height and width), only inner lists scroll.
+No side borders, no page shadow. Row 1 (flex-1): sidebar 380px (card bg, right
 hairline, inset panel shadow) + stage (bg, centered content, mode tabs pinned
 top-right 24px). Row 2: transport deck - one footer card 140px tall, deck shadow
 on top edge, brushed-metal wash, containing the waveform strip row (40px, bottom
