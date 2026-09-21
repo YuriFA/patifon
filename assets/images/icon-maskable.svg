@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!--
+    Maskable app icon: full-bleed Warm Earth cream surface with the vinyl
+    deck artwork scaled 0.7 about the center so every point (worst case:
+    the counterweight corner) stays inside the maskable safe zone, the
+    central 80% (radius 410).
+  -->
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d4d4d1" />
+      <stop offset="0.5" stop-color="#fafaf9" />
+      <stop offset="1" stop-color="#a3a39e" />
+    </linearGradient>
+    <linearGradient id="counterweight" x1="0" y1="0" x2="1" y2="0.35">
+      <stop offset="0" stop-color="#9ca3af" />
+      <stop offset="0.5" stop-color="#f0eeec" />
+      <stop offset="1" stop-color="#d1d5db" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#f6f2ec" />
+
+  <g transform="translate(512 512) scale(0.7) translate(-512 -512)">
+    <!-- Record: ink rim, vinyl with grooves, mint label, teal spindle -->
+    <circle cx="512" cy="512" r="306" fill="#1a1a1a" stroke="#221d16" stroke-width="12" />
+    <g fill="none" stroke="#111" stroke-width="4">
+      <circle cx="512" cy="512" r="146" />
+      <circle cx="512" cy="512" r="162" />
+      <circle cx="512" cy="512" r="178" />
+      <circle cx="512" cy="512" r="194" />
+      <circle cx="512" cy="512" r="210" />
+      <circle cx="512" cy="512" r="226" />
+      <circle cx="512" cy="512" r="242" />
+      <circle cx="512" cy="512" r="258" />
+      <circle cx="512" cy="512" r="274" />
+      <circle cx="512" cy="512" r="290" />
+    </g>
+    <circle cx="512" cy="512" r="118" fill="#d9efec" stroke="#221d16" stroke-width="8" />
+    <circle cx="512" cy="512" r="26" fill="#0f766e" />
+
+    <!-- Tonearm assembly, above the record like the deck -->
+    <rect x="833" y="89" width="56" height="120" rx="12" fill="url(#counterweight)" transform="rotate(-141 861 149)" />
+    <rect x="807" y="207" width="290" height="20" rx="10" fill="url(#metal)" stroke="#a3a39e" stroke-width="2" transform="rotate(108 807 217)" />
+    <circle cx="807" cy="217" r="56" fill="url(#metal)" stroke="#a3a39e" stroke-width="2" />
+    <circle cx="807" cy="217" r="12" fill="#8a8072" />
+    <g transform="translate(709 508) rotate(118)">
+      <rect x="-47" y="-24.5" width="94" height="49" rx="9" fill="#f0eeec" stroke="#9ca3af" stroke-width="3" />
+      <rect x="-37" y="-15" width="48" height="30" rx="10" fill="#0f766e" />
+      <rect x="22" y="-3.5" width="21" height="7" rx="2" fill="#9ca3af" />
+    </g>
+  </g>
+</svg>

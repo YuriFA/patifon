@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Patifon</title>
+    <link rel="icon" type="image/svg+xml" href="/patifon/assets/images/icon.svg" />
+    <meta name="theme-color" content="#f6f2ec" />
+    <script type="module" crossorigin src="/patifon/assets/index-DmBTy7mD.js"></script>
+    <link rel="modulepreload" crossorigin href="/patifon/assets/rolldown-runtime-hePW80VL.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/BasicParser-BbS26p_A.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/Util-cYHczhNO.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/APEv2Parser-CXjz7OXA.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/types-gz03Z04a.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/ID3v2Token-CM9ztahx.js">
+    <link rel="modulepreload" crossorigin href="/patifon/assets/ID3v1Parser-BuMTbqBO.js">
+    <link rel="stylesheet" crossorigin href="/patifon/assets/index-CmpuPVHn.css">
+  <link rel="manifest" href="/patifon/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/patifon/registerSW.js"></script></head>
+  <body>
+    <div class="audio_player">
+      <div class="playlist">
+        <div class="library__header" id="sidebar-root"></div>
+        <div id="rows-host-root"></div>
+        <div class="recommendations" hidden>
+          <div class="recommendations__head">
+            Created for you <span class="recommendations__brand">ListenBrainz</span>
+          </div>
+          <div class="recommendations__state"></div>
+          <div id="recommendations-rows-root"></div>
+        </div>
+      </div>
+      <div class="audio_visualize">
+        <canvas id="visualizer" height="500"></canvas>
+        <canvas class="visualizer__webgl" hidden></canvas>
+        <div class="lyrics" hidden>
+          <div class="lyrics__text"></div>
+          <div class="lyrics__empty" hidden>No lyrics for this track</div>
+        </div>
+        <div id="vinyl-root"></div>
+        <div id="radio-deck-root"></div>
+        <div id="area-tabs-root"></div>
+        <div class="visualizer-controls">
+          <button
+            class="visualizer-controls__style"
+            type="button"
+            data-style="lcd"
+            title="LCD matrix spectrum"
+          >
+            LCD
+          </button>
+          <button
+            class="visualizer-controls__style"
+            type="button"
+            data-style="led"
+            title="LED ladder spectrum"
+          >
+            LED
+          </button>
+          <button
+            class="visualizer-controls__mode"
+            type="button"
+            title="Toggle MilkDrop visualizer"
+          >
+            MilkDrop
+          </button>
+          <button class="visualizer-controls__skip" type="button" title="Next preset" hidden>
+            Next
+          </button>
+        </div>
+      </div>
+      <footer class="deck">
+        <div class="deck__strip progress">
+          <div id="seek-root"></div>
+        </div>
+        <div class="deck__controls">
+          <div class="player-controls">
+            <div id="transport-root"></div>
+            <div id="nowplaying-root"></div>
+            <div id="volume-root"></div>
+            <div id="equalizer-root"></div>
+            <div id="scrobbling-root"></div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
