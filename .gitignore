@@ -2,6 +2,7 @@
 node_modules/
 .idea/
 .vscode/
+.omp/
 etc/config.json
 script
 test.js
